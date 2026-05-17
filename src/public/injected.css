@@ -1,0 +1,17 @@
+/* SpeedGrader style override */
+
+/* #iframe_holder {
+	opacity: 0;
+	transition-property: opacity;
+	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	transition-duration: 200ms;
+} */
+
+/* App-specific directives */
+
+.question.display_question.sgh_question_hidden {
+	/* Apparently, 'display: none;' breaks the total points calculation */
+	/* display: none; */
+	position: fixed;
+	visibility: hidden;
+}

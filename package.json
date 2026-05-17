@@ -1,0 +1,50 @@
+{
+	"name": "speed-grader-helper",
+	"version": "1.0.0",
+	"description": "A Chrome extension that makes Canvas SpeedGrader infinitely better",
+	"type": "module",
+	"scripts": {
+		"dev": "BUILD_MODE=development tsx build.ts",
+		"build": "npm run clean && tsc && tsx build.ts",
+		"clean": "rm -rf dist",
+		"format": "prettier --write \"**/*.{js,jsx,ts,tsx,css,json,md}\""
+	},
+	"devDependencies": {
+		"@tailwindcss/postcss": "^4.3.0",
+		"@types/chrome": "^0.1.42",
+		"@types/node": "^25.9.1",
+		"@types/react": "^19.2.14",
+		"@types/react-dom": "^19.2.3",
+		"@vitejs/devtools": "^0.3.1",
+		"@vitejs/plugin-react": "^6.0.2",
+		"autoprefixer": "^10.5.0",
+		"concurrently": "^10.0.3",
+		"fast-glob": "^3.3.3",
+		"postcss": "^8.5.14",
+		"prettier": "^3.8.3",
+		"prettier-plugin-tailwindcss": "^0.8.0",
+		"rollup-plugin-visualizer": "^7.0.1",
+		"tailwindcss": "^4.3.0",
+		"tsx": "^4.22.4",
+		"typescript": "^6.0.3",
+		"vite": "^8.0.13",
+		"vite-plugin-tailwind-shadowdom": "^1.1.1"
+	},
+	"dependencies": {
+		"@emotion/cache": "^11.14.0",
+		"@emotion/react": "^11.14.0",
+		"@emotion/styled": "^11.14.1",
+		"@mui/icons-material": "^9.0.1",
+		"@mui/joy": "^5.0.0-beta.52",
+		"@mui/material": "^9.0.1",
+		"@reduxjs/toolkit": "^2.12.0",
+		"@tailwindcss/vite": "^4.3.0",
+		"decimal.js": "^10.6.0",
+		"motion": "^12.40.0",
+		"react": "^19.2.6",
+		"react-dom": "^19.2.6",
+		"react-redux": "^9.3.0",
+		"uuid": "^14.0.0",
+		"zod": "^4.4.3"
+	}
+}

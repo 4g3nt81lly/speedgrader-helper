@@ -1,0 +1,65 @@
+{
+	"name": "Speed Grader Helper",
+	"description": "An extension that makes Canvas SpeedGrader infinitely better",
+	"version": "0.0.1",
+	"manifest_version": 3,
+	"minimum_chrome_version": "115",
+	"background": {
+		"service_worker": "background.js",
+		"type": "module"
+	},
+	"permissions": [
+		"sidePanel",
+		"activeTab",
+		"tabs",
+		"windows",
+		"storage",
+		"unlimitedStorage",
+		"downloads"
+	],
+	"host_permissions": [
+		"https://*/*",
+		"http://*/*"
+	],
+	"action": {
+		"default_title": "Click to open panel"
+	},
+	"side_panel": {
+		"default_path": "ui/pages/main/index.html"
+	},
+	"content_scripts": [
+		{
+			"matches": [
+				"https://*/*",
+				"http://*/*"
+			],
+			"css": [
+				"injected.css"
+			],
+			"run_at": "document_start",
+			"all_frames": true
+		},
+		{
+			"matches": [
+				"https://*/*",
+				"http://*/*"
+			],
+			"js": [
+				"content-scripts/insider.js"
+			],
+			"run_at": "document_start",
+			"world": "MAIN"
+		},
+		{
+			"matches": [
+				"https://*/*",
+				"http://*/*"
+			],
+			"js": [
+				"content-scripts/main.js"
+			],
+			"run_at": "document_idle",
+			"world": "ISOLATED"
+		}
+	]
+}

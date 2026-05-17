@@ -1,0 +1,31 @@
+@layer theme, base, mui, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme) source(none);
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+@reference 'tailwindcss';
+
+@source './';
+
+#root {
+	@apply h-full;
+
+	font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+	line-height: 1.5;
+	font-weight: 400;
+
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+html {
+	@apply overflow-hidden;
+}
+
+body {
+	@apply m-0 h-screen w-screen overflow-hidden;
+}
+
+@utility control-shadow {
+	box-shadow: 0 1px 6px 0 rgba(0, 0, 0, 0.25);
+}
