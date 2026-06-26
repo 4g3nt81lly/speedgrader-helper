@@ -1,4 +1,5 @@
 import SubdirectoryArrowRightIcon from '@mui/icons-material/SubdirectoryArrowRight';
+import type { ChangeEvent } from 'react';
 import { isDecimalPositive } from '~/shared/utils';
 import {
 	RubricItemDiffStatus,
@@ -12,7 +13,7 @@ export type RubricControlsProps = {
 
 	checkRubricItemCanToggle(rubricItem: DiffRubricItem): boolean;
 	toggleRubricItemSelection(rubricItem: DiffRubricItem): void;
-	updateComments(comments: string): void;
+	handleCommentsChange(event: ChangeEvent<HTMLTextAreaElement>): void;
 };
 
 export default function RubricControls(props: RubricControlsProps) {
@@ -21,7 +22,7 @@ export default function RubricControls(props: RubricControlsProps) {
 		isSubmitting,
 		checkRubricItemCanToggle,
 		toggleRubricItemSelection,
-		updateComments,
+		handleCommentsChange,
 	} = props;
 
 	return (
@@ -46,7 +47,7 @@ export default function RubricControls(props: RubricControlsProps) {
 				<textarea
 					className="p-1 font-[inherit] text-inherit"
 					value={gradingState.comments}
-					onChange={(event) => updateComments(event.target.value)}
+					onChange={handleCommentsChange}
 					disabled={isSubmitting}
 				/>
 			</div>
