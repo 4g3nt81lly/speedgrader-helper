@@ -1,5 +1,7 @@
+import Decimal from 'decimal.js';
 import { v4 as uuidv4 } from 'uuid';
-import type { SetOptional } from '~/types/utils';
+import { isDecimalPositive } from '~/shared/utils';
+import type { Nullable, SetOptional } from '~/types/utils';
 
 export interface IRubricItem {
 	id: string;
@@ -16,5 +18,30 @@ export class RubricItem {
 			description: item.description,
 			points: item.points,
 		};
+	}
+
+	public static fromText(text: string): Nullable<IRubricItem> {
+		text = text.trim();
+		if (!text) return null;
+
+		const match = text.match(/(?<=[\d.])[ \t]+/);
+		if (!match?.[0]) return null;
+
+		const pointsText = text.substring(0, match.index!);
+		const descriptionText = text
+			.substring(match.index! + match[0].length)
+			.replace('\\\n', '\n');
+		try {
+			return this.create({
+				description: descriptionText,
+				points: Decimal(pointsText).toString(),
+			});
+		} catch (error) {
+			return null;
+		}
+	}
+
+	public static toText(item: IRubricItem) {
+		return `${isDecimalPositive(item.points) ? '+' : ''}${item.points}\t${item.description.replace('\n', '\\\n')}`;
 	}
 }

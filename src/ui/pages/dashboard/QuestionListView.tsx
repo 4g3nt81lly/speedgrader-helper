@@ -1,36 +1,39 @@
-import { List, ListItem } from '@mui/joy';
+import QuestionCard, { type QuestionCardProps } from '@components/QuestionCard';
+import { useTheme } from '@mui/joy';
+import { LayoutGroup, motion } from 'motion/react';
 import type { IQuestion } from '~/models/Question';
-import QuestionCard from '../../components/QuestionCard';
 
-export type QuestionListViewProps = { questions: IQuestion[] } & (
-	| {
-			updateQuestion?: undefined;
-			disableFocusControl: true;
-			disableRubricEditor: true;
-	  }
-	| {
-			updateQuestion?(newQuestion: IQuestion): void;
-			disableFocusControl?: boolean;
-			disableRubricEditor?: boolean;
-	  }
-);
+type QuestionListViewProps = {
+	questions: IQuestion[];
+	cardProps: Omit<QuestionCardProps, 'question'>;
+};
 
 export default function QuestionListView(props: QuestionListViewProps) {
-	const { questions, ...questionProps } = props;
+	const { questions, cardProps: questionCardProps } = props;
+
+	const theme = useTheme();
+
 	return (
-		<List className="mb-18 w-full p-0">
-			{questions.map((question) => (
-				<ListItem
-					key={question.id}
-					className="px-5 py-3"
-					sx={{
-						bgcolor: question.isFocused ? 'background.level1' : 'transparent',
-						':hover': question.isFocused ? {} : { bgcolor: 'background.surface' },
-					}}
-				>
-					<QuestionCard question={question} {...questionProps} />
-				</ListItem>
-			))}
-		</List>
+		<div className="mb-18 flex w-full flex-col p-0">
+			<LayoutGroup>
+				{questions.map((question) => (
+					<motion.div
+						key={question.id}
+						className="px-5 py-3"
+						style={{
+							backgroundColor: question.isFocused
+								? theme.vars.palette.background.level1
+								: 'transparent',
+						}}
+						whileHover={
+							question.isFocused ? {} : { backgroundColor: theme.vars.palette.background.surface }
+						}
+						layout
+					>
+						<QuestionCard question={question} {...questionCardProps} />
+					</motion.div>
+				))}
+			</LayoutGroup>
+		</div>
 	);
 }

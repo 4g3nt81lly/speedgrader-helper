@@ -68,7 +68,7 @@ export default function QuizDetailsView(props: QuizDetailsViewProps) {
 			</div>
 
 			{showQuestions ? (
-				<QuestionListView questions={quiz.questions} updateQuestion={updateQuestion} />
+				<QuestionListView questions={quiz.questions} cardProps={{ updateQuestion }} />
 			) : (
 				<div className="mb-10 flex flex-1 flex-col items-center justify-center">
 					<CircularProgress />

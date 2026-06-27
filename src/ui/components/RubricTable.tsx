@@ -3,7 +3,6 @@ import { RubricItem, type IRubricItem } from '@models/RubricItem';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
-import DownloadIcon from '@mui/icons-material/Download';
 import EditIcon from '@mui/icons-material/Edit';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
@@ -79,75 +78,70 @@ export default function RubricTable(props: RubricTableProps) {
 	};
 
 	return (
-		<Table className="table-auto bg-transparent">
-			<thead>
-				<tr className="bg-transparent [&>th]:h-[20px] [&>th]:bg-transparent [&>th]:px-0">
-					<th></th>
-					<th>Description</th>
-					<th className="text-center">Points</th>
-					<th></th>
-				</tr>
-			</thead>
-			<tbody>
-				{rubric.items.map((item) => (
-					<RubricItemRow
-						key={item.id}
-						rubricItem={item}
-						maxPoints={maxPoints}
-						update={updateRubricItem}
-						remove={removeRubricItem}
-					/>
-				))}
-			</tbody>
-			<tfoot>
-				<tr className="bg-transparent [&>td]:bg-transparent">
-					<td colSpan={4}>
-						<div className="flex justify-between">
-							<div className="flex items-center justify-start">
-								<Tooltip title="New" size="sm" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
-									<IconButton onClick={addRubricItem}>
-										<AddIcon />
-									</IconButton>
-								</Tooltip>
-								{/* <Tooltip title="Import" size="sm" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
+		<div>
+			<Table className="table-auto bg-transparent">
+				<thead>
+					<tr className="bg-transparent [&>th]:h-[20px] [&>th]:bg-transparent [&>th]:px-0">
+						<th></th>
+						<th>Description</th>
+						<th className="text-center">Points</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					{rubric.items.map((item) => (
+						<RubricItemRow
+							key={item.id}
+							rubricItem={item}
+							maxPoints={maxPoints}
+							update={updateRubricItem}
+							remove={removeRubricItem}
+						/>
+					))}
+				</tbody>
+				<tfoot>
+					<tr className="bg-transparent [&>td]:bg-transparent">
+						<td colSpan={4}>
+							<div className="flex justify-between">
+								<div className="flex items-center justify-start">
+									<Tooltip title="New" size="sm" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
+										<IconButton onClick={addRubricItem}>
+											<AddIcon />
+										</IconButton>
+									</Tooltip>
+									{/* <Tooltip title="Import" size="sm" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
 									<IconButton>
 										<UploadIcon />
 									</IconButton>
 								</Tooltip> */}
-								<Tooltip
-									title="Points will default to maximum"
-									size="sm"
-									enterDelay={Constants.TOOLTIP_ENTER_DELAY}
-								>
-									<Checkbox
-										label="Negative grading"
-										checked={rubric.gradingMode === 'negative'}
+									<Tooltip
+										title="Points will default to maximum"
 										size="sm"
-										onChange={toggleRubricGradingMode}
-										className="items-center px-2"
-									/>
-								</Tooltip>
-							</div>
+										enterDelay={Constants.TOOLTIP_ENTER_DELAY}
+									>
+										<Checkbox
+											label="Negative grading"
+											checked={rubric.gradingMode === 'negative'}
+											size="sm"
+											onChange={toggleRubricGradingMode}
+											className="items-center px-2"
+										/>
+									</Tooltip>
+								</div>
 
-							<div className="flex justify-end">
-								{rubric.items.length > 0 && (
-									<Tooltip title="Export" size="sm" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
-										<IconButton>
-											<DownloadIcon />
+								<div className="flex justify-end">
+									<Tooltip title="Remove All" size="sm" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
+										<IconButton onClick={removeRubric}>
+											<DeleteIcon htmlColor="firebrick" />
 										</IconButton>
 									</Tooltip>
-								)}
-								<Tooltip title="Remove All" size="sm" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
-									<IconButton onClick={removeRubric}>
-										<DeleteIcon htmlColor="firebrick" />
-									</IconButton>
-								</Tooltip>
+								</div>
 							</div>
-						</div>
-					</td>
-				</tr>
-			</tfoot>
-		</Table>
+						</td>
+					</tr>
+				</tfoot>
+			</Table>
+		</div>
 	);
 }
 
@@ -302,10 +296,10 @@ function RubricItemRow({ rubricItem, maxPoints, update, remove }: RubricItemRowP
 									<Input value={newPoints} onChange={handleSetNewPoints} />
 									<FormHelperText className="mt-2 mb-1 flex flex-col items-start leading-4.5">
 										Enter the number of points this rubric item awards/deducts.
-										<ul style={{ paddingInlineStart: 20 }}>
+										<ul className="pl-4">
 											<li>Use a negative number for deduction.</li>
 											<li>
-												The magnitude of this value must be no greater than {maxPoints} points.
+												The magnitude of this value must be no greater than {maxPoints} point(s).
 											</li>
 										</ul>
 									</FormHelperText>
