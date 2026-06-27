@@ -143,10 +143,21 @@ export default function useGradingState(props: GradingBoxProps) {
 		}
 	}
 
-	function handleSubmit() {
+	async function handleSubmit() {
 		if (isSubmitting || !state.isDirty) return;
 
 		setIsSubmitting(true);
+
+		// Update last-graded question before submitting
+		await sendMessageToBackground(
+			{
+				command: BackgroundCommand.updateQuizLastGradedQuestion,
+				quizId: initialQuiz.id,
+				questionId: question.id,
+			},
+			{ noThrowOnNoReceiver: true }
+		);
+
 		pointsInput.form!.requestSubmit();
 	}
 
