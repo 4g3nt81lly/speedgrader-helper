@@ -1,7 +1,7 @@
 {
 	"name": "Speed Grader Helper",
 	"description": "An extension that makes Canvas SpeedGrader infinitely better",
-	"version": "0.0.1",
+	"version": "0.1",
 	"manifest_version": 3,
 	"minimum_chrome_version": "115",
 	"background": {

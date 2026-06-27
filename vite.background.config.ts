@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => ({
 				codeSplitting: false,
 			},
 		},
-		outDir: 'dist',
+		outDir: isProduction(mode) ? 'dist' : 'build',
 		emptyOutDir: false,
 		copyPublicDir: true,
 		minify: isProduction(mode) ? 'oxc' : false,

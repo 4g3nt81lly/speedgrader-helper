@@ -1,6 +1,6 @@
 import createCache from '@emotion/cache';
 import { CacheProvider } from '@emotion/react';
-import { StyledEngineProvider } from '@mui/styled-engine';
+import { StyledEngineProvider } from '@mui/joy';
 import { StrictMode, type ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
 import type { Nullable } from '~/types/utils';

@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
 				codeSplitting: false,
 			},
 		},
-		outDir: 'dist/content-scripts',
+		outDir: `${isProduction(mode) ? 'dist' : 'build'}/content-scripts`,
 		emptyOutDir: false,
 		copyPublicDir: false,
 		minify: isProduction(mode) ? 'oxc' : false,

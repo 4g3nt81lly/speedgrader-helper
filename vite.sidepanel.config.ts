@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => ({
 					: true,
 			},
 		},
-		outDir: '../dist',
+		outDir: `../${isProduction(mode) ? 'dist' : 'build'}`,
 		emptyOutDir: false,
 		copyPublicDir: false,
 		minify: isProduction(mode) ? 'oxc' : false,

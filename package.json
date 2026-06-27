@@ -1,17 +1,19 @@
 {
 	"name": "speed-grader-helper",
-	"version": "1.0.0",
+	"version": "0.1-alpha",
 	"description": "A Chrome extension that makes Canvas SpeedGrader infinitely better",
 	"type": "module",
 	"scripts": {
 		"dev": "BUILD_MODE=development tsx build.ts",
-		"build": "npm run clean && tsc && tsx build.ts",
+		"build": "tsc && tsx build.ts",
 		"clean": "rm -rf dist",
+		"clean:dev": "rm -rf build",
 		"format": "prettier --write \"**/*.{js,jsx,ts,tsx,css,json,md}\""
 	},
 	"devDependencies": {
 		"@tailwindcss/postcss": "^4.3.0",
 		"@types/chrome": "^0.1.42",
+		"@types/fs-extra": "^11.0.4",
 		"@types/node": "^25.9.1",
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
@@ -20,6 +22,7 @@
 		"autoprefixer": "^10.5.0",
 		"concurrently": "^10.0.3",
 		"fast-glob": "^3.3.3",
+		"fs-extra": "^11.3.5",
 		"postcss": "^8.5.14",
 		"prettier": "^3.8.3",
 		"prettier-plugin-tailwindcss": "^0.8.0",
