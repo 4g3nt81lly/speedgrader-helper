@@ -8,7 +8,7 @@ import Rubric from '~/models/Rubric';
 import Constants from '~/shared/constants';
 import { inOutTransitionMotionProps } from '../utils/animation';
 import Accordion from './Accordion';
-import RubricTable from './RubricTable';
+import RubricListEditor from './RubricListEditor';
 import RubricTextEditor from './RubricTextEditor';
 
 type RubricAccordionProps = {
@@ -47,67 +47,79 @@ export default function RubricAccordion(props: RubricAccordionProps) {
 				</Typography>
 			}
 		>
-			{question.rubric ? (
-				<motion.div layout="size">
-					<AnimatePresence mode="wait">
-						{editorType === EditorType.list ? (
-							<motion.div
-								key={EditorType.list}
-								layout="position"
-								{...inOutTransitionMotionProps({ opacity: [0, 1] })}
-							>
-								<RubricTable
-									rubric={question.rubric}
-									maxPoints={question.points}
-									updateRubric={updateRubric}
-								/>
-							</motion.div>
-						) : (
-							<motion.div
-								key={EditorType.text}
-								layout="position"
-								{...inOutTransitionMotionProps({ opacity: [0, 1] })}
-							>
-								<RubricTextEditor
-									rubric={question.rubric}
-									maxPoints={question.points}
-									updateRubric={updateRubric}
-								/>
-							</motion.div>
-						)}
-					</AnimatePresence>
+			<AnimatePresence mode="popLayout">
+				{question.rubric ? (
+					<motion.div
+						key="rubricEditor"
+						layout="size"
+						{...inOutTransitionMotionProps({ opacity: [0, 1] })}
+					>
+						<AnimatePresence mode="wait">
+							{editorType === EditorType.list ? (
+								<motion.div
+									key={EditorType.list}
+									layout="position"
+									{...inOutTransitionMotionProps({ opacity: [0, 1] })}
+								>
+									<RubricListEditor
+										rubric={question.rubric}
+										maxPoints={question.points}
+										updateRubric={updateRubric}
+									/>
+								</motion.div>
+							) : (
+								<motion.div
+									key={EditorType.text}
+									layout="position"
+									{...inOutTransitionMotionProps({ opacity: [0, 1] })}
+								>
+									<RubricTextEditor
+										rubric={question.rubric}
+										maxPoints={question.points}
+										updateRubric={updateRubric}
+									/>
+								</motion.div>
+							)}
+						</AnimatePresence>
 
-					<motion.div layout="position">
-						<ToggleButtonGroup
-							value={editorType}
-							onChange={(_, newValue) => setEditorType(newValue!)}
-						>
-							<Tooltip
-								title="List Editor"
-								placement="bottom"
-								enterDelay={Constants.TOOLTIP_ENTER_DELAY}
+						<motion.div layout="position">
+							<ToggleButtonGroup
+								value={editorType}
+								onChange={(_, newValue) => newValue && setEditorType(newValue)}
 							>
-								<IconButton value={EditorType.list} size="sm">
-									<TuneIcon fontSize="small" />
-								</IconButton>
-							</Tooltip>
-							<Tooltip
-								title="Text Editor"
-								placement="bottom"
-								enterDelay={Constants.TOOLTIP_ENTER_DELAY}
-							>
-								<IconButton value={EditorType.text} size="sm">
-									<TextFieldsIcon fontSize="small" />
-								</IconButton>
-							</Tooltip>
-						</ToggleButtonGroup>
+								<Tooltip
+									title="List Editor"
+									placement="bottom"
+									enterDelay={Constants.TOOLTIP_ENTER_DELAY}
+								>
+									<IconButton value={EditorType.list} size="sm">
+										<TuneIcon fontSize="small" />
+									</IconButton>
+								</Tooltip>
+								<Tooltip
+									title="Text Editor"
+									placement="bottom"
+									enterDelay={Constants.TOOLTIP_ENTER_DELAY}
+								>
+									<IconButton value={EditorType.text} size="sm">
+										<TextFieldsIcon fontSize="small" />
+									</IconButton>
+								</Tooltip>
+							</ToggleButtonGroup>
+						</motion.div>
 					</motion.div>
-				</motion.div>
-			) : (
-				<Button variant="plain" onClick={handleAddRubric}>
-					Add rubric
-				</Button>
-			)}
+				) : (
+					<motion.div
+						key="addRubricButton"
+						layout="position"
+						{...inOutTransitionMotionProps({ opacity: [0, 1] })}
+					>
+						<Button variant="plain" fullWidth onClick={handleAddRubric}>
+							Add rubric
+						</Button>
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</Accordion>
 	);
 }

@@ -25,6 +25,12 @@ export default function RubricTextEditor(props: RubricTextEditorProps) {
 	}
 
 	function handleCompile() {
+		if (
+			rubric.items.length > 0 &&
+			!confirm('Warning: This will replace the existing rubric items, continue?')
+		)
+			return;
+
 		let newRubric = Rubric.fromText(newText);
 		newRubric = {
 			...newRubric,

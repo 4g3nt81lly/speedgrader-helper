@@ -50,7 +50,7 @@ export default function Accordion(props: AccordionProps) {
 				/>
 			</motion.div>
 
-			<motion.div layout="size">
+			<motion.div className="relative" layout="size">
 				<AnimatePresence mode="popLayout">
 					{isOpen && (
 						<motion.div
