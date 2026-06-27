@@ -13,7 +13,10 @@ export function pushSnackbarItem(
 	sender: 'external' | 'toplevel' | 'iframe' = 'external'
 ) {
 	if (sender === 'external') {
-		sendMessageToTab({ command: ContentCommand.pushSnackbarItem, item }).catch(() => {});
+		sendMessageToTab(
+			{ command: ContentCommand.pushSnackbarItem, item },
+			{ noThrowOnNoReceiver: true }
+		);
 	} else {
 		dispatchContentEvent(
 			ContentEvent.pushSnackbarItem,

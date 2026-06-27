@@ -16,6 +16,7 @@ const Constants = {
 	/* Miscellaneous */
 
 	SECOND_MS: 1000,
+	RECEIVING_END_DNE_MESSAGE: 'Receiving end does not exist.',
 };
 
 export default Constants;

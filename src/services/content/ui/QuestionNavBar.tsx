@@ -20,11 +20,10 @@ export default function QuestionNavBar(props: QuestionNavBarProps) {
 		setIsNavigating(true);
 
 		// Update last-graded question before navigating
-		await sendMessageToBackground({
-			command: BackgroundCommand.updateQuizLastGradedQuestion,
-			quizId,
-			questionId: question.id,
-		}).catch(() => {});
+		await sendMessageToBackground(
+			{ command: BackgroundCommand.updateQuizLastGradedQuestion, quizId, questionId: question.id },
+			{ noThrowOnNoReceiver: true }
+		);
 
 		addContentEventListener(
 			ContentEvent.gradeSubmissionComplete,

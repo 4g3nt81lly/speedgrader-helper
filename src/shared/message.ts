@@ -4,6 +4,7 @@ import type { IQuiz } from '~/models/Quiz';
 import type { QuizLoaderPayload, QuizLoaderType } from '~/services/content/QuizLoader';
 import type { ISnackbarItem } from '../types/snackbar';
 import type { SetOptional } from '../types/utils';
+import Constants from './constants';
 
 export const enum BackgroundCommand {
 	addQuizToStore = 0x00,
@@ -27,13 +28,12 @@ export const enum ContentCommand {
 	updateFocusState,
 	reloadPage,
 }
+
 export type RuntimeCommand = BackgroundCommand | ContentCommand;
 
 export type ICommandMessage<
 	C extends keyof CommandMessagePayload = keyof CommandMessagePayload,
-> = {
-	command: C;
-} & CommandMessagePayload[C];
+> = { command: C } & CommandMessagePayload[C];
 
 export type IMessageResponse<T = any> =
 	| {
@@ -151,22 +151,21 @@ function makeErrorResponsePayload(error: unknown): IMessageResponse {
 	};
 }
 
-type SendMessageToRuntimeOptions = {
+type SendMessageOptions = {
 	timeout?: {
 		milliseconds: number;
 		message?: string;
 	};
-	// TODO: Implement this option and check where the errors should be silenced
 	noThrowOnNoReceiver?: boolean;
 };
 
-export async function sendMessageToRuntime<
-	T = unknown,
-	C extends RuntimeCommand = RuntimeCommand,
->(message: ICommandMessage<C>, options: SendMessageToRuntimeOptions = {}): Promise<T> {
+async function sendMessage<T = unknown>(
+	messagePromise: Promise<any>,
+	options: SendMessageOptions = {}
+): Promise<T> {
 	const { timeout } = options;
 	const promises = [
-		chrome.runtime.sendMessage(message).then((response: IMessageResponse<T>) => {
+		messagePromise.then((response: IMessageResponse<T>) => {
 			if (response.error) {
 				// The receiver responded with an error object
 				throw new Error(response.error.message);
@@ -191,27 +190,37 @@ export async function sendMessageToRuntime<
 					: `Message timeout (${timeout!.milliseconds}ms)`
 			);
 		}
+		if (
+			options.noThrowOnNoReceiver &&
+			error instanceof Error &&
+			error.message.endsWith(Constants.RECEIVING_END_DNE_MESSAGE)
+		) {
+			return <T>undefined;
+		}
 		throw error;
 	}
+}
+
+type SendMessageToRuntimeOptions = {} & SendMessageOptions;
+
+export function sendMessageToRuntime<
+	T = unknown,
+	C extends RuntimeCommand = RuntimeCommand,
+>(message: ICommandMessage<C>, options: SendMessageToRuntimeOptions = {}) {
+	return sendMessage<T>(chrome.runtime.sendMessage(message), options);
 }
 
 export const sendMessageToBackground = sendMessageToRuntime;
 
 type SendMessageToTabOptions = {
 	tabId?: number;
-	timeout?: {
-		milliseconds: number;
-		message?: string;
-	};
-	// TODO: Implement this option and check where the errors should be silenced
-	noThrowOnNoReceiver?: boolean;
-};
+} & SendMessageOptions;
 
 export async function sendMessageToTab<
 	T = unknown,
 	C extends ContentCommand = ContentCommand,
 >(message: ICommandMessage<C>, options: SendMessageToTabOptions = {}): Promise<T> {
-	let { timeout, tabId } = options;
+	let { tabId } = options;
 	if (tabId === undefined) {
 		const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
 		if (!activeTab) {
@@ -219,34 +228,7 @@ export async function sendMessageToTab<
 		}
 		tabId = activeTab.id!;
 	}
-	const promises = [
-		chrome.tabs.sendMessage(tabId, message).then((response: IMessageResponse<T>) => {
-			if (response.error) {
-				// The receiver responded with an error object
-				throw new Error(response.error.message);
-			}
-			return response.data;
-		}),
-	];
-	if (timeout && timeout.milliseconds > 0) {
-		promises.push(
-			new Promise((_, reject) =>
-				setTimeout(() => reject('TIMEOUT'), timeout.milliseconds)
-			)
-		);
-	}
-	try {
-		return await Promise.race(promises);
-	} catch (error) {
-		if (error === 'TIMEOUT') {
-			throw new Error(
-				timeout?.message
-					? `${timeout.message} (${timeout.milliseconds}ms)`
-					: `Message timeout (${timeout!.milliseconds}ms)`
-			);
-		}
-		throw error;
-	}
+	return sendMessage<T>(chrome.tabs.sendMessage(tabId, message), options);
 }
 
 export async function broadcastMessageToTabs<C extends ContentCommand = ContentCommand>(
