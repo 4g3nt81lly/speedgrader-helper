@@ -44,10 +44,6 @@ const messageHandlers: MessageHandlers = {
 		);
 		return true;
 	},
-
-	[BackgroundCommand.devReloadExtension]() {
-		chrome.runtime.reload();
-	},
 };
 
 export default messageHandlers;

@@ -11,6 +11,7 @@
 		"format": "prettier --write \"**/*.{js,jsx,ts,tsx,css,json,md}\""
 	},
 	"devDependencies": {
+		"@dotenvx/dotenvx": "^1.75.1",
 		"@tailwindcss/postcss": "^4.3.0",
 		"@types/chrome": "^0.1.42",
 		"@types/fs-extra": "^11.0.4",
@@ -27,6 +28,8 @@
 		"prettier": "^3.8.3",
 		"prettier-plugin-tailwindcss": "^0.8.0",
 		"rollup-plugin-visualizer": "^7.0.1",
+		"socket.io": "^4.8.3",
+		"socket.io-client": "^4.8.3",
 		"tailwindcss": "^4.3.0",
 		"tsx": "^4.22.4",
 		"typescript": "^6.0.3",

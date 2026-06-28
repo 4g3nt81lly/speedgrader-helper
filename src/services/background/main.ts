@@ -1,18 +1,12 @@
-/**
- * Background Service Worker
- * This runs in the background and can perform tasks that need to persist.
- */
-
 import Constants from '~/shared/constants';
 import {
 	addMessageListener,
-	type BackgroundCommand,
+	BackgroundCommand,
 	type ICommandMessage,
 } from '~/shared/message';
 import { TaskQueue } from '~/shared/queues';
+import configDev from './dev';
 import messageHandlers from './handlers';
-
-console.log('Background service worker loaded');
 
 export const localStoreQueue = new TaskQueue(Constants.LOCAL_STORE_QUEUE_NAME);
 
@@ -24,6 +18,12 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error
 	);
 });
 
-addMessageListener(async (message: ICommandMessage<BackgroundCommand>) => {
+addMessageListener((message: ICommandMessage<BackgroundCommand>) => {
 	return messageHandlers[message.command]?.(<any>message);
 });
+
+if (import.meta.env.DEV) {
+	configDev();
+}
+
+console.log('Background service worker loaded');

@@ -1,9 +1,15 @@
 import { resolve } from 'path';
 import { defineConfig } from 'vite';
-import { isProduction, resolveOptions } from './vite.shared';
+import { hotReloadExtension, isProduction, resolveOptions } from './vite.shared';
 
 export default defineConfig(({ mode }) => ({
-	plugins: [],
+	plugins: [
+		hotReloadExtension(function (socket) {
+			this.info('Reloading active tab...');
+			socket.emit('hr', 'reload');
+			socket.emit('hr', 'reloadActiveTabs');
+		}),
+	],
 	resolve: resolveOptions,
 	build: {
 		rolldownOptions: {

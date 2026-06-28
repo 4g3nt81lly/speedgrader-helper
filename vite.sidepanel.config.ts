@@ -1,11 +1,19 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
-import { defineConfig } from 'vite';
-import { isProduction, resolveOptions } from './vite.shared';
+import { defineConfig, type PluginOption } from 'vite';
+import { hotReloadExtension, isProduction, resolveOptions } from './vite.shared';
 
 export default defineConfig(({ mode }) => ({
-	plugins: [react(), tailwindcss()],
+	plugins: [
+		react(),
+		tailwindcss(),
+		populateIndexHtmlPreamble(mode),
+		hotReloadExtension(function (socket) {
+			this.info('Reloading side panel...');
+			socket.emit('hr', 'reloadSidePanel');
+		}),
+	],
 	root: 'src',
 	resolve: resolveOptions,
 	build: {
@@ -39,3 +47,18 @@ export default defineConfig(({ mode }) => ({
 	},
 	envDir: '..',
 }));
+
+function populateIndexHtmlPreamble(mode: string): PluginOption {
+	return {
+		name: 'populate-index-html-preamble',
+		transformIndexHtml(html, _ctx) {
+			if (!isProduction(mode)) {
+				html = html.replace(
+					'<!--PREAMBLE-->',
+					`<script src="${process.env.REACT_DEVTOOLS_SERVER_URL}"></script>`
+				);
+			}
+			return html;
+		},
+	};
+}

@@ -13,8 +13,6 @@ export const enum BackgroundCommand {
 
 	updateQuestionFeedbackInStore,
 	updateQuizLastGradedQuestion,
-
-	devReloadExtension,
 }
 
 export const enum ContentCommand {
@@ -26,7 +24,6 @@ export const enum ContentCommand {
 
 	reinjectRubric,
 	updateFocusState,
-	reloadPage,
 }
 
 export type RuntimeCommand = BackgroundCommand | ContentCommand;
@@ -72,8 +69,6 @@ type CommandMessagePayload = {
 		questionId: IQuestion['id'];
 	};
 
-	[BackgroundCommand.devReloadExtension]: {};
-
 	/* Content script command */
 
 	[ContentCommand.loadQuiz]: {
@@ -105,7 +100,6 @@ type CommandMessagePayload = {
 				focusMode: 'off';
 				target: null;
 		  };
-	[ContentCommand.reloadPage]: {};
 };
 
 export function addMessageListener<Message>(

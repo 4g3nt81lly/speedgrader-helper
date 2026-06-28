@@ -4,7 +4,6 @@ import type { IQuestion } from '~/models/Question';
 import { type IQuiz } from '~/models/Quiz';
 import Constants from '~/shared/constants';
 import { ContentEvent, dispatchContentEvent } from '~/shared/event';
-import { addMessageListener, ContentCommand, type ICommandMessage } from '~/shared/message';
 import QuizFeedbackLocalStore from '~/shared/stores/QuizFeedbackLocalStore';
 import QuizLocalStore from '~/shared/stores/QuizLocalStore';
 import { getElementByQuerySelector, pushSnackbarItem } from '~/shared/utils';
@@ -35,8 +34,6 @@ export class OldSGQuizInjector extends QuizInjector {
 			const quiz = await QuizLocalStore.getQuizByUrl(canonicalUrl);
 
 			await this.registerInjectOnLoad(quiz, this.handleInject.bind(this));
-
-			this.registerMessageHandler();
 		} catch (error) {
 			initialErrors.push({
 				id: uuidv4(),
@@ -280,14 +277,6 @@ export class OldSGQuizInjector extends QuizInjector {
 					window.parent
 				);
 			}
-		});
-	}
-
-	protected registerMessageHandler() {
-		// This should only be done once per injection
-		addMessageListener((message: ICommandMessage<ContentCommand.reloadPage>) => {
-			if (message.command !== ContentCommand.reloadPage) return;
-			window.location.reload();
 		});
 	}
 

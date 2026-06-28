@@ -1,10 +1,17 @@
 import fg from 'fast-glob';
 import { resolve } from 'path';
 import { defineConfig, type PluginOption } from 'vite';
-import { isProduction, resolveOptions } from './vite.shared';
+import { hotReloadExtension, isProduction, resolveOptions } from './vite.shared';
 
 export default defineConfig(({ mode }) => ({
-	plugins: [processManifestJson(), watchPublicFiles()],
+	plugins: [
+		processManifestJson(),
+		watchPublicFiles(),
+		hotReloadExtension(function (socket) {
+			this.info('Hot reloading extension...');
+			socket.emit('hr', 'reload');
+		}),
+	],
 	resolve: resolveOptions,
 	publicDir: 'src/public',
 	build: {
@@ -39,7 +46,7 @@ function processManifestJson(): PluginOption {
 
 			// Enable standalone React developer tools
 			manifestObject['content_security_policy'] = {
-				extension_pages: "script-src 'self' http://localhost:8097; object-src 'self';",
+				extension_pages: `script-src 'self' ${process.env.REACT_DEVTOOLS_SERVER_URL}; object-src 'self';`,
 			};
 
 			await this.fs.writeFile(manifestJsonPath, JSON.stringify(manifestObject, null, 4), {
