@@ -63,7 +63,7 @@ export default function GradingBox(props: GradingBoxProps) {
 				<div className="flex justify-between gap-2">
 					{/* Left controls */}
 					<div className="flex items-center">
-						<label className="mr-5 flex gap-1.5">
+						<label className="mr-5 flex items-center gap-1.5">
 							<span>Manual Points:</span>
 							<input
 								type="number"
@@ -98,14 +98,16 @@ export default function GradingBox(props: GradingBoxProps) {
 					</div>
 
 					{/* Right controls */}
-					<button
-						type="submit"
-						className="px-1.5 py-1"
-						disabled={isSubmitting || !state.isDirty || state.isInvalid}
-						onClick={handleSubmit}
-					>
-						{isSubmitting ? 'Submitting...' : 'Submit'}
-					</button>
+					<div className="flex items-center">
+						<button
+							type="submit"
+							className="px-1.5 py-1"
+							disabled={isSubmitting || !state.isDirty || state.isInvalid}
+							onClick={handleSubmit}
+						>
+							{isSubmitting ? 'Submitting...' : 'Submit'}
+						</button>
+					</div>
 				</div>
 			</div>
 		)
