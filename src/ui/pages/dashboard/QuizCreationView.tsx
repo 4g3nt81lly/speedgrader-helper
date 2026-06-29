@@ -1,11 +1,12 @@
+import DropdownMenu from '@components/DropdownMenu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import { Button, CircularProgress, Option, Select, Typography } from '@mui/joy';
+import { Button, CircularProgress, Typography } from '@mui/joy';
+import { quizLoaders, type QuizLoaderType } from '@services/content/QuizLoader';
 import Decimal from 'decimal.js';
 import { useEffect, useMemo } from 'react';
-import { quizLoaders, type QuizLoaderType } from '~/services/content/QuizLoader';
 import QuestionListView from './QuestionListView';
 import useCreateQuiz from './hooks/useCreateQuiz';
 
@@ -97,7 +98,12 @@ export default function QuizCreationView(props: QuizCreationViewProps) {
 
 					<div className="mb-3 flex items-center gap-2">
 						<Typography>Try another quiz loader:</Typography>
-						<QuizLoaderSelector quizLoader={quizLoader} setQuizLoader={setQuizLoader} />
+						<DropdownMenu
+							items={quizLoaders}
+							selectedItem={quizLoader}
+							onSelect={setQuizLoader}
+							render={(_quizLoaderId, quizLoaderClass) => quizLoaderClass.name}
+						/>
 					</div>
 
 					<Button variant="plain" startDecorator={<RefreshIcon />} onClick={loadQuiz}>
@@ -106,24 +112,6 @@ export default function QuizCreationView(props: QuizCreationViewProps) {
 				</div>
 			)}
 		</div>
-	);
-}
-
-export function QuizLoaderSelector({
-	quizLoader,
-	setQuizLoader,
-}: {
-	quizLoader: QuizLoaderType;
-	setQuizLoader(quizLoader: QuizLoaderType): void;
-}) {
-	return (
-		<Select size="sm" value={quizLoader} onChange={(_event, value) => setQuizLoader(value!)}>
-			{Object.entries(quizLoaders).map(([quizLoaderId, quizLoaderClass], index) => (
-				<Option key={index} value={quizLoaderId}>
-					{quizLoaderClass.name}
-				</Option>
-			))}
-		</Select>
 	);
 }
 
@@ -157,7 +145,12 @@ function ActionBar(props: ActionBarProps) {
 					Discard
 				</Button>
 				<div className="flex gap-0.5">
-					<QuizLoaderSelector quizLoader={quizLoader} setQuizLoader={setQuizLoader} />
+					<DropdownMenu
+						items={quizLoaders}
+						selectedItem={quizLoader}
+						onSelect={setQuizLoader}
+						render={(_quizLoaderId, quizLoaderClass) => quizLoaderClass.name}
+					/>
 				</div>
 				<Button variant="solid" onClick={confirmQuiz}>
 					Create

@@ -1,8 +1,10 @@
 const Constants = {
 	/* Local storage */
 
-	LOCAL_STORE_QUEUE_NAME: 'localStorage.queue',
+	QUIZ_ACTION_QUEUE_NAME: 'quizzes.queue',
+	APP_SETTINGS_ACTION_QUEUE_NAME: 'appSettings.queue',
 	STORE_QUIZZES_KEY: 'quizzes' as const,
+	STORE_APP_SETTINGS_KEY: 'settings' as const,
 
 	/* Events + Messaging channels */
 

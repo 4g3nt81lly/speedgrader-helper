@@ -12,7 +12,7 @@ import type { Nullable } from '~/types/utils';
 export default function useCreateQuiz(dismiss: () => void) {
 	const dispatch = useDispatch<MainPageDispatch>();
 
-	const [quizLoader, setQuizLoader] = useState<QuizLoaderType>('oldSpeedGrader');
+	const [quizLoader, setQuizLoader] = useState<QuizLoaderType>('oldSG');
 	const [newQuiz, setNewQuiz] = useState<Nullable<IQuiz>>(null);
 
 	const [isLoading, setIsLoading] = useState(true);

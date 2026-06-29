@@ -2,10 +2,11 @@ import type { IQuiz } from '@models/Quiz';
 import { configureStore } from '@reduxjs/toolkit';
 import { useReduxSelector } from '@shared/hooks';
 import type { MainTab } from '~/shared/enums';
+import type { AppSettings } from '~/shared/settings';
 import type { Nullable } from '~/types/utils';
-import { listenerMiddleware } from './middleware';
 import quizzes from './quizzes.slice';
 import selection from './selection.slice';
+import settings from './settings.slice';
 
 export type MainPageStates = {
 	quizzes: Record<string, IQuiz>;
@@ -13,15 +14,14 @@ export type MainPageStates = {
 		mainTab: MainTab;
 		quiz: Nullable<string>;
 	};
+	settings: AppSettings;
 };
 
 const store = configureStore({
 	reducer: {
 		quizzes,
 		selection,
-	},
-	middleware(getDefaultMiddleware) {
-		return getDefaultMiddleware().prepend(listenerMiddleware.middleware);
+		settings,
 	},
 });
 

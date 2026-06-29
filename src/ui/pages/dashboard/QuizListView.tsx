@@ -21,6 +21,7 @@ import Quiz from '~/models/Quiz';
 import Constants from '~/shared/constants';
 import { useMainSelector, type MainPageDispatch } from '../main/stores/main.store';
 import { removeQuizzes } from '../main/stores/quizzes.slice';
+import { saveSelectionStateToLocalStorage } from '../main/stores/selection.actions';
 import { selectQuiz } from '../main/stores/selection.slice';
 
 export type QuizListViewProps = {};
@@ -31,26 +32,31 @@ export default function QuizListView(props: QuizListViewProps) {
 
 	const quizzes = Object.values(quizzesMap);
 
-	const handleRemoveQuiz = (event: MouseEvent<HTMLDivElement>, quiz: IQuiz) => {
+	function handleSelectQuiz(quizId: IQuiz['id']) {
+		dispatch(selectQuiz(quizId));
+		dispatch(saveSelectionStateToLocalStorage());
+	}
+
+	function handleRemoveQuiz(event: MouseEvent<HTMLDivElement>, quiz: IQuiz) {
 		event.stopPropagation();
 		if (confirm(getRemoveQuizPrompt(quiz))) {
 			dispatch(removeQuizzes(quiz.id));
 		}
-	};
+	}
 
-	const handleOpenInNewTab = (event: MouseEvent<HTMLAnchorElement>, quiz: IQuiz) => {
+	function handleOpenInNewTab(event: MouseEvent<HTMLAnchorElement>, quiz: IQuiz) {
 		event.stopPropagation();
 		chrome.tabs.create({ url: quiz.url });
-	};
+	}
 
-	const handleExportQuiz = (event: MouseEvent<HTMLDivElement>, quiz: IQuiz) => {
+	function handleExportQuiz(event: MouseEvent<HTMLDivElement>, quiz: IQuiz) {
 		event.stopPropagation();
 		chrome.downloads.download({
 			url: Quiz.getExportedObjectURL(quiz),
 			filename: `${quiz.title}.json`,
 			saveAs: true,
 		});
-	};
+	}
 
 	return quizzes.length > 0 ? (
 		<List className="p-0">
@@ -62,7 +68,7 @@ export default function QuizListView(props: QuizListViewProps) {
 				>
 					<ListItemButton
 						className="flex flex-col items-start gap-0 rounded-xl bg-transparent pt-2 pb-3"
-						onClick={() => dispatch(selectQuiz(quiz.id))}
+						onClick={() => handleSelectQuiz(quiz.id)}
 					>
 						<div className="flex w-full items-center justify-between gap-2">
 							<Typography level="title-md" fontWeight="bold" className="line-clamp-1 text-ellipsis">

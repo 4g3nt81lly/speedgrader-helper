@@ -2,10 +2,12 @@ import type { IQuiz } from '@models/Quiz';
 import type { MainTab } from '@shared/enums';
 import type { ISubmissionFeedback } from '~/models/Feedback';
 import type { IQuestion } from '~/models/Question';
+import type Constants from '~/shared/constants';
+import type { AppSettings } from '~/shared/settings';
 import type { Nullable } from './utils';
 
 export type ILocalStore = {
-	quizzes: StoreQuizIndex[];
+	[Constants.STORE_QUIZZES_KEY]: StoreQuizIndex[];
 	[quizId: StoreQuizIdKey]: IQuiz;
 
 	[quizUrl: StoreQuizUrlKey]: StoreQuizIdKey;
@@ -19,6 +21,7 @@ export type ILocalStore = {
 		mainTab: MainTab;
 		quiz: Nullable<IQuiz['id']>;
 	};
+	[Constants.STORE_APP_SETTINGS_KEY]: Partial<AppSettings>;
 };
 
 export type StoreQuizIndex = {

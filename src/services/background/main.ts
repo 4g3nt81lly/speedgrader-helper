@@ -8,7 +8,7 @@ import { TaskQueue } from '~/shared/queues';
 import configDev from './dev';
 import messageHandlers from './handlers';
 
-export const localStoreQueue = new TaskQueue(Constants.LOCAL_STORE_QUEUE_NAME);
+export const quizActionQueue = new TaskQueue(Constants.QUIZ_ACTION_QUEUE_NAME);
 
 // Allows users to open side panel by clicking on the action toolbar icon
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error) => {

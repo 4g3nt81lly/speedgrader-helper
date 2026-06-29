@@ -10,23 +10,34 @@ import { SidePanelEvent } from '~/shared/event';
 import global from './stores/global';
 import store, { useMainSelector, type MainPageDispatch } from './stores/main.store';
 import { loadQuizzesFromLocalStore } from './stores/quizzes.actions';
-import { loadSelectionStateFromLocalStorage } from './stores/selection.actions';
+import {
+	loadSelectionStateFromLocalStorage,
+	saveSelectionStateToLocalStorage,
+} from './stores/selection.actions';
 import { selectMainTab } from './stores/selection.slice';
+import { loadAppSettingsFromLocalStorage } from './stores/settings.actions';
 
 function App() {
 	const dispatch = useDispatch<MainPageDispatch>();
 	const { mainTab } = useMainSelector('selection');
 
+	function handleTabChange(tab: MainTab) {
+		dispatch(selectMainTab(tab));
+		dispatch(saveSelectionStateToLocalStorage());
+	}
+
 	useLayoutEffect(() => {
 		(async () => {
+			dispatch(loadAppSettingsFromLocalStorage());
 			await dispatch(loadQuizzesFromLocalStore());
-			await dispatch(loadSelectionStateFromLocalStorage());
+			dispatch(loadSelectionStateFromLocalStorage());
 		})();
 		// Register broadcast channel for syncing across side panel contexts
 		const handleSyncSidePanel = ({ data }: MessageEvent<any>) => {
 			if (data.type !== SidePanelEvent.syncState) return;
 			// Sync quizzes with another instance of side panel, reload from local storage
 			(async () => {
+				await dispatch(loadAppSettingsFromLocalStorage());
 				await dispatch(loadQuizzesFromLocalStore());
 			})();
 		};
@@ -47,7 +58,7 @@ function App() {
 	return (
 		<Tabs
 			value={mainTab}
-			onChange={(_, newValue) => dispatch(selectMainTab(newValue as MainTab))}
+			onChange={(_, newValue) => handleTabChange(newValue as MainTab)}
 			className="my-2 h-full bg-transparent"
 		>
 			<TabList

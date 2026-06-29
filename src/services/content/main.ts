@@ -12,7 +12,7 @@ addMessageListener((message: ICommandMessage<ContentCommand>) => {
 });
 
 if (import.meta.env.DEV || document.URL.match(Patterns.SG_URL_ORIGIN)) {
-	const injector = quizInjectors.oldSpeedGrader;
+	const injector = quizInjectors.oldSG;
 	new injector().inject({});
 }
 

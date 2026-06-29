@@ -16,7 +16,7 @@ type RubricAccordionProps = {
 	updateQuestion(newQuestion: IQuestion): void;
 };
 
-const enum EditorType {
+export const enum RubricEditorType {
 	list = 'list',
 	text = 'text',
 }
@@ -24,7 +24,7 @@ const enum EditorType {
 export default function RubricAccordion(props: RubricAccordionProps) {
 	const { question, updateQuestion } = props;
 
-	const [editorType, setEditorType] = useState<EditorType>(EditorType.list);
+	const [editorType, setEditorType] = useState<RubricEditorType>(RubricEditorType.list);
 
 	const updateRubric = (newRubric: IQuestion['rubric']) => {
 		updateQuestion!({ ...question, rubric: newRubric });
@@ -55,9 +55,9 @@ export default function RubricAccordion(props: RubricAccordionProps) {
 						{...inOutTransitionMotionProps({ opacity: [0, 1] })}
 					>
 						<AnimatePresence mode="wait">
-							{editorType === EditorType.list ? (
+							{editorType === RubricEditorType.list ? (
 								<motion.div
-									key={EditorType.list}
+									key={RubricEditorType.list}
 									layout="position"
 									{...inOutTransitionMotionProps({ opacity: [0, 1] })}
 								>
@@ -69,7 +69,7 @@ export default function RubricAccordion(props: RubricAccordionProps) {
 								</motion.div>
 							) : (
 								<motion.div
-									key={EditorType.text}
+									key={RubricEditorType.text}
 									layout="position"
 									{...inOutTransitionMotionProps({ opacity: [0, 1] })}
 								>
@@ -83,29 +83,7 @@ export default function RubricAccordion(props: RubricAccordionProps) {
 						</AnimatePresence>
 
 						<motion.div layout="position">
-							<ToggleButtonGroup
-								value={editorType}
-								onChange={(_, newValue) => newValue && setEditorType(newValue)}
-							>
-								<Tooltip
-									title="List Editor"
-									placement="bottom"
-									enterDelay={Constants.TOOLTIP_ENTER_DELAY}
-								>
-									<IconButton value={EditorType.list} size="sm">
-										<TuneIcon fontSize="small" />
-									</IconButton>
-								</Tooltip>
-								<Tooltip
-									title="Text Editor"
-									placement="bottom"
-									enterDelay={Constants.TOOLTIP_ENTER_DELAY}
-								>
-									<IconButton value={EditorType.text} size="sm">
-										<TextFieldsIcon fontSize="small" />
-									</IconButton>
-								</Tooltip>
-							</ToggleButtonGroup>
+							<RubricEditorSelector editorType={editorType} setEditorType={setEditorType} />
 						</motion.div>
 					</motion.div>
 				) : (
@@ -121,5 +99,31 @@ export default function RubricAccordion(props: RubricAccordionProps) {
 				)}
 			</AnimatePresence>
 		</Accordion>
+	);
+}
+
+export function RubricEditorSelector({
+	editorType,
+	setEditorType,
+}: {
+	editorType: RubricEditorType;
+	setEditorType(editorType: RubricEditorType): void;
+}) {
+	return (
+		<ToggleButtonGroup
+			value={editorType}
+			onChange={(_, newValue) => newValue && setEditorType(newValue)}
+		>
+			<Tooltip title="List Editor" placement="bottom" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
+				<IconButton value={RubricEditorType.list} size="sm">
+					<TuneIcon fontSize="small" />
+				</IconButton>
+			</Tooltip>
+			<Tooltip title="Text Editor" placement="bottom" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
+				<IconButton value={RubricEditorType.text} size="sm">
+					<TextFieldsIcon fontSize="small" />
+				</IconButton>
+			</Tooltip>
+		</ToggleButtonGroup>
 	);
 }

@@ -40,7 +40,7 @@ export abstract class QuizLoader {
 }
 
 export class OldSGQuizLoader extends QuizLoader {
-	public static override readonly name: string = 'Old SpeedGrader';
+	public static override readonly name: string = 'Old SG';
 
 	private static readonly assignmentIdKey = 'assignment_id';
 
@@ -163,18 +163,18 @@ export class OldSGQuizLoader extends QuizLoader {
 }
 
 export class NewSGQuizLoader extends OldSGQuizLoader {
-	public static override readonly name: string = 'New SpeedGrader';
+	public static override readonly name: string = 'New SG (Experimental)';
 
 	public override get selectors() {
 		return Selectors.newSpeedGrader;
 	}
 }
 
-export const quizLoaderTypes = ['oldSpeedGrader', 'newSpeedGrader'] as const;
+export const quizLoaderTypes = ['oldSG', 'newSG'] as const;
 
 export type QuizLoaderType = (typeof quizLoaderTypes)[number];
 
 export const quizLoaders: Record<QuizLoaderType, Constructor<QuizLoader>> = {
-	oldSpeedGrader: OldSGQuizLoader,
-	newSpeedGrader: NewSGQuizLoader,
+	oldSG: OldSGQuizLoader,
+	newSG: NewSGQuizLoader,
 };

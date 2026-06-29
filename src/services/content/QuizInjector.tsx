@@ -27,6 +27,8 @@ export abstract class QuizInjector {
 }
 
 export class OldSGQuizInjector extends QuizInjector {
+	public static override readonly name: string = 'Old SG';
+
 	public override async inject() {
 		const initialErrors: ISnackbarItem[] = [];
 		try {
@@ -286,16 +288,18 @@ export class OldSGQuizInjector extends QuizInjector {
 }
 
 export class NewSGQuizLoader extends OldSGQuizInjector {
+	public static override readonly name: string = 'New SG (Experimental)';
+
 	protected override get selectors() {
 		return Selectors.newSpeedGrader;
 	}
 }
 
-export const quizInjectorTypes = ['oldSpeedGrader', 'newSpeedGrader'] as const;
+export const quizInjectorTypes = ['oldSG', 'newSG'] as const;
 
 export type QuizInjectorType = (typeof quizInjectorTypes)[number];
 
 export const quizInjectors: Record<QuizInjectorType, Constructor<QuizInjector>> = {
-	oldSpeedGrader: OldSGQuizInjector,
-	newSpeedGrader: NewSGQuizLoader,
+	oldSG: OldSGQuizInjector,
+	newSG: NewSGQuizLoader,
 };
