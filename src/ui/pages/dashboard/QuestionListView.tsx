@@ -1,15 +1,15 @@
-import QuestionCard, { type QuestionCardProps } from '@components/QuestionCard';
+import QuestionCard, { type QuestionCardOptions } from '@components/QuestionCard';
 import { useTheme } from '@mui/joy';
 import { LayoutGroup, motion } from 'motion/react';
 import type { IQuestion } from '~/models/Question';
 
 type QuestionListViewProps = {
 	questions: IQuestion[];
-	cardProps: Omit<QuestionCardProps, 'question'>;
+	cardOptions: QuestionCardOptions;
 };
 
 export default function QuestionListView(props: QuestionListViewProps) {
-	const { questions, cardProps: questionCardProps } = props;
+	const { questions, cardOptions: questionCardProps } = props;
 
 	const theme = useTheme();
 

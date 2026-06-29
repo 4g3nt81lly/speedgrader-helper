@@ -1,14 +1,14 @@
+import type { IQuestion } from '@models/Question';
+import Quiz, { type IQuiz } from '@models/Quiz';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import { Button, Checkbox, CircularProgress, Tooltip, Typography } from '@mui/joy';
+import { useMainSelector, type MainPageDispatch } from '@pages/main/stores/main.store';
+import { setQuiz } from '@pages/main/stores/quizzes.slice';
+import { selectQuiz } from '@pages/main/stores/selection.slice';
+import Constants from '@shared/constants';
+import { ContentCommand, sendMessageToTab } from '@shared/message';
 import { useEffect, useState, useTransition } from 'react';
 import { useDispatch } from 'react-redux';
-import type { IQuestion } from '~/models/Question';
-import Quiz, { type IQuiz } from '~/models/Quiz';
-import Constants from '~/shared/constants';
-import { ContentCommand, sendMessageToTab } from '~/shared/message';
-import { useMainSelector, type MainPageDispatch } from '../main/stores/main.store';
-import { setQuiz } from '../main/stores/quizzes.slice';
-import { selectQuiz } from '../main/stores/selection.slice';
 import QuestionListView from './QuestionListView';
 
 export type QuizDetailsViewProps = {};
@@ -71,7 +71,10 @@ export default function QuizDetailsView(props: QuizDetailsViewProps) {
 			</div>
 
 			{showQuestions ? (
-				<QuestionListView questions={quiz.questions} cardProps={{ updateQuestion }} />
+				<QuestionListView
+					questions={quiz.questions}
+					cardOptions={{ focusMode: quiz.focusMode, updateQuestion }}
+				/>
 			) : (
 				<div className="mb-10 flex flex-1 flex-col items-center justify-center">
 					<CircularProgress />
@@ -150,12 +153,15 @@ function ActionBar({ quiz }: ActionBarProps) {
 	return (
 		<div className="absolute inset-x-0 bottom-0 z-100 flex items-center justify-between bg-white px-3 pt-3 pb-5">
 			<Tooltip
-				title={`Select ${focusState <= FocusState.some ? 'all' : 'none'} to focus`}
+				title={
+					quiz.focusMode ? `Select ${focusState <= FocusState.some ? 'all' : 'none'} to focus` : ''
+				}
 				placement="right"
 				enterDelay={Constants.TOOLTIP_ENTER_DELAY}
 			>
 				<Checkbox
 					checked={focusState === FocusState.all}
+					disabled={!quiz.focusMode}
 					onChange={toggleFocusAllQuestions}
 					indeterminate={focusState === FocusState.some}
 					size="lg"

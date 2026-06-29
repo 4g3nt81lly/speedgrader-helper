@@ -1,37 +1,42 @@
 import { questionTypeDisplayName, type IQuestion, type QuestionType } from '@models/Question';
-import { Checkbox, Chip, FormControl, FormHelperText, Tooltip, Typography } from '@mui/joy';
+import type { IQuiz } from '@models/Quiz';
+import { Checkbox, Chip, Tooltip, Typography } from '@mui/joy';
 import Constants from '@shared/constants';
 import { motion } from 'motion/react';
 import RubricAccordion from './RubricAccordion';
 
-export type QuestionCardProps = { question: IQuestion } & (
+type QuestionCardProps = {
+	question: IQuestion;
+} & QuestionCardOptions;
+
+export type QuestionCardOptions =
 	| {
+			readonly: true;
+			focusMode?: undefined;
 			updateQuestion?: undefined;
-			disableFocusControl: true;
-			disableRubricEditor: true;
 	  }
 	| {
-			updateQuestion?(newQuestion: IQuestion): void;
-			disableFocusControl?: boolean;
-			disableRubricEditor?: boolean;
-	  }
-);
+			readonly?: false;
+			focusMode: IQuiz['focusMode'];
+			updateQuestion(newQuestion: IQuestion): void;
+	  };
 
 export default function QuestionCard(props: QuestionCardProps) {
-	const { question, updateQuestion, disableFocusControl, disableRubricEditor } = props;
+	const { question, readonly, focusMode, updateQuestion } = props;
 	const questionLabel = question.id;
 
 	function toggleQuestionFocus() {
+		if (readonly) return;
 		updateQuestion!({ ...question, isFocused: !question.isFocused });
 	}
 
 	return (
 		<motion.div className="flex flex-1 flex-col gap-1.5" layout="position">
 			<div className="flex justify-between">
-				{disableFocusControl ? (
+				{readonly ? (
 					<div>
 						<div className="mb-1 flex flex-col gap-1">
-							<Typography level="title-md">{questionLabel}</Typography>
+							<Typography fontWeight="bold">{questionLabel}</Typography>
 							<QuestionTypeChip type={question.type} />
 						</div>
 						<Typography level="body-xs" className="line-clamp-4 wrap-anywhere text-ellipsis">
@@ -39,42 +44,37 @@ export default function QuestionCard(props: QuestionCardProps) {
 						</Typography>
 					</div>
 				) : (
-					<FormControl>
+					<div className="flex items-start gap-2">
 						<Tooltip
-							title="Select to focus"
+							title={focusMode ? 'Select to focus' : ''}
 							size="sm"
 							placement="bottom-start"
 							enterDelay={Constants.TOOLTIP_ENTER_DELAY}
 						>
 							<Checkbox
-								label={
-									<div className="mb-0.5 flex flex-col gap-2">
-										{questionLabel}
-										<QuestionTypeChip type={question.type} />
-									</div>
-								}
+								className="mt-0.5"
 								checked={question.isFocused}
-								className="font-medium whitespace-nowrap"
+								disabled={!focusMode}
 								onChange={toggleQuestionFocus}
 							/>
 						</Tooltip>
-						<FormHelperText>
+						<div className="mb-0.5 flex flex-col gap-1.5">
+							<Typography fontWeight="bold">{questionLabel}</Typography>
+							<QuestionTypeChip type={question.type} />
 							<Typography level="body-xs" className="line-clamp-4 wrap-anywhere text-ellipsis">
 								{question.body}
 							</Typography>
-						</FormHelperText>
-					</FormControl>
+						</div>
+					</div>
 				)}
 				<Typography className="whitespace-nowrap">{`- / ${question.points}`}</Typography>
 			</div>
 
-			{!disableRubricEditor && (
-				<RubricAccordion question={question} updateQuestion={updateQuestion!} />
-			)}
+			{!readonly && <RubricAccordion question={question} updateQuestion={updateQuestion!} />}
 		</motion.div>
 	);
 }
 
-export function QuestionTypeChip({ type }: { type: QuestionType }) {
+function QuestionTypeChip({ type }: { type: QuestionType }) {
 	return <Chip size="sm">{questionTypeDisplayName[type] ?? 'Unknown'}</Chip>;
 }

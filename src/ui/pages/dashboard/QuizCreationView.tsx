@@ -76,10 +76,7 @@ export default function QuizCreationView(props: QuizCreationViewProps) {
 				</div>
 			) : newQuiz ? (
 				<div className="mb-5">
-					<QuestionListView
-						questions={newQuiz.questions}
-						cardProps={{ disableFocusControl: true, disableRubricEditor: true }}
-					/>
+					<QuestionListView questions={newQuiz.questions} cardOptions={{ readonly: true }} />
 					<ActionBar
 						quizLoader={quizLoader}
 						isOverwrite={isOverwrite}
