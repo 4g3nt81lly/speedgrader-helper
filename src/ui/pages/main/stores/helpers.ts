@@ -1,6 +1,6 @@
 import type { IQuiz } from '~/models/Quiz';
 import { OldSGQuizLoader } from '~/services/content/QuizLoader';
-import { SidePanelEvent } from '~/shared/event';
+import { SidePanelEvent } from '..';
 import global from './global';
 
 export function syncSidePanelStates() {

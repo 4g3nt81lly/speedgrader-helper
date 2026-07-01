@@ -1,4 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { broadcastMessageToTabs, ContentCommand } from '~/shared/message';
 import { defaultAppSettings, type AppSettings } from '~/shared/settings';
 import AppSettingsLocalStore from '~/shared/stores/AppSettingsLocalStore';
 import global from './global';
@@ -19,6 +20,7 @@ const settingsSlice = createSlice({
 			};
 			global.appSettingsActionQueue.run(async () => {
 				await AppSettingsLocalStore.set(updatedSettings);
+				broadcastMessageToTabs({ command: ContentCommand.reloadAppSettings });
 				syncSidePanelStates();
 			});
 		},

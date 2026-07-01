@@ -1,5 +1,4 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { MainTab } from '~/shared/enums';
 import { getLocalStore } from '~/shared/stores/utils';
 import type { ILocalStore } from '~/types/store';
 import type { MainPageThunkAPI } from './main.store';
@@ -14,7 +13,7 @@ export const loadSelectionStateFromLocalStorage = createAsyncThunk<
 		// TODO: Determine if this is necessary and/or find a more elegant way
 		// Attempt to restore the missing field with default value
 		const defaultSelection: ILocalStore['selection'] = {
-			mainTab: MainTab.Dashboard,
+			mainTab: 'dashboard',
 			quiz: null,
 		};
 		chrome.storage.local.set<ILocalStore>({ selection: defaultSelection });

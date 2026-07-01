@@ -1,16 +1,16 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { MainTab } from '@shared/enums';
 import type { Nullable } from '~/types/utils';
+import type { MainTab } from '..';
+import type { MainPageStates } from './main.store';
 import {
 	loadSelectionStateFromLocalStorage,
 	saveSelectionStateToLocalStorage,
 } from './selection.actions';
-import type { MainPageStates } from './main.store';
 
 const selectionSlice = createSlice({
 	name: 'selection',
 	initialState: <MainPageStates['selection']>{
-		mainTab: MainTab.Dashboard,
+		mainTab: 'dashboard',
 		quiz: null,
 	},
 	reducers: {

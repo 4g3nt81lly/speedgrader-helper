@@ -2,32 +2,30 @@ import type { ISnackbarItem } from '~/types/snackbar';
 import type { SetOptional } from '~/types/utils';
 
 export const enum ContentEvent {
+	// Top-level events
 	pushSnackbarItem = 'sgh:push_snackbar_item',
-
-	gradeSubmissionComplete = 'sgh:grade_submission_complete',
-	saveQuestionFeedback = 'sgh:save_question_feedback',
 	refreshGrades = 'sgh:refresh_grades',
 	navigateSubmission = 'sgh:navigate_submission',
+
+	// iframe events
+	beginSubmitFeedback = 'sgh:begin_submit_feedback',
+	endSubmitFeedback = 'sgh:end_submit_feedback',
 }
 
 export type ContentEventPayload = {
 	[ContentEvent.pushSnackbarItem]: {
 		item: SetOptional<ISnackbarItem, 'id'>;
 	};
-
-	[ContentEvent.gradeSubmissionComplete]: {
-		success: boolean;
-	};
-	[ContentEvent.saveQuestionFeedback]: {};
 	[ContentEvent.refreshGrades]: {};
 	[ContentEvent.navigateSubmission]: {
 		direction: 'prev' | 'next';
 	};
-};
 
-export const enum SidePanelEvent {
-	syncState = 'syncState',
-}
+	[ContentEvent.beginSubmitFeedback]: {};
+	[ContentEvent.endSubmitFeedback]: {
+		success: boolean;
+	};
+};
 
 export function dispatchContentEvent<E extends ContentEvent = ContentEvent>(
 	name: E,
@@ -48,13 +46,14 @@ export function addContentEventListener<E extends ContentEvent = ContentEvent>(
 		handler(customEvent.detail);
 	};
 	target.addEventListener(name, eventHandler, options);
-	return eventHandler;
+	return () => removeContentEventListener(name, eventHandler, target, options);
 }
 
 export function removeContentEventListener<E extends ContentEvent = ContentEvent>(
 	name: E,
 	handler: (event: Event) => void,
-	target: EventTarget = window
+	target: EventTarget = window,
+	options: EventListenerOptions = {}
 ) {
-	target.removeEventListener(name, handler);
+	target.removeEventListener(name, handler, options);
 }

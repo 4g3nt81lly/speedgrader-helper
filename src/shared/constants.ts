@@ -18,6 +18,7 @@ const Constants = {
 	/* Miscellaneous */
 
 	SECOND_MS: 1000,
+	HOTKEYS_DELIMITER: '+',
 	RECEIVING_END_DNE_MESSAGE: 'Receiving end does not exist.',
 };
 

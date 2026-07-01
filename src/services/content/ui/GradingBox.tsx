@@ -1,6 +1,7 @@
 import type { QuestionFeedback } from '~/models/Feedback';
 import type { IQuestion } from '~/models/Question';
 import type { IQuiz } from '~/models/Quiz';
+import type { AppSettings } from '~/shared/settings';
 import type { Nullable } from '~/types/utils';
 import Selectors from '../selectors';
 import RubricControls from './RubricControls';
@@ -16,7 +17,9 @@ export type GradingBoxProps = {
 	pointsInput: HTMLInputElement;
 	commentsTextarea: HTMLTextAreaElement;
 
-	scrollIntoView: boolean;
+	iframeWindow: Window;
+
+	appSettings: AppSettings;
 };
 
 export default function GradingBox(props: GradingBoxProps) {
@@ -41,7 +44,7 @@ export default function GradingBox(props: GradingBoxProps) {
 			<div
 				className={`${Selectors.app.GRADING_BOX_CLASS} mt-8 flex flex-col gap-1.5 border-[0.75px] p-5`}
 			>
-				{state.isInvalid && (
+				{state.invalidError && (
 					<div className="mb-2 bg-red-200 p-2 leading-snug">
 						❗️ Rubric has been updated and your{' '}
 						{initialFeedback === null
@@ -73,7 +76,7 @@ export default function GradingBox(props: GradingBoxProps) {
 								max={question.points}
 								min="0"
 								step="0.5"
-								disabled={isSubmitting || state.isInvalid}
+								disabled={isSubmitting || !!state.invalidError}
 							/>
 						</label>
 
@@ -102,7 +105,7 @@ export default function GradingBox(props: GradingBoxProps) {
 						<button
 							type="submit"
 							className="px-1.5 py-1"
-							disabled={isSubmitting || !state.isDirty || state.isInvalid}
+							disabled={isSubmitting || !state.isDirty || !!state.invalidError}
 							onClick={handleSubmit}
 						>
 							{isSubmitting ? 'Submitting...' : 'Submit'}

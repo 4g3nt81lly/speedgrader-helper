@@ -2,7 +2,7 @@ import Decimal from 'decimal.js';
 import { ContentCommand, sendMessageToTab } from '~/shared/message';
 import type { ISnackbarItem } from '~/types/snackbar';
 import type { Nullable, SetOptional } from '~/types/utils';
-import { ContentEvent, dispatchContentEvent } from './event';
+import { ContentEvent, dispatchContentEvent } from '../services/content/event';
 
 /**
  * Shared utility functions
@@ -10,7 +10,7 @@ import { ContentEvent, dispatchContentEvent } from './event';
 
 export function pushSnackbarItem(
 	item: SetOptional<ISnackbarItem, 'id'>,
-	sender: 'external' | 'toplevel' | 'iframe' = 'external'
+	sender: 'external' | 'toplevel' | 'iframe' = 'toplevel'
 ) {
 	if (sender === 'external') {
 		sendMessageToTab(

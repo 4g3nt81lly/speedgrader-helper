@@ -1,5 +1,5 @@
 import type { IQuestion } from './Question';
-import type { IRubric } from './Rubric';
+import type { GradingMode } from './Rubric';
 import type { IRubricItem } from './RubricItem';
 
 export interface ISubmissionFeedback {
@@ -27,7 +27,7 @@ export type QuestionFeedback = {
 	  }
 	| {
 			// Rubric items selected
-			gradingMode: IRubric['gradingMode'];
+			gradingMode: GradingMode;
 			rubricItems: IRubricItem[];
 			manualPoints: null;
 	  }

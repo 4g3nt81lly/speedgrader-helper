@@ -1,17 +1,21 @@
 import DropdownMenu from '@components/DropdownMenu';
+import HotkeysButton from '@components/HotkeysButton';
 import { RubricEditorSelector } from '@components/RubricAccordion';
 import { Button, Switch, Typography } from '@mui/joy';
 import { useMainSelector, type MainPageDispatch } from '@pages/main/stores/main.store';
+import { removeAllQuizzes } from '@pages/main/stores/quizzes.slice';
+import { selectQuiz } from '@pages/main/stores/selection.slice';
 import { updateAppSettings } from '@pages/main/stores/settings.slice';
 import { quizInjectors } from '@services/content/QuizInjector';
 import { quizLoaders } from '@services/content/QuizLoader';
 import { defaultAppSettings, type AppHotKeySettings, type AppSettings } from '@shared/settings';
+import QuizFeedbackLocalStore from '@shared/stores/QuizFeedbackLocalStore';
 import { type ReactNode } from 'react';
 import { useDispatch } from 'react-redux';
-import HotkeysButton from '~/ui/components/HotkeysButton';
 
 export default function SettingsPage() {
 	const dispatch = useDispatch<MainPageDispatch>();
+	const quizzes = useMainSelector('quizzes');
 	const settings = useMainSelector('settings');
 
 	function setSetting<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
@@ -19,7 +23,31 @@ export default function SettingsPage() {
 	}
 
 	function setHotkeys<K extends keyof AppHotKeySettings>(key: K, value: AppHotKeySettings[K]) {
-		dispatch(updateAppSettings({ hotkeys: { ...settings.hotkeys, [key]: value } }));
+		setSetting('hotkeys', { ...settings.hotkeys, [key]: value });
+	}
+
+	function handleClearQuizzes() {
+		if (!confirm('Remove all quizzes? This cannot be undone.')) return;
+		dispatch(selectQuiz(null));
+		dispatch(removeAllQuizzes());
+	}
+
+	function handleClearFeedback() {
+		if (!confirm('Clear all feedback saved in local storage? This cannot be undone.')) return;
+		Promise.allSettled(
+			Object.keys(quizzes).map((quizId) => QuizFeedbackLocalStore.clearAllFeedback(quizId))
+		);
+	}
+
+	function handleResetSettings() {
+		if (!confirm('Reset all settings to default?')) return;
+		dispatch(updateAppSettings(defaultAppSettings));
+	}
+
+	async function handleFactoryReset() {
+		if (!confirm('Clear all local storage and reload extension? This cannot be undone.')) return;
+		await chrome.storage.local.clear();
+		chrome.runtime.reload();
 	}
 
 	return (
@@ -30,15 +58,6 @@ export default function SettingsPage() {
 
 			<div className="mb-18">
 				<SettingsSection heading="Grading">
-					<SettingItem
-						title="Hide answer boxes"
-						description="Automatically hide answer panels from all question boxes."
-					>
-						<Switch
-							checked={settings.hideAnswerBoxes}
-							onChange={(event) => setSetting('hideAnswerBoxes', event.target.checked)}
-						/>
-					</SettingItem>
 					<SettingItem
 						title="Scroll to last-graded question"
 						description="Automatically scroll to most-recently graded question after navigation."
@@ -139,7 +158,7 @@ export default function SettingsPage() {
 						title="Clear quizzes"
 						description="Remove all quizzes and their rubrics and saved feedbacks from the local storage."
 					>
-						<Button variant="soft" size="sm" color="danger">
+						<Button variant="soft" size="sm" color="danger" onClick={handleClearQuizzes}>
 							Clear quizzes
 						</Button>
 					</SettingItem>
@@ -147,20 +166,20 @@ export default function SettingsPage() {
 						title="Clear saved feedback"
 						description="Clear grading feedback saved in local storage."
 					>
-						<Button variant="soft" size="sm" color="danger">
+						<Button variant="soft" size="sm" color="danger" onClick={handleClearFeedback}>
 							Clear feedback
 						</Button>
 					</SettingItem>
-					<SettingItem title="Restore default settings">
-						<Button variant="soft" size="sm" color="danger">
-							Reset all
+					<SettingItem title="Restore settings">
+						<Button variant="soft" size="sm" color="danger" onClick={handleResetSettings}>
+							Reset settings
 						</Button>
 					</SettingItem>
 					<SettingItem
 						title="Factory reset"
 						description="Clear local storage and reload the extension."
 					>
-						<Button variant="soft" size="sm" color="danger">
+						<Button variant="soft" size="sm" color="danger" onClick={handleFactoryReset}>
 							Factory reset
 						</Button>
 					</SettingItem>

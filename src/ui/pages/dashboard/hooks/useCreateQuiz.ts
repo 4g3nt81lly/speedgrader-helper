@@ -1,4 +1,4 @@
-import type { MainPageDispatch } from '@pages/main/stores/main.store';
+import { useMainSelector, type MainPageDispatch } from '@pages/main/stores/main.store';
 import { addQuiz } from '@pages/main/stores/quizzes.slice';
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
@@ -6,13 +6,17 @@ import type { IQuiz } from '~/models/Quiz';
 import type { QuizLoaderType } from '~/services/content/QuizLoader';
 import Constants from '~/shared/constants';
 import { ContentCommand, sendMessageToTab } from '~/shared/message';
+import { defaultAppSettings } from '~/shared/settings';
 import QuizLocalStore from '~/shared/stores/QuizLocalStore';
 import type { Nullable } from '~/types/utils';
 
 export default function useCreateQuiz(dismiss: () => void) {
 	const dispatch = useDispatch<MainPageDispatch>();
+	const appSettings = useMainSelector('settings');
 
-	const [quizLoader, setQuizLoader] = useState<QuizLoaderType>('oldSG');
+	const [quizLoader, setQuizLoader] = useState<QuizLoaderType>(
+		appSettings.defaultQuizLoader ?? defaultAppSettings.defaultQuizLoader
+	);
 	const [newQuiz, setNewQuiz] = useState<Nullable<IQuiz>>(null);
 
 	const [isLoading, setIsLoading] = useState(true);

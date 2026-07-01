@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import Constants from '~/shared/constants';
-import { addContentEventListener, ContentEvent, removeContentEventListener } from '~/shared/event';
+import { addContentEventListener, ContentEvent, removeContentEventListener } from '~/services/content/event';
 import { addMessageListener, ContentCommand, type ICommandMessage } from '~/shared/message';
 import {
 	defaultSnackbarBackgroundColors,

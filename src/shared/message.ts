@@ -24,6 +24,8 @@ export const enum ContentCommand {
 
 	reinjectRubric,
 	updateFocusState,
+
+	reloadAppSettings,
 }
 
 export type RuntimeCommand = BackgroundCommand | ContentCommand;
@@ -100,7 +102,20 @@ type CommandMessagePayload = {
 				focusMode: 'off';
 				target: null;
 		  };
+
+	[ContentCommand.reloadAppSettings]: {};
 };
+
+export function addCommandHandler<C extends keyof CommandMessagePayload>(
+	command: C | C[],
+	handler: (message: ICommandMessage<C>, sender: chrome.runtime.MessageSender) => any
+) {
+	const commands = Array.isArray(command) ? command : [command];
+	return addMessageListener<ICommandMessage<C>>((message, sender) => {
+		if (!commands.includes(message.command)) return;
+		return handler(message, sender);
+	});
+}
 
 export function addMessageListener<Message>(
 	handler: (message: Message, sender: chrome.runtime.MessageSender) => any
@@ -241,6 +256,8 @@ export async function broadcastMessageToTabs<C extends ContentCommand = ContentC
 		);
 	}
 	await Promise.allSettled(
-		tabs.map(async (tab) => chrome.tabs.sendMessage(tab.id!, message))
+		tabs.map((tab) =>
+			sendMessageToTab(message, { tabId: tab.id!, noThrowOnNoReceiver: true })
+		)
 	);
 }

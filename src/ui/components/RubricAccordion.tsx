@@ -6,6 +6,9 @@ import { useState, type MouseEvent } from 'react';
 import type { IQuestion } from '~/models/Question';
 import Rubric from '~/models/Rubric';
 import Constants from '~/shared/constants';
+import { defaultAppSettings } from '~/shared/settings';
+import type { SetNonNullable } from '~/types/utils';
+import { useMainSelector } from '../pages/main/stores/main.store';
 import { inOutTransitionMotionProps } from '../utils/animation';
 import Accordion from './Accordion';
 import RubricListEditor from './RubricListEditor';
@@ -16,23 +19,17 @@ type RubricAccordionProps = {
 	updateQuestion(newQuestion: IQuestion): void;
 };
 
-export const enum RubricEditorType {
-	list = 'list',
-	text = 'text',
-}
-
 export default function RubricAccordion(props: RubricAccordionProps) {
 	const { question, updateQuestion } = props;
+	const appSettings = useMainSelector('settings');
 
-	const [editorType, setEditorType] = useState<RubricEditorType>(RubricEditorType.list);
-
-	const updateRubric = (newRubric: IQuestion['rubric']) => {
+	function updateRubric(newRubric: IQuestion['rubric']) {
 		updateQuestion!({ ...question, rubric: newRubric });
-	};
+	}
 
-	const handleAddRubric = (_event: MouseEvent<HTMLButtonElement>) => {
-		updateRubric(Rubric.create({}));
-	};
+	function handleAddRubric(_event: MouseEvent<HTMLButtonElement>) {
+		updateRubric(Rubric.create({ gradingMode: appSettings.defaultGradingMode }));
+	}
 
 	return (
 		<Accordion
@@ -54,37 +51,13 @@ export default function RubricAccordion(props: RubricAccordionProps) {
 						layout="size"
 						{...inOutTransitionMotionProps({ opacity: [0, 1] })}
 					>
-						<AnimatePresence mode="wait">
-							{editorType === RubricEditorType.list ? (
-								<motion.div
-									key={RubricEditorType.list}
-									layout="position"
-									{...inOutTransitionMotionProps({ opacity: [0, 1] })}
-								>
-									<RubricListEditor
-										rubric={question.rubric}
-										maxPoints={question.points}
-										updateRubric={updateRubric}
-									/>
-								</motion.div>
-							) : (
-								<motion.div
-									key={RubricEditorType.text}
-									layout="position"
-									{...inOutTransitionMotionProps({ opacity: [0, 1] })}
-								>
-									<RubricTextEditor
-										rubric={question.rubric}
-										maxPoints={question.points}
-										updateRubric={updateRubric}
-									/>
-								</motion.div>
-							)}
-						</AnimatePresence>
-
-						<motion.div layout="position">
-							<RubricEditorSelector editorType={editorType} setEditorType={setEditorType} />
-						</motion.div>
+						<RubricEditor
+							question={question as SetNonNullable<IQuestion, 'rubric'>}
+							defaultRubricEditor={
+								appSettings.defaultRubricEditor ?? defaultAppSettings.defaultRubricEditor
+							}
+							updateRubric={updateRubric}
+						/>
 					</motion.div>
 				) : (
 					<motion.div
@@ -102,6 +75,54 @@ export default function RubricAccordion(props: RubricAccordionProps) {
 	);
 }
 
+export type RubricEditorType = 'list' | 'text';
+
+type RubricEditorProps = {
+	question: SetNonNullable<IQuestion, 'rubric'>;
+	defaultRubricEditor: RubricEditorType;
+	updateRubric(newRubric: IQuestion['rubric']): void;
+};
+
+function RubricEditor({ question, defaultRubricEditor, updateRubric }: RubricEditorProps) {
+	const [editorType, setEditorType] = useState<RubricEditorType>(defaultRubricEditor);
+
+	return (
+		<>
+			<AnimatePresence mode="wait">
+				{editorType === 'list' ? (
+					<motion.div
+						key={editorType}
+						layout="position"
+						{...inOutTransitionMotionProps({ opacity: [0, 1] })}
+					>
+						<RubricListEditor
+							rubric={question.rubric}
+							maxPoints={question.points}
+							updateRubric={updateRubric}
+						/>
+					</motion.div>
+				) : (
+					<motion.div
+						key={editorType}
+						layout="position"
+						{...inOutTransitionMotionProps({ opacity: [0, 1] })}
+					>
+						<RubricTextEditor
+							rubric={question.rubric}
+							maxPoints={question.points}
+							updateRubric={updateRubric}
+						/>
+					</motion.div>
+				)}
+			</AnimatePresence>
+
+			<motion.div layout="position">
+				<RubricEditorSelector editorType={editorType} setEditorType={setEditorType} />
+			</motion.div>
+		</>
+	);
+}
+
 export function RubricEditorSelector({
 	editorType,
 	setEditorType,
@@ -115,12 +136,12 @@ export function RubricEditorSelector({
 			onChange={(_, newValue) => newValue && setEditorType(newValue)}
 		>
 			<Tooltip title="List Editor" placement="bottom" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
-				<IconButton value={RubricEditorType.list} size="sm">
+				<IconButton value="list" size="sm">
 					<TuneIcon fontSize="small" />
 				</IconButton>
 			</Tooltip>
 			<Tooltip title="Text Editor" placement="bottom" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
-				<IconButton value={RubricEditorType.text} size="sm">
+				<IconButton value="text" size="sm">
 					<TextFieldsIcon fontSize="small" />
 				</IconButton>
 			</Tooltip>

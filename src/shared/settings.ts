@@ -1,13 +1,12 @@
-import type { IRubric } from '~/models/Rubric';
+import type { GradingMode } from '~/models/Rubric';
 import type { QuizInjectorType } from '~/services/content/QuizInjector';
 import type { QuizLoaderType } from '~/services/content/QuizLoader';
-import { RubricEditorType } from '~/ui/components/RubricAccordion';
+import type { RubricEditorType } from '~/ui/components/RubricAccordion';
 
 export type AppSettings = {
-	hideAnswerBoxes: boolean;
 	scrollToLastGradedQuestion: boolean;
 	defaultRubricEditor: RubricEditorType;
-	defaultGradingMode: IRubric['gradingMode'];
+	defaultGradingMode: GradingMode;
 	defaultQuizInjector: QuizInjectorType;
 	defaultQuizLoader: QuizLoaderType;
 
@@ -21,16 +20,15 @@ export type AppHotKeySettings = {
 };
 
 export const defaultAppSettings: AppSettings = {
-	hideAnswerBoxes: false,
 	scrollToLastGradedQuestion: true,
-	defaultRubricEditor: RubricEditorType.list,
+	defaultRubricEditor: 'list',
 	defaultGradingMode: 'positive',
 	defaultQuizInjector: 'oldSG',
 	defaultQuizLoader: 'oldSG',
 
 	hotkeys: {
 		quizSubmitFeedback: 'ctrl+s',
-		quizNextSubmission: 'ctrl+.',
-		quizPrevSubmission: 'ctrl+,',
+		quizNextSubmission: 'ctrl+period',
+		quizPrevSubmission: 'ctrl+comma',
 	},
 };

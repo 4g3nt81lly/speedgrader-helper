@@ -1,9 +1,9 @@
 import type { IQuiz } from '@models/Quiz';
-import type { MainTab } from '@shared/enums';
 import type { ISubmissionFeedback } from '~/models/Feedback';
 import type { IQuestion } from '~/models/Question';
 import type Constants from '~/shared/constants';
 import type { AppSettings } from '~/shared/settings';
+import type { MainTab } from '~/ui/pages/main';
 import type { Nullable } from './utils';
 
 export type ILocalStore = {

@@ -1,10 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import type { IQuestion } from '~/models/Question';
-import {
-	addContentEventListener,
-	ContentEvent,
-	removeContentEventListener,
-} from '~/shared/event';
+import { addContentEventListener, ContentEvent } from '~/services/content/event';
 import {
 	addMessageListener,
 	BackgroundCommand,
@@ -14,6 +10,7 @@ import {
 } from '~/shared/message';
 import { pushSnackbarItem } from '~/shared/utils';
 import type { Nullable } from '~/types/utils';
+import globals from '../global';
 import Selectors from '../selectors';
 import type { GradingBoxProps } from './GradingBox';
 import {
@@ -28,17 +25,22 @@ export default function useGradingState(props: GradingBoxProps) {
 		initialQuiz,
 		initialQuestion,
 		initialFeedback,
+
 		questionContainer,
 		pointsInput,
 		commentsTextarea,
-		scrollIntoView,
+
+		iframeWindow,
+
+		appSettings,
 	} = props;
 
 	const [question, setQuestion] = useState(initialQuestion);
 
 	const [savedFeedback, setSavedFeedback] = useState(initialFeedback);
 	const defaultState = useMemo(
-		() => QuestionGradingState.create(question, savedFeedback),
+		() =>
+			QuestionGradingState.create(question, savedFeedback, pointsInput, commentsTextarea),
 		[question, savedFeedback]
 	);
 
@@ -74,7 +76,7 @@ export default function useGradingState(props: GradingBoxProps) {
 	}
 
 	function toggleSelectRubricItem(rubricItem: DiffRubricItem) {
-		if (isSubmitting || state.isInvalid) return;
+		if (isSubmitting || state.invalidError) return;
 		if (
 			state.manualPoints !== null &&
 			!confirm('Apply rubric item? This will discard manual points override!')
@@ -98,7 +100,7 @@ export default function useGradingState(props: GradingBoxProps) {
 	}
 
 	function handleManualPointsChange(event: ChangeEvent<HTMLInputElement>) {
-		if (isSubmitting || state.isInvalid) return;
+		if (isSubmitting || state.invalidError) return;
 
 		// If no feedback, apply manual points immediately
 		// If manual points override, update its value
@@ -121,12 +123,14 @@ export default function useGradingState(props: GradingBoxProps) {
 		if (isSubmitting) return;
 		// Clear current feedback state
 		if (
-			state.isInvalid ||
+			state.invalidError ||
 			confirm(
 				'Grade this question from scratch? This will not delete feedback already submitted and saved.'
 			)
 		) {
-			updateState(QuestionGradingState.create(question, null));
+			updateState(
+				QuestionGradingState.create(question, null, pointsInput, commentsTextarea)
+			);
 		}
 	}
 
@@ -134,7 +138,7 @@ export default function useGradingState(props: GradingBoxProps) {
 		if (isSubmitting || !state.isDirty) return;
 		// Reset to default (saved) state
 		if (
-			state.isInvalid ||
+			state.invalidError ||
 			confirm(
 				'Reset to last-saved feedback? This has no effect if no changes were made since last save.'
 			)
@@ -143,28 +147,14 @@ export default function useGradingState(props: GradingBoxProps) {
 		}
 	}
 
-	async function handleSubmit() {
+	function handleSubmit() {
 		if (isSubmitting || !state.isDirty) return;
-
 		setIsSubmitting(true);
 
-		// Update last-graded question before submitting
-		await sendMessageToBackground(
-			{
-				command: BackgroundCommand.updateQuizLastGradedQuestion,
-				quizId: initialQuiz.id,
-				questionId: question.id,
-			},
-			{ noThrowOnNoReceiver: true }
-		);
-
-		pointsInput.form!.requestSubmit();
+		globals.submitFeedback!();
 	}
 
 	async function saveQuestionFeedback() {
-		if (!stateRef.current.isDirty || stateRef.current.isInvalid) {
-			return setIsSubmitting(false);
-		}
 		const newSavedFeedback = QuestionGradingState.toPersistentState(
 			stateRef.current,
 			initialQuestion.id
@@ -196,8 +186,6 @@ export default function useGradingState(props: GradingBoxProps) {
 				},
 				'iframe'
 			);
-		} finally {
-			setIsSubmitting(false);
 		}
 	}
 
@@ -209,7 +197,12 @@ export default function useGradingState(props: GradingBoxProps) {
 				newQuestion.id
 			);
 			// Update diff rubric items
-			return QuestionGradingState.create(newQuestion, currentFeedback);
+			return QuestionGradingState.create(
+				newQuestion,
+				currentFeedback,
+				pointsInput,
+				commentsTextarea
+			);
 		});
 
 		// Update current question
@@ -237,17 +230,32 @@ export default function useGradingState(props: GradingBoxProps) {
 	}
 
 	useLayoutEffect(() => {
-		if (scrollIntoView) questionContainer.scrollIntoView();
-
+		if (
+			appSettings.scrollToLastGradedQuestion &&
+			globals.quizLastGradedQuestionId === initialQuestion.id
+		) {
+			questionContainer.scrollIntoView();
+		}
 		setQuestionContainerVisible(questionContainer, isVisible);
 
 		const formEventHandler = () => setIsSubmitting(true);
-		pointsInput.form!.addEventListener('formdata', formEventHandler);
+		iframeWindow.addEventListener('formdata', formEventHandler, { capture: true });
 
+		const removeBeginSubmitFeedbackHandler = addContentEventListener(
+			ContentEvent.beginSubmitFeedback,
+			() => setIsSubmitting(true),
+			iframeWindow
+		);
 		// Register event handler to save feedback to store upon successful form submission
-		const saveQuestionFeedbackHandler = addContentEventListener(
-			ContentEvent.saveQuestionFeedback,
-			saveQuestionFeedback
+		const removeSaveQuestionFeedbackHandler = addContentEventListener(
+			ContentEvent.endSubmitFeedback,
+			async ({ success }) => {
+				if (success) {
+					await saveQuestionFeedback();
+				}
+				setIsSubmitting(false);
+			},
+			iframeWindow
 		);
 
 		const removeMessageListener = addMessageListener(
@@ -268,10 +276,8 @@ export default function useGradingState(props: GradingBoxProps) {
 		);
 
 		return () => {
-			removeContentEventListener(
-				ContentEvent.saveQuestionFeedback,
-				saveQuestionFeedbackHandler
-			);
+			removeBeginSubmitFeedbackHandler();
+			removeSaveQuestionFeedbackHandler();
 			removeMessageListener();
 		};
 	}, []);

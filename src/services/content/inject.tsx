@@ -1,7 +1,7 @@
 import createCache from '@emotion/cache';
 import { CacheProvider } from '@emotion/react';
 import { StyledEngineProvider } from '@mui/joy';
-import { StrictMode, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
 import type { Nullable } from '~/types/utils';
 import baseStyles from './ui/base.css?inline';
@@ -53,13 +53,11 @@ export function injectReactShadowDOM(
 
 	const reactRoot = ReactDOM.createRoot(root);
 	reactRoot.render(
-		<StrictMode>
-			<StyledEngineProvider enableCssLayer>
-				<CacheProvider value={cache}>
-					{typeof element === 'function' ? element() : element}
-				</CacheProvider>
-			</StyledEngineProvider>
-		</StrictMode>
+		<StyledEngineProvider enableCssLayer>
+			<CacheProvider value={cache}>
+				{typeof element === 'function' ? element() : element}
+			</CacheProvider>
+		</StyledEngineProvider>
 	);
 
 	return { reactRoot, shadowRoot };

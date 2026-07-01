@@ -21,9 +21,21 @@ const modifierKeyDisplayChar: Record<ModifierKey, string> = {
 
 const otherKeyDisplayChar: Record<string, string> = {
 	escape: '\u238b',
+	minus: '-',
+	equal: '=',
 	backspace: '\u232b',
 	delete: '\u2326',
+	divide: '\u00f7',
+	multiply: '\u00d7',
+	bracketleft: '[',
+	bracketright: ']',
+	backslash: '\\',
+	semicolon: ';',
 	enter: '\u23ce',
+	add: '+',
+	period: '.',
+	comma: ',',
+	slash: '/',
 	arrowleft: '\u2190',
 	arrowright: '\u2192',
 	arrowup: '\u2191',
@@ -54,7 +66,7 @@ export default function HotkeysButton({
 		if (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return;
 		if (modifiers.length > 0 && keys.length > 0) {
 			(event.target as HTMLButtonElement).blur();
-			setHotkeys([...modifiers, ...keys].join('+'));
+			setHotkeys([...modifiers, ...keys].join(Constants.HOTKEYS_DELIMITER));
 			dismissRecording();
 		} else {
 			resetKeys();
@@ -107,7 +119,7 @@ export default function HotkeysButton({
 }
 
 function getHotkeysInfo(hotkeys: string | Set<string>) {
-	hotkeys = new Set(hotkeys instanceof Set ? hotkeys : hotkeys.split('+'));
+	hotkeys = new Set(hotkeys instanceof Set ? hotkeys : hotkeys.split(Constants.HOTKEYS_DELIMITER));
 
 	const recordedModifierKeys = modifierKeys.filter((modifierKey) => hotkeys.delete(modifierKey));
 	const otherKeys = [...hotkeys].sort();

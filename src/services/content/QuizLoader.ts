@@ -4,7 +4,6 @@ import type { IQuiz } from '~/models/Quiz';
 import Quiz from '~/models/Quiz';
 import Patterns from '~/shared/patterns';
 import { getBaseUrl } from '~/shared/utils';
-import type { Constructor } from '~/types/utils';
 import Selectors from './selectors';
 
 export interface QuizLoaderPayload {}
@@ -12,17 +11,17 @@ export interface QuizLoaderPayload {}
 export abstract class QuizLoader {
 	public static readonly name: string;
 
-	public abstract validateURL(payload: QuizLoaderPayload, ...args: any[]): boolean;
+	public abstract validateURL(payload?: QuizLoaderPayload, ...args: any[]): boolean;
 
-	public abstract getTitle(payload: QuizLoaderPayload, ...args: any[]): string;
+	public abstract getTitle(payload?: QuizLoaderPayload, ...args: any[]): string;
 
-	public abstract getCanonicalURL(payload: QuizLoaderPayload, ...args: any[]): string;
+	public abstract getCanonicalURL(payload?: QuizLoaderPayload, ...args: any[]): string;
 
-	public abstract getCourseId(payload: QuizLoaderPayload, ...args: any[]): string;
+	public abstract getCourseId(payload?: QuizLoaderPayload, ...args: any[]): string;
 
-	public abstract getAssignmentId(payload: QuizLoaderPayload, ...args: any[]): string;
+	public abstract getAssignmentId(payload?: QuizLoaderPayload, ...args: any[]): string;
 
-	public abstract getQuestions(payload: QuizLoaderPayload, ...args: any[]): IQuestion[];
+	public abstract getQuestions(payload?: QuizLoaderPayload, ...args: any[]): IQuestion[];
 
 	public getQuiz(payload: QuizLoaderPayload = {}, ...args: any[]): IQuiz {
 		// Validate site origin before loading quiz from content
@@ -174,7 +173,7 @@ export const quizLoaderTypes = ['oldSG', 'newSG'] as const;
 
 export type QuizLoaderType = (typeof quizLoaderTypes)[number];
 
-export const quizLoaders: Record<QuizLoaderType, Constructor<QuizLoader>> = {
+export const quizLoaders: Record<QuizLoaderType, new () => QuizLoader> = {
 	oldSG: OldSGQuizLoader,
 	newSG: NewSGQuizLoader,
 };

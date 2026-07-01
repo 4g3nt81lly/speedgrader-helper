@@ -53,7 +53,7 @@ export default function RubricTextEditor(props: RubricTextEditorProps) {
 	}
 
 	return (
-		<div className="mt-2 mb-3 flex flex-col gap-3">
+		<div className="mt-2 mb-3 flex flex-col gap-1">
 			<FormControl>
 				<Textarea
 					placeholder="Rubric markup"
@@ -62,7 +62,7 @@ export default function RubricTextEditor(props: RubricTextEditorProps) {
 					minRows={3}
 					autoFocus
 				/>
-				<FormHelperText className="block">
+				<FormHelperText className="mt-0">
 					<ul className="pl-4">
 						<li>
 							Rubric item format: <code>&lt;points&gt;&emsp;&lt;description&gt;</code>

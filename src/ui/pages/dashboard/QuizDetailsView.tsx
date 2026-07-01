@@ -16,6 +16,8 @@ export type QuizDetailsViewProps = {};
 export default function QuizDetailsView(props: QuizDetailsViewProps) {
 	const dispatch = useDispatch<MainPageDispatch>();
 	const quizzes = useMainSelector('quizzes');
+	const appSettings = useMainSelector('settings');
+
 	const { quiz: selectedQuizId } = useMainSelector('selection');
 
 	const [showQuestions, setShowQuestions] = useState(false);

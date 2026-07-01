@@ -1,51 +1,52 @@
-import { useState, type MouseEvent } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import type { IQuestion } from '~/models/Question';
-import type { IQuiz } from '~/models/Quiz';
-import { addContentEventListener, ContentEvent, dispatchContentEvent } from '~/shared/event';
-import { BackgroundCommand, sendMessageToBackground } from '~/shared/message';
+import { addContentEventListener, ContentEvent } from '../event';
+import globals from '../global';
 
 type QuestionNavBarProps = {
-	quizId: IQuiz['id'];
 	question: Pick<IQuestion, 'id'>;
-	gradingForm: HTMLFormElement;
+
+	iframeWindow: Window;
 };
 
 export default function QuestionNavBar(props: QuestionNavBarProps) {
-	const { quizId, question, gradingForm } = props;
+	const { question, iframeWindow } = props;
 
-	const [isNavigating, setIsNavigating] = useState(false);
+	const [canNavigate, setCanNavigate] = useState(true);
 
-	async function handleNavigate(event: MouseEvent<HTMLButtonElement>) {
-		if (isNavigating) return;
-		setIsNavigating(true);
+	function handleNavigate(event: MouseEvent<HTMLButtonElement>) {
+		if (!canNavigate) return;
+		setCanNavigate(false);
 
-		// Update last-graded question before navigating
-		await sendMessageToBackground(
-			{ command: BackgroundCommand.updateQuizLastGradedQuestion, quizId, questionId: question.id },
-			{ noThrowOnNoReceiver: true }
-		);
+		globals.quizLastGradedQuestionId = question.id;
 
-		addContentEventListener(
-			ContentEvent.gradeSubmissionComplete,
-			({ success }) => {
-				setIsNavigating(false);
-				if (!success) return;
-				const direction = (event.target as HTMLButtonElement).name as 'prev' | 'next';
-				dispatchContentEvent(ContentEvent.navigateSubmission, { direction }, window.parent);
-			},
-			window,
-			{ once: true }
-		);
-
-		gradingForm.requestSubmit();
+		const direction = (event.target as HTMLButtonElement).name as 'prev' | 'next';
+		globals.submitFeedback!(direction);
 	}
+
+	useEffect(() => {
+		const removeBeginSubmitFeedbackHandler = addContentEventListener(
+			ContentEvent.beginSubmitFeedback,
+			() => setCanNavigate(false),
+			iframeWindow
+		);
+		const removeEndSubmitFeedbackHandler = addContentEventListener(
+			ContentEvent.endSubmitFeedback,
+			() => setCanNavigate(true),
+			iframeWindow
+		);
+		return () => {
+			removeBeginSubmitFeedbackHandler();
+			removeEndSubmitFeedbackHandler();
+		};
+	}, []);
 
 	return (
 		<div className="absolute inset-0 my-2.5 flex justify-center gap-5">
-			<button title="Previous" name="prev" disabled={isNavigating} onClick={handleNavigate}>
+			<button title="Previous" name="prev" disabled={!canNavigate} onClick={handleNavigate}>
 				Prev
 			</button>
-			<button title="Next" name="next" disabled={isNavigating} onClick={handleNavigate}>
+			<button title="Next" name="next" disabled={!canNavigate} onClick={handleNavigate}>
 				Next
 			</button>
 		</div>

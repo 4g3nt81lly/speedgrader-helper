@@ -1,4 +1,4 @@
-import { addContentEventListener, ContentEvent } from '~/shared/event';
+import { addContentEventListener, ContentEvent } from '~/services/content/event';
 import Patterns from '~/shared/patterns';
 import Selectors from './selectors';
 

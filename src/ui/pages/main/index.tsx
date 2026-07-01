@@ -5,8 +5,6 @@ import { useLayoutEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider as ReduxProvider, useDispatch } from 'react-redux';
 import { io } from 'socket.io-client';
-import { MainTab } from '~/shared/enums';
-import { SidePanelEvent } from '~/shared/event';
 import global from './stores/global';
 import store, { useMainSelector, type MainPageDispatch } from './stores/main.store';
 import { loadQuizzesFromLocalStore } from './stores/quizzes.actions';
@@ -16,6 +14,12 @@ import {
 } from './stores/selection.actions';
 import { selectMainTab } from './stores/selection.slice';
 import { loadAppSettingsFromLocalStorage } from './stores/settings.actions';
+
+export const enum SidePanelEvent {
+	syncState = 'syncState',
+}
+
+export type MainTab = 'dashboard' | 'settings';
 
 function App() {
 	const dispatch = useDispatch<MainPageDispatch>();
@@ -77,13 +81,17 @@ function App() {
 					},
 				}}
 			>
-				<Tab disableIndicator>Dashboard</Tab>
-				<Tab disableIndicator>Settings</Tab>
+				<Tab value="dashboard" disableIndicator>
+					Dashboard
+				</Tab>
+				<Tab value="settings" disableIndicator>
+					Settings
+				</Tab>
 			</TabList>
-			<TabPanel value={MainTab.Dashboard} keepMounted className="overflow-hidden p-0">
+			<TabPanel value="dashboard" keepMounted className="overflow-hidden p-0">
 				<DashboardPage />
 			</TabPanel>
-			<TabPanel value={MainTab.Settings} keepMounted className="overflow-hidden p-0">
+			<TabPanel value="settings" keepMounted className="overflow-hidden p-0">
 				<SettingsPage />
 			</TabPanel>
 		</Tabs>

@@ -1,12 +1,12 @@
 import Decimal from 'decimal.js';
 import type { QuestionFeedback } from '~/models/Feedback';
 import type { IQuestion } from '~/models/Question';
-import type { IRubric } from '~/models/Rubric';
+import type { GradingMode } from '~/models/Rubric';
 import type { IRubricItem } from '~/models/RubricItem';
 import { isDecimalEqual, isDecimalPositive, isDecimalWithinRange } from '~/shared/utils';
 import type { Nullable } from '~/types/utils';
 
-export const enum QuestionFeedbackMode {
+const enum QuestionFeedbackMode {
 	Manual = 2,
 	Rubric = 3,
 }
@@ -14,7 +14,7 @@ export const enum QuestionFeedbackMode {
 export type IQuestionGradingState = {
 	rubricItems: DiffRubricItem[];
 	isDirty: boolean;
-	isInvalid: boolean;
+	invalidError: Nullable<string>;
 } & (
 	| {
 			mode: QuestionFeedbackMode.Manual;
@@ -67,26 +67,35 @@ export type DiffRubricItem = { id: IRubricItem['id'] } & (
 export class QuestionGradingState {
 	public static create(
 		question: IQuestion,
-		feedback: Nullable<QuestionFeedback>
+		feedback: Nullable<QuestionFeedback>,
+		pointsInput: HTMLInputElement,
+		commentsTextarea: HTMLTextAreaElement
 	): IQuestionGradingState {
 		const rubricItems = this.generateDiffRubricItems(question.rubric, feedback);
 		if (!feedback) {
+			// No saved feedback but question might already be graded
+			const manualPoints = pointsInput.value.trim();
 			return {
 				mode: QuestionFeedbackMode.Manual,
 				gradingMode: question.rubric?.gradingMode ?? null,
 				points: null,
 				selectedRubricItems: null,
-				manualPoints: null,
-				comments: '',
+				manualPoints:
+					manualPoints && isFinite(Number(manualPoints)) ? manualPoints : null,
+				comments: commentsTextarea.textContent.trim(),
 				rubricItems,
 				isDirty: false,
-				isInvalid: false,
+				invalidError: null,
 			};
 		}
+		let invalidError: Nullable<string> = null;
 
 		const gradingMode = question.rubric?.gradingMode ?? feedback.gradingMode;
 		if (feedback.manualPoints !== null) {
 			// Feedback contains manual points override
+			if (!isDecimalWithinRange(feedback.manualPoints, 0, question.points)) {
+				invalidError = `Saved manual points not within valid range [0, ${question.points}]`;
+			}
 			return {
 				mode: QuestionFeedbackMode.Manual,
 				gradingMode,
@@ -96,7 +105,7 @@ export class QuestionGradingState {
 				comments: feedback.comments,
 				rubricItems,
 				isDirty: false,
-				isInvalid: !isDecimalWithinRange(feedback.manualPoints, 0, question.points),
+				invalidError,
 			};
 		}
 		if (feedback.rubricItems === null) {
@@ -110,7 +119,7 @@ export class QuestionGradingState {
 				comments: feedback.comments,
 				rubricItems,
 				isDirty: false,
-				isInvalid: false,
+				invalidError,
 			};
 		}
 		// Rubric items were selected, calculate total points using feedback grading mode
@@ -126,6 +135,9 @@ export class QuestionGradingState {
 			points = points.add(itemPoints);
 			selectedRubricItems[selectedRubricItem.id] = true;
 		}
+		if (!isDecimalWithinRange(points, 0, question.points)) {
+			invalidError = `New points not within valid range [0, ${question.points}]`;
+		}
 		return {
 			mode: QuestionFeedbackMode.Rubric,
 			// Rubric item interactions will prefer new rubric grading mode
@@ -136,7 +148,7 @@ export class QuestionGradingState {
 			comments: feedback.comments,
 			rubricItems,
 			isDirty: false,
-			isInvalid: !isDecimalWithinRange(points, 0, question.points),
+			invalidError,
 		};
 	}
 
@@ -192,7 +204,7 @@ export class QuestionGradingState {
 
 	public static getInitialPoints(
 		maxPoints: IQuestion['points'],
-		gradingMode: IRubric['gradingMode']
+		gradingMode: GradingMode
 	) {
 		return gradingMode === 'negative' ? maxPoints : '0';
 	}
@@ -201,7 +213,7 @@ export class QuestionGradingState {
 		state: IQuestionGradingState,
 		defaultState: IQuestionGradingState
 	) {
-		if (state.isInvalid) {
+		if (state.invalidError) {
 			// Invalid state is considered NOT dirty
 			return false;
 		}
@@ -235,7 +247,7 @@ export class QuestionGradingState {
 		question: Pick<IQuestion, 'points'>,
 		rubricItem: DiffRubricItem
 	) {
-		if (state.isInvalid || state.gradingMode === null) {
+		if (state.invalidError || state.gradingMode === null) {
 			// Prevent state change in invalid state
 			return false;
 		}
@@ -263,7 +275,7 @@ export class QuestionGradingState {
 		question: Pick<IQuestion, 'points'>,
 		rubricItem: DiffRubricItem
 	): IQuestionGradingState {
-		if (state.isInvalid || state.gradingMode === null) {
+		if (state.invalidError || state.gradingMode === null) {
 			// Prevent state change in invalid state
 			return state;
 		}
@@ -286,7 +298,7 @@ export class QuestionGradingState {
 				comments: state.comments,
 				rubricItems: state.rubricItems,
 				isDirty: true,
-				isInvalid: false,
+				invalidError: null,
 			};
 		} else if (state.selectedRubricItems[item.id]) {
 			// Selected rubric items, toggle selection and update state
@@ -304,7 +316,7 @@ export class QuestionGradingState {
 					comments: state.comments,
 					rubricItems: state.rubricItems,
 					isDirty: true,
-					isInvalid: false,
+					invalidError: null,
 				};
 			} else {
 				newState = {
@@ -316,7 +328,7 @@ export class QuestionGradingState {
 					comments: state.comments,
 					rubricItems: state.rubricItems,
 					isDirty: true,
-					isInvalid: false,
+					invalidError: null,
 				};
 			}
 		} else {
@@ -331,7 +343,7 @@ export class QuestionGradingState {
 				comments: state.comments,
 				rubricItems: state.rubricItems,
 				isDirty: true,
-				isInvalid: false,
+				invalidError: null,
 			};
 		}
 		newState.isDirty = this.isDirty(newState, defaultState);
@@ -343,7 +355,7 @@ export class QuestionGradingState {
 		defaultState: IQuestionGradingState,
 		manualPoints: string
 	): IQuestionGradingState {
-		if (state.isInvalid) {
+		if (state.invalidError) {
 			// Invalid state
 			return state;
 		}
@@ -356,7 +368,7 @@ export class QuestionGradingState {
 			comments: state.comments,
 			rubricItems: state.rubricItems,
 			isDirty: true,
-			isInvalid: false,
+			invalidError: null,
 		};
 		newState.isDirty = this.isDirty(newState, defaultState);
 		return newState;
@@ -396,7 +408,7 @@ export class QuestionGradingState {
 		state: IQuestionGradingState,
 		questionId: IQuestion['id']
 	): Nullable<QuestionFeedback> {
-		if (state.isInvalid) {
+		if (state.invalidError) {
 			return null;
 		}
 		if (
