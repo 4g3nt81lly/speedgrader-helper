@@ -9,7 +9,7 @@ import Constants from '~/shared/constants';
 import { defaultAppSettings } from '~/shared/settings';
 import type { SetNonNullable } from '~/types/utils';
 import { useMainSelector } from '../pages/main/stores/main.store';
-import { inOutTransitionMotionProps } from '../utils/animation';
+import { inOutTransitionMotionProps } from '../../shared/animation';
 import Accordion from './Accordion';
 import RubricListEditor from './RubricListEditor';
 import RubricTextEditor from './RubricTextEditor';

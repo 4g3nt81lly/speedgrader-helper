@@ -1,20 +1,18 @@
 import Decimal from 'decimal.js';
 import { v4 as uuidv4 } from 'uuid';
 import { isDecimalPositive } from '~/shared/utils';
-import type { Nullable, SetOptional } from '~/types/utils';
+import type { Nullable } from '~/types/utils';
 
 export interface IRubricItem {
 	id: string;
-	title: string;
 	description: string;
 	points: string;
 }
 
 export class RubricItem {
-	public static create(item: SetOptional<Omit<IRubricItem, 'id'>, 'title'>): IRubricItem {
+	public static create(item: Omit<IRubricItem, 'id'>): IRubricItem {
 		return {
 			id: uuidv4(),
-			title: item.title ?? '',
 			description: item.description,
 			points: item.points,
 		};

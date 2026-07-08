@@ -1,38 +1,33 @@
-import { v4 as uuidv4 } from 'uuid';
 import type { QuestionFeedback } from '~/models/Feedback';
 import type { IQuestion } from '~/models/Question';
 import { type IQuiz } from '~/models/Quiz';
 import Constants from '~/shared/constants';
-import { defaultAppSettings, type AppSettings } from '~/shared/settings';
+import { quizLoaders } from '~/shared/modules';
 import QuizFeedbackLocalStore from '~/shared/stores/QuizFeedbackLocalStore';
 import QuizLocalStore from '~/shared/stores/QuizLocalStore';
-import { getElementByQuerySelector, pushSnackbarItem } from '~/shared/utils';
+import { getElementByQuerySelector } from '~/shared/utils';
 import type { ISnackbarItem } from '~/types/snackbar';
 import type { Nullable, SetOptional } from '~/types/utils';
 import EventProxy from './EventProxy';
-import globals from './global';
+import gradingContext from './GradingContext';
 import { injectReactShadowDOM } from './inject';
-import { quizLoaders, type QuizLoader } from './QuizLoader';
+import { type QuizLoader } from './QuizLoader';
 import Selectors from './selectors';
 import GradingBox from './ui/GradingBox';
 import QuestionNavBar from './ui/QuestionNavBar';
-import Snackbar from './ui/Snackbar';
+import Snackbar, { postSnackbarItem } from './ui/Snackbar';
 
 export interface QuizInjectorPayload {}
 
 export abstract class QuizInjector {
 	public static readonly name: string;
 
-	protected readonly appSettings: AppSettings;
 	protected readonly quizLoader: QuizLoader;
 
 	protected quiz: Nullable<IQuiz>;
 
-	public constructor(appSettings: Partial<AppSettings>) {
-		this.appSettings = { ...defaultAppSettings, ...appSettings };
-		this.quizLoader = new quizLoaders[
-			appSettings.defaultQuizLoader ?? defaultAppSettings.defaultQuizLoader
-		]();
+	public constructor() {
+		this.quizLoader = new quizLoaders[gradingContext.appSettings.defaultQuizLoader]();
 		this.quiz = null;
 	}
 
@@ -44,69 +39,56 @@ export abstract class QuizInjector {
 export class OldSGQuizInjector extends QuizInjector {
 	public static override readonly name: string = 'Old SG';
 
+	protected canonicalUrl!: string;
 	protected submissionId: Nullable<string> = null;
 	protected submissionIframeHolder: Nullable<HTMLElement> = null;
 
 	protected submissionIframe: Nullable<HTMLIFrameElement> = null;
 
 	public override async inject() {
-		const initialItems: ISnackbarItem[] = [];
+		injectReactShadowDOM(document.body, <Snackbar />);
 		try {
-			const canonicalUrl = this.quizLoader.getCanonicalURL();
-			this.quiz = await QuizLocalStore.getQuizByUrl(canonicalUrl);
+			this.canonicalUrl = this.quizLoader.getCanonicalURL();
 
-			await this.registerInjectOnLoad(initialItems);
+			await this.registerInjectOnLoad();
 		} catch (error) {
-			this.postSnackbarItem(
-				{ message: `An unexpected error has occurred while performing injection: ${error}` },
-				initialItems
-			);
-		} finally {
-			// Inject message snackbar with initial injection errors
-			injectReactShadowDOM(document.body, <Snackbar initialItems={initialItems} />);
+			postSnackbarItem({
+				message: `An unexpected error has occurred while performing injection: ${error}`,
+			});
 		}
 	}
 
-	private async handleInject(snackbarItems?: ISnackbarItem[]) {
+	private async handleInject() {
 		console.log('Attempting to perform injection...');
 
-		const gradingForm = this.submissionIframe!.contentDocument!.querySelector<HTMLFormElement>(
-			this.selectors.SUBMISSION_FORM
-		);
-		if (!gradingForm) {
-			return this.postErrorItem(
-				{ message: `Error: SpeedGrader submission form not found.` },
-				snackbarItems
-			);
+		this.submissionId = new URL(document.URL).searchParams.get('student_id');
+		if (this.submissionId === null) {
+			return this.postErrorItem({
+				message: `Failed to extract submission ID from "${document.URL}"`,
+			});
 		}
 		try {
-			this.registerEventProxy(gradingForm);
+			this.quiz = await QuizLocalStore.getQuizByUrl(this.canonicalUrl);
+			await this.initializeGradingContext();
 			if (this.quiz) {
-				await this.injectGradingControls(snackbarItems);
+				this.registerEventProxy();
+				await this.injectGradingControls();
 			}
 		} catch (error) {
-			this.postErrorItem({ message: (error as Error).message }, snackbarItems);
+			this.postErrorItem({ message: (error as Error).message });
 		}
 	}
 
-	protected async registerInjectOnLoad(snackbarItems: ISnackbarItem[]) {
-		this.submissionId = new URL(document.URL).searchParams.get('student_id');
-		if (this.submissionId === null) {
-			return this.postErrorItem(
-				{ message: `Failed to extract submission ID from "${document.URL}"` },
-				snackbarItems
-			);
-		}
+	protected async registerInjectOnLoad() {
 		this.submissionIframeHolder = await getElementByQuerySelector<HTMLElement>(
 			this.selectors.SUBMISSION_IFRAME_HOLDER,
 			document,
 			{ timeout: 5 * Constants.SECOND_MS }
 		);
 		if (!this.submissionIframeHolder) {
-			return this.postErrorItem(
-				{ message: 'SpeedGrader not found in reasonable time. Reload page to try again!' },
-				snackbarItems
-			);
+			return this.postErrorItem({
+				message: 'SpeedGrader not found in reasonable time. Reload page to try again!',
+			});
 		}
 		// Start looking for the submission iframe immediately
 		const submissionIframe = this.submissionIframeHolder.querySelector<HTMLIFrameElement>(
@@ -115,7 +97,7 @@ export class OldSGQuizInjector extends QuizInjector {
 		if (submissionIframe?.contentDocument?.readyState === 'complete') {
 			// Submission iframe already loaded, execute injection handler right away
 			this.submissionIframe = submissionIframe;
-			await this.handleInject(snackbarItems);
+			await this.handleInject();
 		}
 		// Add mutation observer to continuously registering onload handler
 		const mutationObserver = new MutationObserver((mutations) => {
@@ -134,43 +116,52 @@ export class OldSGQuizInjector extends QuizInjector {
 		mutationObserver.observe(this.submissionIframeHolder, { childList: true });
 	}
 
-	protected registerEventProxy(gradingForm: HTMLFormElement) {
+	protected registerEventProxy() {
 		const submissionDocument = this.submissionIframe!.contentDocument!;
-		injectReactShadowDOM(
-			submissionDocument.body,
-			<EventProxy
-				initialAppSettings={this.appSettings}
-				iframeWindow={this.submissionIframe!.contentWindow!}
-				gradingForm={gradingForm}
-			/>,
-			{ document: submissionDocument }
-		);
+		injectReactShadowDOM(submissionDocument.body, <EventProxy />, { document: submissionDocument });
 	}
 
-	protected async injectGradingControls(snackbarItems?: ISnackbarItem[]) {
+	protected async initializeGradingContext() {
+		gradingContext.quiz = this.quiz;
+
+		gradingContext.submissionWindow = this.submissionIframe!.contentWindow!;
+		gradingContext.submissionForm =
+			this.submissionIframe!.contentDocument!.querySelector<HTMLFormElement>(
+				this.selectors.SUBMISSION_FORM
+			);
+		gradingContext.dirtyQuestions.clear();
+		gradingContext.isFeedbackSubmitting = false;
+
+		if (!gradingContext.submissionForm) {
+			return this.postErrorItem({ message: `Error: SpeedGrader submission form not found.` });
+		}
+		if (!this.quiz) return;
+
+		const lastGradedQuestionId = await QuizLocalStore.getQuizLastGradedQuestionId(
+			this.quiz.id
+		).catch((error) => {
+			postSnackbarItem({
+				message: `Unable to load last-graded question: ${error.message}`,
+				type: 'warning',
+			});
+			return null;
+		});
+		gradingContext.lastGradedQuestionId = lastGradedQuestionId;
+	}
+
+	protected async injectGradingControls() {
 		const quiz = this.quiz!;
-		globals.quizId = quiz.id;
 
 		const submissionFeedback = await QuizFeedbackLocalStore.getStoreQuizSubmissionFeedback(
 			quiz.id,
 			this.submissionId!
 		).catch((error) => {
-			this.postSnackbarItem(
-				{ message: `Unable to load saved feedback: ${error.message}`, type: 'warning' },
-				snackbarItems
-			);
+			postSnackbarItem({
+				message: `Unable to load saved feedback: ${error.message}`,
+				type: 'warning',
+			});
 			return null;
 		});
-		const lastGradedQuestionId = await QuizLocalStore.getQuizLastGradedQuestionId(quiz.id).catch(
-			(error) => {
-				this.postSnackbarItem(
-					{ message: `Unable to load last-graded question: ${error.message}`, type: 'warning' },
-					snackbarItems
-				);
-				return null;
-			}
-		);
-		globals.quizLastGradedQuestionId = lastGradedQuestionId;
 
 		for (const question of quiz.questions) {
 			this.injectQuestionGradingControls(
@@ -196,10 +187,7 @@ export class OldSGQuizInjector extends QuizInjector {
 		const commentsTextarea = questionContainer?.querySelector<HTMLTextAreaElement>(
 			this.selectors.QUESTION_COMMENTS_TEXTAREA
 		);
-		if (!textElement || !pointsInput?.form || !commentsTextarea) return;
-
-		pointsInput.readOnly = true;
-		commentsTextarea.readOnly = true;
+		if (!textElement || !pointsInput || !commentsTextarea) return;
 
 		this.injectQuestionNavBar(question, questionContainer);
 
@@ -213,8 +201,6 @@ export class OldSGQuizInjector extends QuizInjector {
 				questionContainer={questionContainer}
 				pointsInput={pointsInput}
 				commentsTextarea={commentsTextarea}
-				iframeWindow={this.submissionIframe!.contentWindow!}
-				appSettings={this.appSettings}
 			/>,
 			{ document: submissionDocument }
 		);
@@ -228,32 +214,13 @@ export class OldSGQuizInjector extends QuizInjector {
 
 		questionHeader.style.position = 'relative';
 
-		injectReactShadowDOM(
-			questionHeader,
-			<QuestionNavBar
-				question={{ id: question.id }}
-				iframeWindow={this.submissionIframe!.contentWindow!}
-			/>,
-			{ document: this.submissionIframe!.contentDocument! }
-		);
+		injectReactShadowDOM(questionHeader, <QuestionNavBar question={{ id: question.id }} />, {
+			document: this.submissionIframe!.contentDocument!,
+		});
 	}
 
-	protected postErrorItem(
-		item: SetOptional<Omit<ISnackbarItem, 'type'>, 'id'>,
-		initialItems?: ISnackbarItem[]
-	) {
-		return this.postSnackbarItem({ ...item, type: 'error' }, initialItems);
-	}
-
-	protected postSnackbarItem(
-		item: SetOptional<ISnackbarItem, 'id'>,
-		initialItems?: ISnackbarItem[]
-	) {
-		if (initialItems) {
-			initialItems.push({ id: uuidv4(), ...item });
-		} else {
-			pushSnackbarItem(item);
-		}
+	protected postErrorItem(item: SetOptional<Omit<ISnackbarItem, 'type'>, 'id'>) {
+		return postSnackbarItem({ ...item, type: 'error' });
 	}
 
 	protected override get selectors() {
@@ -261,22 +228,10 @@ export class OldSGQuizInjector extends QuizInjector {
 	}
 }
 
-export class NewSGQuizLoader extends OldSGQuizInjector {
+export class NewSGQuizInjector extends OldSGQuizInjector {
 	public static override readonly name: string = 'New SG (Experimental)';
 
 	protected override get selectors() {
 		return Selectors.newSpeedGrader;
 	}
 }
-
-export const quizInjectorTypes = ['oldSG', 'newSG'] as const;
-
-export type QuizInjectorType = (typeof quizInjectorTypes)[number];
-
-export const quizInjectors: Record<
-	QuizInjectorType,
-	new (appSettings: Partial<AppSettings>) => QuizInjector
-> = {
-	oldSG: OldSGQuizInjector,
-	newSG: NewSGQuizLoader,
-};

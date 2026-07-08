@@ -3,7 +3,7 @@ import { addQuiz } from '@pages/main/stores/quizzes.slice';
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import type { IQuiz } from '~/models/Quiz';
-import type { QuizLoaderType } from '~/services/content/QuizLoader';
+import type { QuizLoaderType } from '~/shared/modules';
 import Constants from '~/shared/constants';
 import { ContentCommand, sendMessageToTab } from '~/shared/message';
 import { defaultAppSettings } from '~/shared/settings';

@@ -29,7 +29,7 @@ import { RubricItem, type IRubricItem } from '~/models/RubricItem';
 import Constants from '~/shared/constants';
 import { isDecimalEqual, isDecimalGreaterThan, isDecimalPositive } from '~/shared/utils';
 import type { Nullable } from '~/types/utils';
-import { inOutTransitionMotionProps } from '../utils/animation';
+import { inOutTransitionMotionProps } from '../../shared/animation';
 
 type RubricListEditorProps = {
 	rubric: IRubric;
@@ -59,11 +59,7 @@ export default function RubricListEditor(props: RubricListEditorProps) {
 			...rubric,
 			items: [
 				...rubric.items,
-				RubricItem.create({
-					title: 'Untitled rubric item',
-					description: 'This is a new rubric item.',
-					points: '0',
-				}),
+				RubricItem.create({ description: 'This is a new rubric item.', points: '0' }),
 			],
 		});
 	}
@@ -385,7 +381,7 @@ function RubricListItem(props: RubricListItemProps) {
 								<FormControl>
 									<FormLabel>Points</FormLabel>
 									<Input value={newPoints} onChange={handleSetNewPoints} />
-									<FormHelperText className="mt-2 mb-1 flex flex-col items-start leading-4.5">
+									<FormHelperText className="mt-2 mb-2 flex flex-col items-start leading-4.5">
 										Enter the number of points this rubric item awards/deducts.
 										<ul className="my-0 pl-4">
 											<li>Use a negative number for deduction.</li>

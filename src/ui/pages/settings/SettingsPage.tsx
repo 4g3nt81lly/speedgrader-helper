@@ -6,8 +6,8 @@ import { useMainSelector, type MainPageDispatch } from '@pages/main/stores/main.
 import { removeAllQuizzes } from '@pages/main/stores/quizzes.slice';
 import { selectQuiz } from '@pages/main/stores/selection.slice';
 import { updateAppSettings } from '@pages/main/stores/settings.slice';
-import { quizInjectors } from '@services/content/QuizInjector';
-import { quizLoaders } from '@services/content/QuizLoader';
+import { quizInjectors } from '~/shared/modules';
+import { quizLoaders } from '~/shared/modules';
 import { defaultAppSettings, type AppHotKeySettings, type AppSettings } from '@shared/settings';
 import QuizFeedbackLocalStore from '@shared/stores/QuizFeedbackLocalStore';
 import { type ReactNode } from 'react';

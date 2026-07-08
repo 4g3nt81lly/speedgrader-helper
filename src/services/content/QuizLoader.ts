@@ -168,12 +168,3 @@ export class NewSGQuizLoader extends OldSGQuizLoader {
 		return Selectors.newSpeedGrader;
 	}
 }
-
-export const quizLoaderTypes = ['oldSG', 'newSG'] as const;
-
-export type QuizLoaderType = (typeof quizLoaderTypes)[number];
-
-export const quizLoaders: Record<QuizLoaderType, new () => QuizLoader> = {
-	oldSG: OldSGQuizLoader,
-	newSG: NewSGQuizLoader,
-};

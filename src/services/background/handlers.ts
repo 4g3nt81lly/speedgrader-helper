@@ -27,7 +27,7 @@ const messageHandlers: MessageHandlers = {
 		submissionId,
 		question,
 	}) {
-		await quizActionQueue.run(async () =>
+		await quizActionQueue.run(() =>
 			question.feedback
 				? QuizFeedbackLocalStore.setQuestionFeedback(
 						quizId,
@@ -39,7 +39,7 @@ const messageHandlers: MessageHandlers = {
 		return true;
 	},
 	async [BackgroundCommand.updateQuizLastGradedQuestion]({ quizId, questionId }) {
-		await quizActionQueue.run(async () =>
+		await quizActionQueue.run(() =>
 			QuizLocalStore.setQuizLastGradedQuestion(quizId, questionId)
 		);
 		return true;

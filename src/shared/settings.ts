@@ -1,6 +1,6 @@
 import type { GradingMode } from '~/models/Rubric';
-import type { QuizInjectorType } from '~/services/content/QuizInjector';
-import type { QuizLoaderType } from '~/services/content/QuizLoader';
+import type { QuizInjectorType } from './modules';
+import type { QuizLoaderType } from './modules';
 import type { RubricEditorType } from '~/ui/components/RubricAccordion';
 
 export type AppSettings = {

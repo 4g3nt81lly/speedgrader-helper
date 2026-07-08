@@ -11,7 +11,6 @@ export const ExportedRubricJsonSchema = z.object({
 				items: z.array(
 					z.object({
 						id: z.string(),
-						title: z.string(),
 						description: z.string(),
 						points: z.string(),
 					})

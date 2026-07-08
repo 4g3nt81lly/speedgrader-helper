@@ -1,52 +1,42 @@
-import { useEffect, useState, type MouseEvent } from 'react';
+import { useState, type MouseEvent } from 'react';
 import type { IQuestion } from '~/models/Question';
-import { addContentEventListener, ContentEvent } from '../event';
-import globals from '../global';
+import gradingContext from '../GradingContext';
+import { useFeedbackSubmitState } from '../hooks';
 
 type QuestionNavBarProps = {
 	question: Pick<IQuestion, 'id'>;
-
-	iframeWindow: Window;
 };
 
 export default function QuestionNavBar(props: QuestionNavBarProps) {
-	const { question, iframeWindow } = props;
+	const { question } = props;
 
 	const [canNavigate, setCanNavigate] = useState(true);
+	const isSubmitting = useFeedbackSubmitState();
 
 	function handleNavigate(event: MouseEvent<HTMLButtonElement>) {
-		if (!canNavigate) return;
+		if (!canNavigate || isSubmitting) return;
 		setCanNavigate(false);
 
-		globals.quizLastGradedQuestionId = question.id;
-
-		const direction = (event.target as HTMLButtonElement).name as 'prev' | 'next';
-		globals.submitFeedback!(direction);
+		gradingContext.lastGradedQuestionId = question.id;
+		gradingContext.navigateSubmission((event.target as HTMLButtonElement).name as 'prev' | 'next');
 	}
 
-	useEffect(() => {
-		const removeBeginSubmitFeedbackHandler = addContentEventListener(
-			ContentEvent.beginSubmitFeedback,
-			() => setCanNavigate(false),
-			iframeWindow
-		);
-		const removeEndSubmitFeedbackHandler = addContentEventListener(
-			ContentEvent.endSubmitFeedback,
-			() => setCanNavigate(true),
-			iframeWindow
-		);
-		return () => {
-			removeBeginSubmitFeedbackHandler();
-			removeEndSubmitFeedbackHandler();
-		};
-	}, []);
-
 	return (
-		<div className="absolute inset-0 my-2.5 flex justify-center gap-5">
-			<button title="Previous" name="prev" disabled={!canNavigate} onClick={handleNavigate}>
+		<div className="absolute inset-0 mx-auto my-2.5 flex w-fit justify-center gap-5">
+			<button
+				title="Previous"
+				name="prev"
+				disabled={!canNavigate || isSubmitting}
+				onClick={handleNavigate}
+			>
 				Prev
 			</button>
-			<button title="Next" name="next" disabled={!canNavigate} onClick={handleNavigate}>
+			<button
+				title="Next"
+				name="next"
+				disabled={!canNavigate || isSubmitting}
+				onClick={handleNavigate}
+			>
 				Next
 			</button>
 		</div>

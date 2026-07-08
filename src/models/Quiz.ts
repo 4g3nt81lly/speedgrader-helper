@@ -78,7 +78,6 @@ export default class Quiz {
 					rubric: {
 						items: question.rubric.items.map((item) => ({
 							id: item.id,
-							title: item.title,
 							description: item.description,
 							points: item.points,
 						})),

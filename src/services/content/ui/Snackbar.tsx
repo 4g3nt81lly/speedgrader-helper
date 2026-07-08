@@ -1,11 +1,11 @@
 import CloseIcon from '@mui/icons-material/Close';
 import { IconButton, Typography } from '@mui/joy';
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useSyncExternalStore } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { inOutTransitionMotionProps } from '~/shared/animation';
 import Constants from '~/shared/constants';
-import { addContentEventListener, ContentEvent, removeContentEventListener } from '~/services/content/event';
-import { addMessageListener, ContentCommand, type ICommandMessage } from '~/shared/message';
+import { addCommandHandler, ContentCommand } from '~/shared/message';
 import {
 	defaultSnackbarBackgroundColors,
 	defaultSnackbarIcons,
@@ -18,97 +18,62 @@ type SnackbarState = {
 	items: Record<string, ISnackbarItem>;
 };
 
-export type SnackbarProps = {
-	initialItems?: ISnackbarItem[];
+let snackbar: SnackbarState = {
+	stack: [],
+	items: {},
 };
 
-export default function Snackbar({ initialItems }: SnackbarProps) {
-	const [state, setState] = useState<SnackbarState>({ stack: [], items: {} });
+export default function Snackbar() {
+	const state = useSyncExternalStore(subscribe, () => snackbar);
 
-	const pushItem = (item: Omit<ISnackbarItem, 'id'>) => {
-		const id = uuidv4();
-		if (!item.closeReason || item.closeReason === 'timeout') {
-			setTimeout(() => popItems([id]), item.timeoutMs ?? 5 * Constants.SECOND_MS);
-		}
-		setState((state) => ({
-			stack: [...state.stack, id],
-			items: { ...state.items, [id]: { ...item, id } },
-		}));
-	};
-
-	const popItems = (itemIds: string[]) =>
-		setState((state) => {
-			const newStack = state.stack.filter((itemId) => !itemIds.includes(itemId));
-			const newItems = { ...state.items };
-			for (const itemId of itemIds) {
-				delete newItems[itemId];
-			}
-			return { stack: newStack, items: newItems };
-		});
-
-	useEffect(() => {
-		for (const item of initialItems ?? []) {
-			pushItem(item);
-		}
-
-		// Register event listener for invocation from the same content script context
-		const pushItemEventHandler = addContentEventListener(
-			ContentEvent.pushSnackbarItem,
-			({ item }) => pushItem(item)
-		);
-
+	useLayoutEffect(() => {
 		// Register message listener for cross-context invocation
-		const removeMessageListener = addMessageListener(
-			async (
-				message:
-					| ICommandMessage<ContentCommand.pushSnackbarItem>
-					| ICommandMessage<ContentCommand.popSnackbarItems>
-			) => {
+		return addCommandHandler(
+			[ContentCommand.pushSnackbarItem, ContentCommand.popSnackbarItems],
+			(message) => {
 				if (message.command === ContentCommand.pushSnackbarItem) {
-					pushItem(message.item);
+					postSnackbarItem(message.item);
 				}
 				if (message.command === ContentCommand.popSnackbarItems) {
-					const itemIds = message.itemIds;
-					popItems(Array.isArray(itemIds) ? itemIds : [itemIds]);
+					removeSnackbarItems(message.itemIds);
 				}
 			}
 		);
-
-		return () => {
-			removeContentEventListener(ContentEvent.pushSnackbarItem, pushItemEventHandler);
-			removeMessageListener();
-		};
 	}, []);
 
 	return (
 		<motion.div className="fixed bottom-7 left-7 z-1000 flex size-fit max-w-1/2 flex-col justify-end gap-4 bg-transparent">
 			<AnimatePresence>
 				{state.stack.flatMap((itemId) => {
-					const item = state.items[itemId];
+					const item = state.items[itemId]!;
 					if (!item) return [];
 					return (
 						<motion.div
 							key={itemId}
 							className="control-shadow flex gap-4 rounded-2xl pt-1.5 pr-5 pb-2.5 pl-4.5"
 							style={{ backgroundColor: defaultSnackbarBackgroundColors[item.type ?? 'neutral'] }}
-							initial={{ opacity: 0, scale: 0.9 }}
-							animate={{ opacity: 1, scale: 1 }}
-							exit={{ opacity: 0, scale: 0.9 }}
+							{...inOutTransitionMotionProps({
+								opacity: [0, 1],
+								scale: [0.9, 1],
+							})}
 							layout
 						>
-							<div className="flex justify-center">
+							<motion.div className="flex justify-center" layout="position">
 								<Typography level="h2">
 									{item.icon ?? defaultSnackbarIcons[item.type ?? 'neutral']}
 								</Typography>
-							</div>
-							<div className="flex flex-col">
+							</motion.div>
+							<motion.div className="flex flex-col" layout="position">
 								<Typography level="body-md" fontWeight="bold">
 									{item.title ?? defaultSnackbarTitles[item.type ?? 'neutral']}
 								</Typography>
 								<Typography level="body-sm">{item.message}</Typography>
-							</div>
+							</motion.div>
 							{item.closeReason === 'manual' && (
-								<IconButton onClick={() => popItems([itemId])} className="hover:bg-transparent">
+								<IconButton
+									onClick={() => removeSnackbarItems(itemId)}
+									className="hover:bg-transparent"
+								>
 									<CloseIcon />
 								</IconButton>
 							)}
@@ -118,4 +83,38 @@ export default function Snackbar({ initialItems }: SnackbarProps) {
 			</AnimatePresence>
 		</motion.div>
 	);
+}
+
+const listeners = new Set<() => void>();
+
+function subscribe(listener: () => void) {
+	listeners.add(listener);
+	return () => listeners.delete(listener);
+}
+
+function notifyAll() {
+	listeners.forEach((listener) => listener());
+}
+
+export function postSnackbarItem(item: Omit<ISnackbarItem, 'id'>) {
+	const id = uuidv4();
+	if (!item.closeReason || item.closeReason === 'timeout') {
+		setTimeout(() => removeSnackbarItems(id), item.timeoutMs ?? 5 * Constants.SECOND_MS);
+	}
+	snackbar = {
+		stack: [...snackbar.stack, id],
+		items: { ...snackbar.items, [id]: { ...item, id } },
+	};
+	notifyAll();
+}
+
+export function removeSnackbarItems(items: string | string[]) {
+	const itemIds = Array.isArray(items) ? items : [items];
+	const newStack = snackbar.stack.filter((itemId) => !itemIds.includes(itemId));
+	const newItems = { ...snackbar.items };
+	for (const itemId of itemIds) {
+		delete newItems[itemId];
+	}
+	snackbar = { stack: newStack, items: newItems };
+	notifyAll();
 }

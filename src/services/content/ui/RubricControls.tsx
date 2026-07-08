@@ -2,14 +2,14 @@ import SubdirectoryArrowRightIcon from '@mui/icons-material/SubdirectoryArrowRig
 import type { ChangeEvent } from 'react';
 import { isDecimalPositive } from '~/shared/utils';
 import {
-	RubricItemDiffStatus,
+	DiffDescriptor,
 	type DiffRubricItem,
 	type IQuestionGradingState,
 } from './QuestionGradingState';
 
 export type RubricControlsProps = {
 	gradingState: IQuestionGradingState;
-	isSubmitting: boolean;
+	canGrade: boolean;
 
 	checkRubricItemCanToggle(rubricItem: DiffRubricItem): boolean;
 	toggleRubricItemSelection(rubricItem: DiffRubricItem): void;
@@ -19,7 +19,7 @@ export type RubricControlsProps = {
 export default function RubricControls(props: RubricControlsProps) {
 	const {
 		gradingState,
-		isSubmitting,
+		canGrade,
 		checkRubricItemCanToggle,
 		toggleRubricItemSelection,
 		handleCommentsChange,
@@ -35,7 +35,7 @@ export default function RubricControls(props: RubricControlsProps) {
 								key={rubricItem.id}
 								rubricItem={rubricItem}
 								isSelected={!!gradingState.selectedRubricItems?.[rubricItem.id]}
-								canToggle={!isSubmitting && checkRubricItemCanToggle(rubricItem)}
+								canToggle={canGrade && checkRubricItemCanToggle(rubricItem)}
 								toggleSelect={() => toggleRubricItemSelection(rubricItem)}
 							/>
 						);
@@ -48,7 +48,7 @@ export default function RubricControls(props: RubricControlsProps) {
 					className="p-1 font-[inherit] text-inherit"
 					value={gradingState.comments}
 					onChange={handleCommentsChange}
-					disabled={isSubmitting}
+					disabled={!canGrade}
 				/>
 			</div>
 		</div>
@@ -88,8 +88,7 @@ function RubricItemControls(props: RubricItemControlsProps) {
 	const upperItem = oldItem ?? newItem;
 	const lowerItem = newItem;
 	// Show diff IFF modified or removed
-	const showDiff =
-		status === RubricItemDiffStatus.modified || status === RubricItemDiffStatus.removed;
+	const showDiff = status === DiffDescriptor.modified || status === DiffDescriptor.removed;
 
 	return (
 		<div className="flex flex-col">

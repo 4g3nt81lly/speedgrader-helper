@@ -1,9 +1,5 @@
-import type { ISnackbarItem } from '~/types/snackbar';
-import type { SetOptional } from '~/types/utils';
-
 export const enum ContentEvent {
 	// Top-level events
-	pushSnackbarItem = 'sgh:push_snackbar_item',
 	refreshGrades = 'sgh:refresh_grades',
 	navigateSubmission = 'sgh:navigate_submission',
 
@@ -13,9 +9,6 @@ export const enum ContentEvent {
 }
 
 export type ContentEventPayload = {
-	[ContentEvent.pushSnackbarItem]: {
-		item: SetOptional<ISnackbarItem, 'id'>;
-	};
 	[ContentEvent.refreshGrades]: {};
 	[ContentEvent.navigateSubmission]: {
 		direction: 'prev' | 'next';
@@ -24,6 +17,7 @@ export type ContentEventPayload = {
 	[ContentEvent.beginSubmitFeedback]: {};
 	[ContentEvent.endSubmitFeedback]: {
 		success: boolean;
+		questionIds: Set<string>;
 	};
 };
 

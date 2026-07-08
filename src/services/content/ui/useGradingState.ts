@@ -1,16 +1,21 @@
-import { useLayoutEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { IQuestion } from '~/models/Question';
-import { addContentEventListener, ContentEvent } from '~/services/content/event';
 import {
-	addMessageListener,
+	addContentEventListener,
+	ContentEvent,
+	type ContentEventPayload,
+} from '~/services/content/event';
+import {
+	addCommandHandler,
 	BackgroundCommand,
 	ContentCommand,
 	sendMessageToBackground,
 	type ICommandMessage,
 } from '~/shared/message';
-import { pushSnackbarItem } from '~/shared/utils';
+import { isDecimalEqual, isDecimalWithinRange } from '~/shared/utils';
 import type { Nullable } from '~/types/utils';
-import globals from '../global';
+import gradingContext from '../GradingContext';
+import { useAppSettings, useFeedbackSubmitState } from '../hooks';
 import Selectors from '../selectors';
 import type { GradingBoxProps } from './GradingBox';
 import {
@@ -18,6 +23,7 @@ import {
 	type DiffRubricItem,
 	type IQuestionGradingState,
 } from './QuestionGradingState';
+import { postSnackbarItem } from './Snackbar';
 
 export default function useGradingState(props: GradingBoxProps) {
 	const {
@@ -29,134 +35,155 @@ export default function useGradingState(props: GradingBoxProps) {
 		questionContainer,
 		pointsInput,
 		commentsTextarea,
-
-		iframeWindow,
-
-		appSettings,
 	} = props;
+	const submissionWindow = gradingContext.submissionWindow!;
+
+	const appSettings = useAppSettings();
 
 	const [question, setQuestion] = useState(initialQuestion);
 
-	const [savedFeedback, setSavedFeedback] = useState(initialFeedback);
-	const defaultState = useMemo(
-		() =>
-			QuestionGradingState.create(question, savedFeedback, pointsInput, commentsTextarea),
-		[question, savedFeedback]
+	const [sgState, setSGState] = useState(() =>
+		QuestionGradingState.createSGState(
+			{
+				points: pointsInput.value.trim(),
+				comments: commentsTextarea.textContent!.trim(),
+			},
+			initialQuestion
+		)
 	);
 
-	const [state, setState] = useState(defaultState);
-	const stateRef = useRef(defaultState);
+	/** Most-recent feedback object submitted and saved to local storage */
+	const [savedFeedback, setSavedFeedback] = useState(initialFeedback);
+	// Object of the current UI state
+	const [state, setState] = useState<Nullable<IQuestionGradingState>>(() =>
+		QuestionGradingState.create(question, savedFeedback, sgState)
+	);
 
-	const [isVisible, setIsVisible] = useState(
+	// Transient UI states
+	const [manualPoints, setManualPoints] = useState('');
+	const [isContainerVisible, setIsContainerVisible] = useState(
 		!initialQuiz.focusMode || initialQuestion.isFocused
 	);
-	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [isRegrading, setIsRegrading] = useState(false);
+	const isSubmitting = useFeedbackSubmitState();
+
+	const { current: stateRef } = useRef({
+		gradingState: state,
+		savedFeedback,
+		sgState,
+		isRegrading,
+	});
 
 	function updateState(
-		state:
-			| IQuestionGradingState
-			| ((oldState: IQuestionGradingState) => IQuestionGradingState)
+		newState: Nullable<IQuestionGradingState>,
+		updateSG: boolean = true
 	) {
-		setState((oldState) => {
-			const newState = typeof state === 'function' ? state(oldState) : state;
+		if (updateSG) {
+			const defaultPoints = stateRef.isRegrading ? '' : (stateRef.sgState.points ?? '');
+			const defaultComments = stateRef.isRegrading ? '' : stateRef.sgState.comments;
 
-			updatePointsInput(pointsInput, newState.points ?? newState.manualPoints);
+			updatePointsInput(pointsInput, newState?.points ?? defaultPoints);
 			updateCommentsTextarea(
 				commentsTextarea,
-				QuestionGradingState.getGradingComments(newState)
+				newState ? QuestionGradingState.getComments(newState) : defaultComments
 			);
-
-			stateRef.current = newState;
-			return newState;
-		});
+		}
+		stateRef.gradingState = newState;
+		setState(newState);
 	}
 
 	function rubricItemCanToggle(rubricItem: DiffRubricItem) {
+		if (isSubmitting || !state) return false;
 		return QuestionGradingState.checkRubricItemCanToggle(state, question, rubricItem);
 	}
 
 	function toggleSelectRubricItem(rubricItem: DiffRubricItem) {
-		if (isSubmitting || state.invalidError) return;
+		if (isSubmitting || !state?.isGradable) return;
+		updateState(
+			QuestionGradingState.toggleSelectRubricItem(state, sgState, question, rubricItem)
+		);
+
+		gradingContext.lastGradedQuestionId = initialQuestion.id;
+	}
+
+	function handleCommentsChange(event: React.ChangeEvent<HTMLTextAreaElement>) {
+		if (isSubmitting || !state?.isGradable) return;
+		updateState(QuestionGradingState.updateComments(state, sgState, event.target.value));
+
+		gradingContext.lastGradedQuestionId = initialQuestion.id;
+	}
+
+	function handleNewManualPointsChange(event: React.ChangeEvent<HTMLInputElement>) {
+		setManualPoints(event.target.value);
+
+		gradingContext.lastGradedQuestionId = initialQuestion.id;
+	}
+
+	function applyManualPoints() {
+		if (isSubmitting || !state?.isGradable) return;
 		if (
-			state.manualPoints !== null &&
-			!confirm('Apply rubric item? This will discard manual points override!')
+			!manualPoints ||
+			!isFinite(Number(manualPoints)) ||
+			!isDecimalWithinRange(manualPoints, 0, question.points)
+		)
+			return;
+		if (
+			state.selectedRubricItems &&
+			!confirm('Apply manual points? This will discard selected rubric items!')
 		)
 			return;
 
-		updateState(
-			QuestionGradingState.toggleSelectRubricItem(
-				state,
-				defaultState,
-				question,
-				rubricItem
-			)
-		);
-	}
+		updateState(QuestionGradingState.applyManualPoints(state, sgState, manualPoints));
 
-	function handleCommentsChange(event: ChangeEvent<HTMLTextAreaElement>) {
-		if (isSubmitting) return;
-		const comments = event.target.value;
-		updateState(QuestionGradingState.updateComments(state, defaultState, comments));
-	}
-
-	function handleManualPointsChange(event: ChangeEvent<HTMLInputElement>) {
-		if (isSubmitting || state.invalidError) return;
-
-		// If no feedback, apply manual points immediately
-		// If manual points override, update its value
-		// Otherwise selected rubric items present, confirm manual points override
-		const manualPoints = event.target.value.trim();
-		if (!manualPoints) {
-			return updateState({ ...defaultState, comments: state.comments });
-		}
-		if (
-			!state.selectedRubricItems ||
-			confirm('Apply manual points? This will discard selected rubric items!')
-		) {
-			updateState(
-				QuestionGradingState.applyManualPoints(state, defaultState, manualPoints)
-			);
-		}
+		gradingContext.lastGradedQuestionId = initialQuestion.id;
 	}
 
 	function handleRegrade() {
-		if (isSubmitting) return;
+		if (isSubmitting || !state) return;
 		// Clear current feedback state
 		if (
-			state.invalidError ||
+			!state.isGradable ||
 			confirm(
 				'Grade this question from scratch? This will not delete feedback already submitted and saved.'
 			)
 		) {
-			updateState(
-				QuestionGradingState.create(question, null, pointsInput, commentsTextarea)
-			);
+			setRegradeMode(true);
+
+			updateState(QuestionGradingState.create(question, null, sgState), false);
+			updatePointsInput(pointsInput, '');
+			updateCommentsTextarea(commentsTextarea, '');
+
+			gradingContext.lastGradedQuestionId = initialQuestion.id;
 		}
 	}
 
-	function handleReset() {
-		if (isSubmitting || !state.isDirty) return;
-		// Reset to default (saved) state
-		if (
-			state.invalidError ||
-			confirm(
-				'Reset to last-saved feedback? This has no effect if no changes were made since last save.'
-			)
-		) {
-			updateState(defaultState);
-		}
+	function reset(prompt: boolean = true) {
+		if (isSubmitting || !state?.isDirty || !state.isGradable) return;
+		if (prompt && !confirm('Reset to last-saved feedback?')) return;
+
+		const lastSavedState = QuestionGradingState.create(question, savedFeedback, sgState);
+		updateState(lastSavedState, false);
+		restoreSGState();
+		setRegradeMode(false);
+
+		gradingContext.lastGradedQuestionId = initialQuestion.id;
 	}
 
 	function handleSubmit() {
-		if (isSubmitting || !state.isDirty) return;
-		setIsSubmitting(true);
-
-		globals.submitFeedback!();
+		if (isSubmitting || !state?.isDirty || !state.isGradable) return;
+		gradingContext.lastGradedQuestionId = initialQuestion.id;
+		gradingContext.submitFeedback();
 	}
 
-	async function saveQuestionFeedback() {
+	const setRegradeMode = useCallback((regrade: boolean) => {
+		if (stateRef.isRegrading === regrade) return;
+		setIsRegrading(regrade);
+		stateRef.isRegrading = regrade;
+	}, []);
+
+	const saveQuestionFeedback = useCallback(async () => {
 		const newSavedFeedback = QuestionGradingState.toPersistentState(
-			stateRef.current,
+			stateRef.gradingState,
 			initialQuestion.id
 		);
 		try {
@@ -171,104 +198,168 @@ export default function useGradingState(props: GradingBoxProps) {
 				},
 			});
 			setSavedFeedback(newSavedFeedback);
-			updateState(QuestionGradingState.markAsClean(stateRef.current));
+			stateRef.savedFeedback = newSavedFeedback;
+
+			return true;
 		} catch (error) {
 			console.error(
 				'Failed to save question feedback:',
 				error instanceof Error ? error.message : 'Unknown error'
 			);
-			pushSnackbarItem(
-				{
-					title: 'Error: Save',
-					message: 'Unable to save submitted feedback.',
-					type: 'warning',
-					timeoutMs: 3000,
-				},
-				'iframe'
-			);
+			postSnackbarItem({
+				title: 'Error: Save',
+				message: 'Unable to save submitted feedback.',
+				type: 'warning',
+				timeoutMs: 3000,
+			});
+			return false;
 		}
-	}
+	}, []);
 
-	function updateGradingStates(newQuestion: IQuestion) {
-		updateState((oldState) => {
-			// Generate serializable feedback object for current state
-			const currentFeedback = QuestionGradingState.toPersistentState(
-				oldState,
-				newQuestion.id
-			);
-			// Update diff rubric items
-			return QuestionGradingState.create(
-				newQuestion,
-				currentFeedback,
-				pointsInput,
-				commentsTextarea
-			);
-		});
+	const handleSGPointsInputChange = useCallback(() => {
+		if (stateRef.gradingState) return;
 
-		// Update current question
-		setQuestion(newQuestion);
-	}
-
-	function updateFocusState(message: ICommandMessage<ContentCommand.updateFocusState>) {
+		const oldSGPoints = stateRef.sgState.points;
+		const { points: newSGPoints } = QuestionGradingState.createSGState(
+			{ points: pointsInput.value.trim(), comments: '' },
+			initialQuestion
+		);
 		if (
-			message.focusMode === 'select' &&
-			typeof message.target === 'object' &&
-			message.target[initialQuestion.id] === undefined
+			// 1. Both are invalid or empty (ungraded)
+			(!oldSGPoints && !newSGPoints) ||
+			// 2. Both are nonempty and equal
+			(oldSGPoints && newSGPoints && isDecimalEqual(oldSGPoints, newSGPoints))
 		) {
-			// Not the target, no need to update visibility
-			return;
+			gradingContext.dirtyQuestions.delete(initialQuestion.id);
+		} else {
+			gradingContext.dirtyQuestions.add(initialQuestion.id);
 		}
-		const isVisible =
-			message.focusMode === 'off' ||
-			(message.focusMode === 'on' && message.target[initialQuestion.id]) ||
-			(message.focusMode === 'select' &&
-				(message.target === 'all' ||
-					(message.target !== 'none' && message.target[initialQuestion.id]!)));
+		gradingContext.lastGradedQuestionId = initialQuestion.id;
+	}, []);
 
-		setQuestionContainerVisible(questionContainer, isVisible);
-		setIsVisible(isVisible);
-	}
+	const handleSGCommentsChange = useCallback(() => {
+		if (stateRef.gradingState) return;
+
+		const newComments = commentsTextarea.value;
+		commentsTextarea.textContent = newComments;
+
+		const oldSGComments = stateRef.sgState.comments;
+		const { comments: newSGComments } = QuestionGradingState.createSGState(
+			{ points: '', comments: newComments },
+			initialQuestion
+		);
+		if (newSGComments === oldSGComments) {
+			gradingContext.dirtyQuestions.delete(initialQuestion.id);
+		} else {
+			gradingContext.dirtyQuestions.add(initialQuestion.id);
+		}
+		gradingContext.lastGradedQuestionId = initialQuestion.id;
+	}, []);
+
+	const handleEndSubmitFeedback = useCallback(
+		async (payload: ContentEventPayload[ContentEvent.endSubmitFeedback]) => {
+			if (!payload.success) return;
+			const newSGState = QuestionGradingState.createSGState(
+				{ points: pointsInput.value, comments: commentsTextarea.textContent! },
+				initialQuestion
+			);
+			setSGState(newSGState);
+			stateRef.sgState = newSGState;
+
+			if (payload.questionIds.has(initialQuestion.id)) {
+				await saveQuestionFeedback();
+			}
+
+			updateState(
+				QuestionGradingState.create(initialQuestion, stateRef.savedFeedback, newSGState),
+				false
+			);
+			setRegradeMode(false);
+		},
+		[]
+	);
+
+	const restoreSGState = useCallback(() => {
+		updatePointsInput(pointsInput, stateRef.sgState.points ?? '');
+		updateCommentsTextarea(commentsTextarea, stateRef.sgState.comments);
+	}, []);
+
+	const reloadRubric = useCallback((newQuestion: IQuestion) => {
+		if (gradingContext.isFeedbackSubmitting) return;
+
+		const newState = QuestionGradingState.create(
+			newQuestion,
+			stateRef.savedFeedback,
+			stateRef.sgState
+		);
+		if (newState) {
+			pointsInput.readOnly = commentsTextarea.readOnly = true;
+		} else {
+			// No grading state, no grading box
+			pointsInput.readOnly = commentsTextarea.readOnly = false;
+		}
+		setQuestion(newQuestion);
+		updateState(newState, false);
+
+		restoreSGState();
+		setRegradeMode(false);
+	}, []);
+
+	const updateFocusState = useCallback(
+		(message: ICommandMessage<ContentCommand.updateFocusState>) => {
+			if (
+				message.focusMode === 'select' &&
+				typeof message.target === 'object' &&
+				message.target[initialQuestion.id] === undefined
+			) {
+				// Not the target, no need to update visibility
+				return;
+			}
+			const isVisible =
+				message.focusMode === 'off' ||
+				(message.focusMode === 'on' && message.target[initialQuestion.id]) ||
+				(message.focusMode === 'select' &&
+					(message.target === 'all' ||
+						(message.target !== 'none' && message.target[initialQuestion.id]!)));
+
+			if (!isVisible) {
+				reset(false);
+			}
+			setQuestionContainerVisible(questionContainer, isVisible);
+			setIsContainerVisible(isVisible);
+		},
+		[]
+	);
 
 	useLayoutEffect(() => {
+		if (state) {
+			pointsInput.readOnly = commentsTextarea.readOnly = true;
+		}
+		setQuestionContainerVisible(questionContainer, isContainerVisible);
 		if (
 			appSettings.scrollToLastGradedQuestion &&
-			globals.quizLastGradedQuestionId === initialQuestion.id
+			gradingContext.lastGradedQuestionId === initialQuestion.id
 		) {
 			questionContainer.scrollIntoView();
 		}
-		setQuestionContainerVisible(questionContainer, isVisible);
 
-		const formEventHandler = () => setIsSubmitting(true);
-		iframeWindow.addEventListener('formdata', formEventHandler, { capture: true });
+		pointsInput.addEventListener('input', handleSGPointsInputChange);
+		commentsTextarea.addEventListener('input', handleSGCommentsChange);
 
-		const removeBeginSubmitFeedbackHandler = addContentEventListener(
-			ContentEvent.beginSubmitFeedback,
-			() => setIsSubmitting(true),
-			iframeWindow
-		);
 		// Register event handler to save feedback to store upon successful form submission
 		const removeSaveQuestionFeedbackHandler = addContentEventListener(
 			ContentEvent.endSubmitFeedback,
-			async ({ success }) => {
-				if (success) {
-					await saveQuestionFeedback();
-				}
-				setIsSubmitting(false);
-			},
-			iframeWindow
+			handleEndSubmitFeedback,
+			submissionWindow
 		);
 
-		const removeMessageListener = addMessageListener(
-			async (
-				message:
-					| ICommandMessage<ContentCommand.reinjectRubric>
-					| ICommandMessage<ContentCommand.updateFocusState>
-			) => {
-				if (message.command === ContentCommand.reinjectRubric) {
+		const removeCommandListener = addCommandHandler(
+			[ContentCommand.reloadRubric, ContentCommand.updateFocusState],
+			async (message) => {
+				if (message.command === ContentCommand.reloadRubric) {
 					if (message.question.id !== initialQuestion.id) return;
-					updateGradingStates(message.question);
+					reloadRubric(message.question);
 				}
-
 				if (message.command === ContentCommand.updateFocusState) {
 					updateFocusState(message);
 				}
@@ -276,27 +367,43 @@ export default function useGradingState(props: GradingBoxProps) {
 		);
 
 		return () => {
-			removeBeginSubmitFeedbackHandler();
+			pointsInput.removeEventListener('input', handleSGPointsInputChange);
+			commentsTextarea.removeEventListener('input', handleSGCommentsChange);
 			removeSaveQuestionFeedbackHandler();
-			removeMessageListener();
+			removeCommandListener();
 		};
 	}, []);
+
+	useEffect(() => {
+		if (state?.isDirty) {
+			gradingContext.dirtyQuestions.add(initialQuestion.id);
+		} else {
+			gradingContext.dirtyQuestions.delete(initialQuestion.id);
+		}
+	}, [state]);
 
 	return {
 		question,
 		state,
-		savedFeedback,
+		sgState,
 
-		isVisible,
+		newManualPoints: manualPoints,
+		isContainerVisible,
+		isRegrading,
 		isSubmitting,
+		canGrade: Boolean(!isSubmitting && state?.isGradable),
+		canRegrade: !isSubmitting && !isRegrading,
+		canReset: Boolean(!isSubmitting && savedFeedback && state?.isGradable),
+		canSubmit: Boolean(!isSubmitting && state?.isGradable && state.isDirty),
 
 		rubricItemCanToggle,
 		toggleSelectRubricItem,
-		handleManualPointsChange,
+		handleNewManualPointsChange,
+		applyManualPoints,
 		handleCommentsChange,
 
 		handleRegrade,
-		handleReset,
+		handleReset: () => reset(),
 		handleSubmit,
 	};
 }
@@ -309,9 +416,8 @@ function setQuestionContainerVisible(questionContainer: HTMLElement, visible: bo
 	}
 }
 
-function updatePointsInput(pointsInput: HTMLInputElement, points: Nullable<string>) {
-	const pointsText = points ?? pointsInput.defaultValue;
-	if (pointsText === pointsInput.value) return;
+function updatePointsInput(pointsInput: HTMLInputElement, points: string) {
+	if (points === pointsInput.value) return;
 
 	// Simulate input element gaining focus
 	pointsInput.dispatchEvent(
@@ -338,12 +444,12 @@ function updatePointsInput(pointsInput: HTMLInputElement, points: Nullable<strin
 	// Update input value
 	Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(
 		pointsInput,
-		pointsText
+		points
 	);
 	// Simulate user inserting text into the input element
 	pointsInput.dispatchEvent(
 		new InputEvent('insertText', {
-			data: pointsText,
+			data: points,
 			inputType: 'insertText',
 			bubbles: true,
 		})
@@ -360,9 +466,7 @@ function updatePointsInput(pointsInput: HTMLInputElement, points: Nullable<strin
 	);
 }
 
-function updateCommentsTextarea(
-	commentsTextarea: HTMLTextAreaElement,
-	comments: Nullable<string>
-) {
-	commentsTextarea.value = comments ?? commentsTextarea.defaultValue;
+function updateCommentsTextarea(commentsTextarea: HTMLTextAreaElement, comments: string) {
+	commentsTextarea.value = comments;
+	commentsTextarea.textContent = comments;
 }

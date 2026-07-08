@@ -1,40 +1,71 @@
 import Decimal from 'decimal.js';
 import type { QuestionFeedback } from '~/models/Feedback';
 import type { IQuestion } from '~/models/Question';
-import type { GradingMode } from '~/models/Rubric';
-import type { IRubricItem } from '~/models/RubricItem';
+import type { GradingMode, IRubric } from '~/models/Rubric';
+import { type IRubricItem } from '~/models/RubricItem';
 import { isDecimalEqual, isDecimalPositive, isDecimalWithinRange } from '~/shared/utils';
 import type { Nullable } from '~/types/utils';
 
-const enum QuestionFeedbackMode {
-	Manual = 2,
-	Rubric = 3,
-}
+/**
+ * The question is gradable iff the controls are editable as is. If the question is not gradable,
+ * then it is displayed in read-only mode. There are three possible grading states.
+ * Case 1. [+] feedback, [-] rubric; the rubric was removed after last grading activity.
+ *   If SG state has diverged since last saved, the question is not gradable and an error message
+ *   is shown. Otherwise, the question remains gradable, with a message that indicates the removal
+ *   of the rubric.
+ * Case 2. [+] feedback, [+] rubric
+ *   Two separate calculations will be performed: 1) feedback points and 2) rubric points. The
+ *   feedback points will be used for state-diffing. Same as before, the question is gradable only
+ *   if SG state has not diverged. There are two possible sub-cases.
+ *   a) Rubric points == feedback points
+ *      If diverged, question is not gradable and an error message is shown, otherwise gradable and
+ *      a message is shown iff any selected items were "modified" or "removed".
+ *   b) Rubric points != feedback points: the rubric has been updated
+ *      Regardless of state-diff, question is not gradable and an error message is shown to
+ *      indicate this difference and whether the new rubric points is still valid.
+ * Case 3. [-] feedback, [+] rubric
+ *   The question is always gradable in this configuration. If already graded in SG, a note will be
+ *   displayed.
+ */
 
-export type IQuestionGradingState = {
+export type IQuestionGradingState = RawGradingState & {
+	gradingMode: GradingMode;
 	rubricItems: DiffRubricItem[];
 	isDirty: boolean;
-	invalidError: Nullable<string>;
-} & (
+	isGradable: boolean;
+	/** An object describing the diffs between current state and SpeedGrader state */
+	stateDiff: {
+		/** True if SG points has diverged from last saved: invalid, ungraded, or distinct */
+		points: boolean;
+		/** Last-saved comments if SG comments has diverged */
+		comments: Nullable<string>;
+	};
+	message: Nullable<string>;
+};
+
+type RawGradingState = { comments: string } & (
 	| {
-			mode: QuestionFeedbackMode.Manual;
-			gradingMode: Nullable<QuestionFeedback['gradingMode']>;
-			points: null;
 			selectedRubricItems: null;
-			manualPoints: Nullable<string>;
-			comments: string;
+			points: null;
 	  }
 	| {
-			mode: QuestionFeedbackMode.Rubric;
-			gradingMode: NonNullable<QuestionFeedback['gradingMode']>;
+			selectedRubricItems: null;
 			points: string;
+	  }
+	| {
 			selectedRubricItems: Record<IRubricItem['id'], true>;
-			manualPoints: null;
-			comments: string;
+			points: string;
 	  }
 );
 
-export const enum RubricItemDiffStatus {
+export type SGFeedbackState = {
+	/** Points value in SpeedGrader: empty if ungraded, nonempty if graded, `null` if invalid */
+	points: Nullable<string>;
+	/** Comments value in SpeedGrader */
+	comments: string;
+};
+
+export const enum DiffDescriptor {
 	noChange = 0,
 	new = 1,
 	modified = 2,
@@ -43,117 +74,149 @@ export const enum RubricItemDiffStatus {
 
 export type DiffRubricItem = { id: IRubricItem['id'] } & (
 	| {
-			status: RubricItemDiffStatus.noChange;
+			status: DiffDescriptor.noChange;
 			new: IRubricItem;
 			old: IRubricItem;
 	  }
 	| {
-			status: RubricItemDiffStatus.new;
+			status: DiffDescriptor.new;
 			new: IRubricItem;
 			old: null;
 	  }
 	| {
-			status: RubricItemDiffStatus.modified;
+			status: DiffDescriptor.modified;
 			new: IRubricItem;
 			old: IRubricItem;
 	  }
 	| {
-			status: RubricItemDiffStatus.removed;
+			status: DiffDescriptor.removed;
 			new: null;
 			old: IRubricItem;
 	  }
 );
 
 export class QuestionGradingState {
-	public static create(
-		question: IQuestion,
-		feedback: Nullable<QuestionFeedback>,
-		pointsInput: HTMLInputElement,
-		commentsTextarea: HTMLTextAreaElement
-	): IQuestionGradingState {
-		const rubricItems = this.generateDiffRubricItems(question.rubric, feedback);
-		if (!feedback) {
-			// No saved feedback but question might already be graded
-			const manualPoints = pointsInput.value.trim();
-			return {
-				mode: QuestionFeedbackMode.Manual,
-				gradingMode: question.rubric?.gradingMode ?? null,
-				points: null,
-				selectedRubricItems: null,
-				manualPoints:
-					manualPoints && isFinite(Number(manualPoints)) ? manualPoints : null,
-				comments: commentsTextarea.textContent.trim(),
-				rubricItems,
-				isDirty: false,
-				invalidError: null,
-			};
-		}
-		let invalidError: Nullable<string> = null;
-
-		const gradingMode = question.rubric?.gradingMode ?? feedback.gradingMode;
-		if (feedback.manualPoints !== null) {
-			// Feedback contains manual points override
-			if (!isDecimalWithinRange(feedback.manualPoints, 0, question.points)) {
-				invalidError = `Saved manual points not within valid range [0, ${question.points}]`;
-			}
-			return {
-				mode: QuestionFeedbackMode.Manual,
-				gradingMode,
-				points: null,
-				selectedRubricItems: null,
-				manualPoints: feedback.manualPoints,
-				comments: feedback.comments,
-				rubricItems,
-				isDirty: false,
-				invalidError,
-			};
-		}
-		if (feedback.rubricItems === null) {
-			// Feedback contains comments only
-			return {
-				mode: QuestionFeedbackMode.Manual,
-				gradingMode,
-				points: null,
-				selectedRubricItems: null,
-				manualPoints: null,
-				comments: feedback.comments,
-				rubricItems,
-				isDirty: false,
-				invalidError,
-			};
-		}
-		// Rubric items were selected, calculate total points using feedback grading mode
-		let points = Decimal(this.getInitialPoints(question.points, feedback.gradingMode));
-		const selectedRubricItems: Record<IRubricItem['id'], true> = {};
-		for (const selectedRubricItem of feedback.rubricItems) {
-			// If a rubric item was modified, use the new points from question.rubric, if exists
-			// Otherwise, use the old points
-			const itemPoints =
-				question.rubric?.items.find(
-					(rubricItem) => rubricItem.id === selectedRubricItem.id
-				)?.points ?? selectedRubricItem.points;
-			points = points.add(itemPoints);
-			selectedRubricItems[selectedRubricItem.id] = true;
-		}
-		if (!isDecimalWithinRange(points, 0, question.points)) {
-			invalidError = `New points not within valid range [0, ${question.points}]`;
+	public static createSGState(
+		rawState: { points: string; comments: string },
+		question: Pick<IQuestion, 'points'>
+	): SGFeedbackState {
+		let sgPoints: Nullable<string> = rawState.points;
+		if (
+			sgPoints &&
+			!(isFinite(Number(sgPoints)) && isDecimalWithinRange(sgPoints, 0, question.points))
+		) {
+			sgPoints = null;
 		}
 		return {
-			mode: QuestionFeedbackMode.Rubric,
-			// Rubric item interactions will prefer new rubric grading mode
-			gradingMode: feedback.gradingMode,
-			points: points.toString(),
-			selectedRubricItems,
-			manualPoints: null,
-			comments: feedback.comments,
-			rubricItems,
-			isDirty: false,
-			invalidError,
+			points: sgPoints,
+			comments: rawState.comments,
 		};
 	}
 
-	public static generateDiffRubricItems(
-		rubric: IQuestion['rubric'],
+	public static create(
+		question: IQuestion,
+		feedback: Nullable<QuestionFeedback>,
+		sgState: SGFeedbackState
+	): Nullable<IQuestionGradingState> {
+		const rubricItems = this.getDiffRubricItems(question.rubric, feedback);
+		if (rubricItems.length === 0) {
+			return null;
+		}
+		if (!feedback) {
+			// Case 3, question rubric must be present
+			const message = sgState.points
+				? 'This question has already been graded.'
+				: sgState.points === null
+					? 'Points awarded in SpeedGrader is not valid.'
+					: null;
+			const state: IQuestionGradingState = {
+				selectedRubricItems: null,
+				comments: '',
+				points: null,
+				gradingMode: question.rubric!.gradingMode,
+				rubricItems,
+				isDirty: false,
+				isGradable: true,
+				stateDiff: { points: false, comments: null },
+				message,
+			};
+			state.isDirty = this.isDirty(state, sgState);
+			return state;
+		}
+		// Feedback object exists
+		const comments = feedback.comments;
+		const selectedRubricItems: IQuestionGradingState['selectedRubricItems'] = {};
+		// Calculate original points using feedback object
+		let feedbackPoints = Decimal(
+			this.getInitialPoints(question.points, feedback.gradingMode)
+		);
+		// Calculate current points using current rubric object, if any
+		let rubricPoints: Nullable<Decimal> = null;
+		if (question.rubric) {
+			rubricPoints = Decimal(
+				this.getInitialPoints(question.points, question.rubric.gradingMode)
+			);
+		}
+		for (const selectedRubricItem of feedback.rubricItems ?? []) {
+			selectedRubricItems[selectedRubricItem.id] = true;
+			feedbackPoints = feedbackPoints.add(selectedRubricItem.points);
+
+			if (rubricPoints === null) continue;
+			const currentItem = question.rubric!.items.find(
+				(item) => item.id === selectedRubricItem.id
+			);
+			// Selected rubric item was removed, ignore as if it was not selected
+			if (!currentItem) continue;
+			rubricPoints = rubricPoints.add(currentItem.points);
+		}
+		const oldPoints = feedbackPoints.toString();
+
+		const oldComments = this.getFeedbackComments(feedback);
+		const stateDiff: IQuestionGradingState['stateDiff'] = {
+			points: !sgState.points || !isDecimalEqual(oldPoints, sgState.points),
+			comments: sgState.comments === oldComments ? null : oldComments,
+		};
+		const state: IQuestionGradingState = {
+			selectedRubricItems,
+			points: oldPoints,
+			comments,
+			gradingMode: feedback.gradingMode,
+			rubricItems,
+			isDirty: false,
+			isGradable: !stateDiff.points && stateDiff.comments === null,
+			stateDiff,
+			message: null,
+		};
+		state.isDirty = this.isDirty(state, sgState);
+		if (rubricPoints === null) {
+			// Case 1
+			state.message = 'The rubric has been removed since last graded. Please review.';
+			return state;
+		}
+		// Case 2
+		const newPoints = rubricPoints.toString();
+		if (isDecimalEqual(feedbackPoints, rubricPoints)) {
+			// Case 2a
+			state.message = rubricItems.some(
+				({ status }) =>
+					status === DiffDescriptor.modified || status === DiffDescriptor.removed
+			)
+				? 'The rubric has been updated since last graded.'
+				: null;
+			return state;
+		}
+		// Case 2b
+		const newPointsIsValid = isDecimalWithinRange(rubricPoints, 0, question.points);
+		state.isGradable = state.isDirty = false;
+		// If points already diverged, do not show the message to avoid overwhelming the user
+		if (!stateDiff.points) {
+			state.message = `The rubric has been updated since last graded: old rubric awarded "${oldPoints}" points but new rubric awards "${newPoints}" points${newPointsIsValid ? '' : ' (which is invalid)'}. Please consider regrading this question.`;
+		}
+		return state;
+	}
+
+	public static getDiffRubricItems(
+		rubric: Nullable<Pick<IRubric, 'items'>>,
 		feedback: Nullable<QuestionFeedback>
 	): DiffRubricItem[] {
 		const diffItems: DiffRubricItem[] = [];
@@ -169,9 +232,7 @@ export class QuestionGradingState {
 					rubricItem.points !== selectedRubricItem.points;
 				diffItems.push({
 					id: rubricItem.id,
-					status: isModified
-						? RubricItemDiffStatus.modified
-						: RubricItemDiffStatus.noChange,
+					status: isModified ? DiffDescriptor.modified : DiffDescriptor.noChange,
 					new: rubricItem,
 					old: selectedRubricItem,
 				});
@@ -180,21 +241,18 @@ export class QuestionGradingState {
 				// Selected rubric item was removed
 				diffItems.push({
 					id: selectedRubricItem.id,
-					status: RubricItemDiffStatus.removed,
+					status: DiffDescriptor.removed,
 					new: null,
 					old: selectedRubricItem,
 				});
 			}
 		}
-		if (!rubric?.items) {
-			return diffItems;
-		}
 		// Add new (added and unselected) rubric items
-		for (const newRubricItem of rubric.items) {
+		for (const newRubricItem of rubric?.items ?? []) {
 			if (selectedRubricItemIds.has(newRubricItem.id)) continue;
 			diffItems.push({
 				id: newRubricItem.id,
-				status: RubricItemDiffStatus.new,
+				status: DiffDescriptor.new,
 				new: newRubricItem,
 				old: null,
 			});
@@ -209,37 +267,31 @@ export class QuestionGradingState {
 		return gradingMode === 'negative' ? maxPoints : '0';
 	}
 
-	public static isDirty(
-		state: IQuestionGradingState,
-		defaultState: IQuestionGradingState
-	) {
-		if (state.invalidError) {
-			// Invalid state is considered NOT dirty
+	/**
+	 * Returns whether the given state object has saveable contents (i.e. "dirty"), with reference
+	 * to the last-saved SpeedGrader state.
+	 *
+	 * @param state The current UI state.
+	 * @param lastSavedState The last-saved UI state.
+	 * @returns A boolean indicating whether the given state object is dirty relative to the last-
+	 * 			saved SpeedGrader state.
+	 */
+	private static isDirty(state: IQuestionGradingState, sgState: SGFeedbackState) {
+		if (!state.isGradable) {
+			// Invalid state is not comparable and is considered NOT dirty
 			return false;
 		}
-		if (state.mode !== defaultState.mode) {
+		const points = state.points;
+		const { points: sgPoints, comments: sgComments } = sgState;
+		// Points is unchanged if
+		// 1. points is null (empty)
+		// 2. Points and SG points are non-empty and equal
+		const pointsUnchanged =
+			points === null || (sgPoints && isDecimalEqual(points, sgPoints));
+		if (!pointsUnchanged) {
 			return true;
 		}
-		if (state.mode === QuestionFeedbackMode.Manual) {
-			return (
-				typeof state.manualPoints !== typeof defaultState.manualPoints ||
-				(state.manualPoints !== null &&
-					!isDecimalEqual(state.manualPoints, defaultState.manualPoints!)) ||
-				state.comments !== defaultState.comments
-			);
-		}
-		const selectedRubricItemIds = Object.keys(state.selectedRubricItems);
-		if (
-			selectedRubricItemIds.length !== Object(defaultState.selectedRubricItems!).length
-		) {
-			return true;
-		}
-		for (const selectedRubricItemId of selectedRubricItemIds) {
-			if (!defaultState.selectedRubricItems![selectedRubricItemId]) {
-				return true;
-			}
-		}
-		return false;
+		return this.getComments(state) !== sgComments;
 	}
 
 	public static checkRubricItemCanToggle(
@@ -247,192 +299,160 @@ export class QuestionGradingState {
 		question: Pick<IQuestion, 'points'>,
 		rubricItem: DiffRubricItem
 	) {
-		if (state.invalidError || state.gradingMode === null) {
+		if (!state.isGradable) {
 			// Prevent state change in invalid state
 			return false;
+		}
+		if (!state.selectedRubricItems) {
+			// No selected rubric items yet, always toggle-able since no rubric item can have points
+			// with magnitude greater than the max points anyways
+			return true;
 		}
 		// Most-recent version of rubric item
 		const item = rubricItem.new ?? rubricItem.old;
 
-		const currentPoints = Decimal(
-			state.points ?? this.getInitialPoints(question.points, state.gradingMode)
-		);
-		let newPoints: Decimal;
-		if (state.selectedRubricItems?.[item.id]) {
+		let newPoints = Decimal(state.points);
+		if (state.selectedRubricItems[item.id]) {
 			// Rubric item already selected, test subtraction
-			newPoints = currentPoints.sub(item.points);
+			newPoints = newPoints.sub(item.points);
 		} else {
 			// Either rubric item not selected or has manual points override or no feedback
 			// Test addition
-			newPoints = currentPoints.add(item.points);
+			newPoints = newPoints.add(item.points);
 		}
 		return isDecimalWithinRange(newPoints, 0, question.points);
 	}
 
 	public static toggleSelectRubricItem(
 		state: IQuestionGradingState,
-		defaultState: IQuestionGradingState,
+		sgState: SGFeedbackState,
 		question: Pick<IQuestion, 'points'>,
 		rubricItem: DiffRubricItem
 	): IQuestionGradingState {
-		if (state.invalidError || state.gradingMode === null) {
+		if (!state.isGradable) {
 			// Prevent state change in invalid state
 			return state;
 		}
 		// Most-recent version of rubric item
 		const item = rubricItem.new ?? rubricItem.old;
 
-		let newState: IQuestionGradingState;
-		if (state.mode === QuestionFeedbackMode.Manual) {
-			// Current state has manual points override or no feedback, select item and initialize points
-			const newPoints = Decimal.add(
-				this.getInitialPoints(question.points, state.gradingMode),
-				item.points
-			);
-			newState = {
-				mode: QuestionFeedbackMode.Rubric,
-				gradingMode: state.gradingMode,
-				points: newPoints.toString(),
-				selectedRubricItems: { [item.id]: true },
-				manualPoints: null,
-				comments: state.comments,
-				rubricItems: state.rubricItems,
-				isDirty: true,
-				invalidError: null,
-			};
-		} else if (state.selectedRubricItems[item.id]) {
-			// Selected rubric items, toggle selection and update state
-			// Deselect rubric item and subtract from total points
-			const newPoints = Decimal.sub(state.points, item.points);
-			const { [item.id]: _, ...remainingSelectedRubricItems } = state.selectedRubricItems;
-			if (Object.keys(remainingSelectedRubricItems).length === 0) {
-				// All selected rubric items cleared, reset to no-feedback state
-				newState = {
-					mode: QuestionFeedbackMode.Manual,
-					gradingMode: state.gradingMode,
-					points: null,
-					selectedRubricItems: null,
-					manualPoints: null,
-					comments: state.comments,
-					rubricItems: state.rubricItems,
-					isDirty: true,
-					invalidError: null,
-				};
-			} else {
-				newState = {
-					mode: QuestionFeedbackMode.Rubric,
-					gradingMode: state.gradingMode,
-					points: newPoints.toString(),
-					selectedRubricItems: remainingSelectedRubricItems,
-					manualPoints: null,
-					comments: state.comments,
-					rubricItems: state.rubricItems,
-					isDirty: true,
-					invalidError: null,
-				};
-			}
+		const newState: IQuestionGradingState = { ...state };
+		// Selected rubric items, toggle selection and update state
+		const newSelectedRubricItems = { ...state.selectedRubricItems };
+		let newPoints = Decimal(
+			state.selectedRubricItems
+				? state.points
+				: this.getInitialPoints(question.points, state.gradingMode)
+		);
+		if (newSelectedRubricItems[item.id]) {
+			newPoints = newPoints.sub(item.points);
+			delete newSelectedRubricItems[item.id];
 		} else {
-			// Select rubric item and add to total points
-			const newPoints = Decimal.add(state.points, item.points);
-			newState = {
-				mode: QuestionFeedbackMode.Rubric,
-				gradingMode: state.gradingMode,
-				points: newPoints.toString(),
-				selectedRubricItems: { ...state.selectedRubricItems, [item.id]: true },
-				manualPoints: null,
-				comments: state.comments,
-				rubricItems: state.rubricItems,
-				isDirty: true,
-				invalidError: null,
-			};
+			newPoints = newPoints.add(item.points);
+			newSelectedRubricItems[item.id] = true;
 		}
-		newState.isDirty = this.isDirty(newState, defaultState);
+		if (Object.keys(newSelectedRubricItems).length > 0) {
+			newState.selectedRubricItems = newSelectedRubricItems;
+			newState.points = newPoints.toString();
+		} else {
+			// No rubric items selected, reset to no-feedback state
+			newState.selectedRubricItems = null;
+			newState.points = null;
+		}
+		newState.isDirty = this.isDirty(newState, sgState);
 		return newState;
 	}
 
 	public static applyManualPoints(
 		state: IQuestionGradingState,
-		defaultState: IQuestionGradingState,
+		sgState: SGFeedbackState,
 		manualPoints: string
-	): IQuestionGradingState {
-		if (state.invalidError) {
-			// Invalid state
+	) {
+		if (!state.isGradable) {
 			return state;
 		}
 		const newState: IQuestionGradingState = {
-			mode: QuestionFeedbackMode.Manual,
-			gradingMode: state.gradingMode,
-			points: null,
+			...state,
 			selectedRubricItems: null,
-			manualPoints,
-			comments: state.comments,
-			rubricItems: state.rubricItems,
-			isDirty: true,
-			invalidError: null,
+			points: manualPoints,
 		};
-		newState.isDirty = this.isDirty(newState, defaultState);
+		newState.isDirty = this.isDirty(newState, sgState);
 		return newState;
 	}
 
 	public static updateComments(
 		state: IQuestionGradingState,
-		defaultState: IQuestionGradingState,
-		comments: string
-	): IQuestionGradingState {
-		if (comments === state.comments) {
+		sgState: SGFeedbackState,
+		newComments: string
+	) {
+		if (!state.isGradable || newComments === state.comments) {
 			return state;
 		}
-		const newState = { ...state, comments, isDirty: true };
-		newState.isDirty = this.isDirty(newState, defaultState);
+		const newState: IQuestionGradingState = { ...state, comments: newComments };
+		newState.isDirty = this.isDirty(newState, sgState);
 		return newState;
 	}
 
-	public static getGradingComments(state: IQuestionGradingState) {
-		const userComments = state.comments.trim();
-		if (state.mode === QuestionFeedbackMode.Manual) {
-			return userComments;
+	private static getRubricComments(rubricItems: IRubricItem[]) {
+		if (rubricItems.length === 0) {
+			return '';
 		}
-		let comments = '';
-		for (const rubricItem of state.rubricItems) {
-			if (!state.selectedRubricItems[rubricItem.id]) continue;
-			const item = rubricItem.new ?? rubricItem.old;
-			comments += `(${isDecimalPositive(item.points) ? '+' : ''}${item.points}) ${item.description}\n`;
+		return rubricItems
+			.map(({ points, description }) => {
+				return `(${isDecimalPositive(points) ? '+' : ''}${points}) ${description}`;
+			})
+			.join('\n');
+	}
+
+	private static getFeedbackComments(
+		feedback: Pick<QuestionFeedback, 'rubricItems' | 'comments'>
+	) {
+		const rubricComments = this.getRubricComments(feedback.rubricItems);
+		if (!rubricComments) {
+			return feedback.comments;
 		}
-		if (userComments) {
-			comments += `\n${userComments}`;
+		if (!feedback.comments) {
+			return rubricComments;
 		}
-		return comments.trim();
+		return `${rubricComments}\n\n${feedback.comments}`;
+	}
+
+	public static getComments(
+		state: Pick<IQuestionGradingState, 'rubricItems' | 'selectedRubricItems' | 'comments'>
+	) {
+		if (!state.selectedRubricItems) {
+			return state.comments;
+		}
+		const rubricComments = this.getRubricComments(
+			state.rubricItems.flatMap((rubricItem) => {
+				if (!state.selectedRubricItems![rubricItem.id]) return [];
+				return rubricItem.new ?? rubricItem.old;
+			})
+		);
+		if (!rubricComments) {
+			return state.comments;
+		}
+		if (!state.comments) {
+			return rubricComments;
+		}
+		return `${rubricComments}\n\n${state.comments}`;
 	}
 
 	public static toPersistentState(
-		state: IQuestionGradingState,
+		state: Nullable<IQuestionGradingState>,
 		questionId: IQuestion['id']
 	): Nullable<QuestionFeedback> {
-		if (state.invalidError) {
+		if (!state) return null;
+		if (!state.isGradable) {
+			throw new Error('toPersistentState: non-gradable state');
+		}
+		if (state.selectedRubricItems === null) {
+			// No selected rubric items, nothing to save
 			return null;
 		}
-		if (
-			state.manualPoints === null &&
-			state.selectedRubricItems === null &&
-			!state.comments.trim()
-		) {
-			// No feedback provided, nothing to save
-			return null;
-		}
-		if (state.mode === QuestionFeedbackMode.Manual) {
-			return {
-				questionId,
-				gradingMode: null,
-				rubricItems: null,
-				manualPoints: state.manualPoints,
-				comments: state.comments,
-			};
-		}
-		// Rubric items selected
 		return {
 			questionId,
 			gradingMode: state.gradingMode,
-			manualPoints: null,
 			rubricItems: state.rubricItems.flatMap((rubricItem) => {
 				if (!state.selectedRubricItems[rubricItem.id]) {
 					return [];
@@ -441,12 +461,5 @@ export class QuestionGradingState {
 			}),
 			comments: state.comments,
 		};
-	}
-
-	public static markAsClean(state: IQuestionGradingState): IQuestionGradingState {
-		if (!state.isDirty) {
-			return state;
-		}
-		return { ...state, isDirty: false };
 	}
 }

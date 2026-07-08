@@ -45,7 +45,7 @@ export default function QuizDetailsView(props: QuizDetailsViewProps) {
 		});
 		dispatch(setQuiz(newQuiz));
 		sendMessageToTab(
-			{ command: ContentCommand.reinjectRubric, question: newQuestion },
+			{ command: ContentCommand.reloadRubric, question: newQuestion },
 			{ noThrowOnNoReceiver: true }
 		);
 	};

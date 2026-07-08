@@ -1,7 +1,8 @@
 import type { QuestionFeedback } from '~/models/Feedback';
 import type { IQuestion } from '~/models/Question';
 import type { IQuiz } from '~/models/Quiz';
-import type { QuizLoaderPayload, QuizLoaderType } from '~/services/content/QuizLoader';
+import type { QuizLoaderPayload } from '~/services/content/QuizLoader';
+import type { QuizLoaderType } from './modules';
 import type { ISnackbarItem } from '../types/snackbar';
 import type { SetOptional } from '../types/utils';
 import Constants from './constants';
@@ -22,7 +23,7 @@ export const enum ContentCommand {
 	pushSnackbarItem,
 	popSnackbarItems,
 
-	reinjectRubric,
+	reloadRubric,
 	updateFocusState,
 
 	reloadAppSettings,
@@ -86,7 +87,7 @@ type CommandMessagePayload = {
 		itemIds: ISnackbarItem['id'] | ISnackbarItem['id'][];
 	};
 
-	[ContentCommand.reinjectRubric]: {
+	[ContentCommand.reloadRubric]: {
 		question: IQuestion;
 	};
 	[ContentCommand.updateFocusState]:
@@ -108,12 +109,15 @@ type CommandMessagePayload = {
 
 export function addCommandHandler<C extends keyof CommandMessagePayload>(
 	command: C | C[],
-	handler: (message: ICommandMessage<C>, sender: chrome.runtime.MessageSender) => any
+	handler: (
+		message: C extends unknown ? ICommandMessage<C> : never,
+		sender: chrome.runtime.MessageSender
+	) => any
 ) {
 	const commands = Array.isArray(command) ? command : [command];
 	return addMessageListener<ICommandMessage<C>>((message, sender) => {
 		if (!commands.includes(message.command)) return;
-		return handler(message, sender);
+		return handler(message as unknown as any, sender);
 	});
 }
 

@@ -4,7 +4,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Button, CircularProgress, Typography } from '@mui/joy';
-import { quizLoaders, type QuizLoaderType } from '@services/content/QuizLoader';
+import { quizLoaders, type QuizLoaderType } from '~/shared/modules';
 import Decimal from 'decimal.js';
 import { useEffect, useMemo } from 'react';
 import QuestionListView from './QuestionListView';

@@ -1,30 +1,5 @@
 import Decimal from 'decimal.js';
-import { ContentCommand, sendMessageToTab } from '~/shared/message';
-import type { ISnackbarItem } from '~/types/snackbar';
-import type { Nullable, SetOptional } from '~/types/utils';
-import { ContentEvent, dispatchContentEvent } from '../services/content/event';
-
-/**
- * Shared utility functions
- */
-
-export function pushSnackbarItem(
-	item: SetOptional<ISnackbarItem, 'id'>,
-	sender: 'external' | 'toplevel' | 'iframe' = 'toplevel'
-) {
-	if (sender === 'external') {
-		sendMessageToTab(
-			{ command: ContentCommand.pushSnackbarItem, item },
-			{ noThrowOnNoReceiver: true }
-		);
-	} else {
-		dispatchContentEvent(
-			ContentEvent.pushSnackbarItem,
-			{ item },
-			sender === 'toplevel' ? window : window.parent
-		);
-	}
-}
+import type { Nullable } from '~/types/utils';
 
 export type QueryElementOptions = {
 	recursive?: boolean;

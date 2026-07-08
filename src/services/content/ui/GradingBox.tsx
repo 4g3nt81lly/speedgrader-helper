@@ -1,7 +1,7 @@
 import type { QuestionFeedback } from '~/models/Feedback';
 import type { IQuestion } from '~/models/Question';
 import type { IQuiz } from '~/models/Quiz';
-import type { AppSettings } from '~/shared/settings';
+import { isDecimalWithinRange } from '~/shared/utils';
 import type { Nullable } from '~/types/utils';
 import Selectors from '../selectors';
 import RubricControls from './RubricControls';
@@ -16,23 +16,25 @@ export type GradingBoxProps = {
 	questionContainer: HTMLElement;
 	pointsInput: HTMLInputElement;
 	commentsTextarea: HTMLTextAreaElement;
-
-	iframeWindow: Window;
-
-	appSettings: AppSettings;
 };
 
 export default function GradingBox(props: GradingBoxProps) {
-	const { initialFeedback } = props;
 	const {
 		question,
 		state,
-		savedFeedback,
-		isVisible,
+		sgState,
+		newManualPoints,
+		isContainerVisible,
+		isRegrading,
 		isSubmitting,
+		canGrade,
+		canRegrade,
+		canReset,
+		canSubmit,
 		rubricItemCanToggle,
 		toggleSelectRubricItem,
-		handleManualPointsChange,
+		handleNewManualPointsChange,
+		applyManualPoints,
 		handleCommentsChange,
 		handleRegrade,
 		handleReset,
@@ -40,23 +42,45 @@ export default function GradingBox(props: GradingBoxProps) {
 	} = useGradingState(props);
 
 	return (
-		isVisible && (
+		isContainerVisible &&
+		state && (
 			<div
 				className={`${Selectors.app.GRADING_BOX_CLASS} mt-8 flex flex-col gap-1.5 border-[0.75px] p-5`}
 			>
-				{state.invalidError && (
-					<div className="mb-2 bg-red-200 p-2 leading-snug">
-						❗️ Rubric has been updated and your{' '}
-						{initialFeedback === null
-							? 'tentative (not submitted) feedback is no longer valid. '
-							: 'most-recent submitted feedback is no longer valid.'}{' '}
-						For reference, the invalid feedback is kept below. Please regrade this question.
-					</div>
-				)}
+				<div className="flex flex-col gap-1">
+					{state.stateDiff.points && (
+						<div className="mb-2 bg-red-100 p-2 leading-tight">
+							❗️ Points diverged since last graded: awarded "{state.points!}" previously but is now{' '}
+							{sgState.points
+								? `"${sgState.points}"`
+								: sgState.points === null
+									? 'invalid'
+									: 'ungraded'}
+							.
+						</div>
+					)}
+					{state.stateDiff.comments !== null && (
+						<div className="mb-2 bg-red-100 p-2 leading-tight">
+							❗️ Comments diverged since last graded. Comments submitted and saved previously:
+							<blockquote className="text-sm text-gray-600">{state.stateDiff.comments}</blockquote>
+							{sgState.comments ? (
+								<>
+									Comments in SpeedGrader:
+									<blockquote className="text-sm text-gray-600">{sgState.comments}</blockquote>
+								</>
+							) : (
+								'But no comments in SpeedGrader.'
+							)}
+						</div>
+					)}
+					{!isRegrading && state.message && (
+						<div className="mb-2 bg-blue-100 p-2 leading-snug">{state.message}</div>
+					)}
+				</div>
 
 				<RubricControls
 					gradingState={state}
-					isSubmitting={isSubmitting}
+					canGrade={canGrade}
 					checkRubricItemCanToggle={rubricItemCanToggle}
 					toggleRubricItemSelection={toggleSelectRubricItem}
 					handleCommentsChange={handleCommentsChange}
@@ -71,20 +95,32 @@ export default function GradingBox(props: GradingBoxProps) {
 							<input
 								type="number"
 								className="h-full w-[45px] py-1 pr-1 pl-1.5"
-								value={state.manualPoints ?? ''}
-								onChange={handleManualPointsChange}
+								value={newManualPoints}
+								onChange={handleNewManualPointsChange}
 								max={question.points}
 								min="0"
 								step="0.5"
-								disabled={isSubmitting || !!state.invalidError}
+								disabled={!canGrade}
 							/>
+							<button
+								type="button"
+								className="ml-1 px-1.5 py-1"
+								disabled={
+									!canGrade ||
+									!newManualPoints ||
+									!isDecimalWithinRange(newManualPoints, 0, question.points)
+								}
+								onClick={applyManualPoints}
+							>
+								Apply
+							</button>
 						</label>
 
 						<div className="flex gap-2">
 							<button
 								type="button"
 								className="px-1.5 py-1"
-								disabled={isSubmitting}
+								disabled={!canRegrade}
 								onClick={handleRegrade}
 							>
 								Regrade
@@ -92,7 +128,7 @@ export default function GradingBox(props: GradingBoxProps) {
 							<button
 								type="button"
 								className="px-1.5 py-1"
-								disabled={isSubmitting || !savedFeedback}
+								disabled={!canReset}
 								onClick={handleReset}
 							>
 								Reset
@@ -105,7 +141,7 @@ export default function GradingBox(props: GradingBoxProps) {
 						<button
 							type="submit"
 							className="px-1.5 py-1"
-							disabled={isSubmitting || !state.isDirty || !!state.invalidError}
+							disabled={!canSubmit}
 							onClick={handleSubmit}
 						>
 							{isSubmitting ? 'Submitting...' : 'Submit'}

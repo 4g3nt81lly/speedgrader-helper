@@ -62,16 +62,18 @@ const quizzesSlice = createSlice({
 			});
 		},
 		clear(quizzes) {
+			const targetQuizIds: IQuiz['id'][] = [];
 			const targetQuizUrls: IQuiz['url'][] = [];
 
 			for (const id of Object.keys(quizzes)) {
+				targetQuizIds.push(id);
 				targetQuizUrls.push(quizzes[id]!.url);
 				delete quizzes[id];
 			}
 
 			sendMessageToBackground({
 				command: BackgroundCommand.removeQuizzesFromStore,
-				quizIds: Object.keys(quizzes),
+				quizIds: targetQuizIds,
 			}).then(() => {
 				reloadSpeedGraderPages(targetQuizUrls);
 				syncSidePanelStates();
