@@ -1,8 +1,11 @@
-import type { ExportedRubricJson } from '#schemas/ExportedRubricJson.schema';
+import type { ExportedRubricJson } from '#schemas/ExportedQuizJson.schema';
+import { isDecimalWithinRange } from '#shared/decimal';
 import type { SetOptional } from '#shared/types/utils';
+import Decimal from 'decimal.js';
 import { v4 as uuidv4 } from 'uuid';
 import type { IQuestion } from './Question';
 import Question from './Question';
+import type { IRubric } from './Rubric';
 
 export interface IQuiz {
 	id: string;
@@ -66,13 +69,35 @@ export default class Quiz {
 		});
 	}
 
+	public static fromExported(quiz: IQuiz, exported: ExportedRubricJson): IQuiz {
+		const rubricMap: Record<IQuestion['id'], IRubric> = Object.fromEntries(
+			exported.rubrics.map((rubric) => [rubric.question.id, rubric.rubric])
+		);
+		const newQuestions = quiz.questions.map((question) => {
+			const newRubric = rubricMap[question.id];
+			if (!newRubric || newRubric.items.length === 0) {
+				return question;
+			}
+			const invalidItem = newRubric.items.find(
+				(item) => !isDecimalWithinRange(Decimal.abs(item.points), 0, question.points)
+			);
+			if (invalidItem) {
+				throw new Error(
+					`Rubric item "${invalidItem.id}" has unexpected points "${invalidItem.points}"`
+				);
+			}
+			return { ...question, rubric: newRubric };
+		});
+		return { ...quiz, questions: newQuestions };
+	}
+
 	public static toExported(quiz: IQuiz): ExportedRubricJson {
 		return {
 			courseId: quiz.courseId,
 			assignmentId: quiz.assignmentId,
 			url: quiz.url,
 			rubrics: quiz.questions.flatMap((question) => {
-				if (!question.rubric) return [];
+				if (!question.rubric || question.rubric.items.length === 0) return [];
 				return {
 					question: { id: question.id },
 					rubric: {
@@ -86,11 +111,5 @@ export default class Quiz {
 				};
 			}),
 		};
-	}
-
-	public static getExportedObjectURL(quiz: IQuiz): string {
-		const data = this.toExported(quiz);
-		const blob = new Blob([JSON.stringify(data, null, 4)], { type: 'application/json' });
-		return URL.createObjectURL(blob);
 	}
 }

@@ -1,4 +1,4 @@
-import Quiz, { type IQuiz } from '#models/Quiz';
+import { type IQuiz } from '#models/Quiz';
 import Constants from '#shared/constants';
 import { useMainSelector, type MainPageDispatch } from '#sidepanel/pages/main/stores/main.store';
 import { removeQuizzes } from '#sidepanel/pages/main/stores/quizzes.slice';
@@ -22,12 +22,15 @@ import {
 } from '@mui/joy';
 import type { MouseEvent } from 'react';
 import { useDispatch } from 'react-redux';
+import useQuizIO from './hooks/useQuizIO';
 
 type QuizListViewProps = {};
 
 export default function QuizListView(props: QuizListViewProps) {
 	const dispatch = useDispatch<MainPageDispatch>();
 	const quizzesMap = useMainSelector('quizzes');
+
+	const quizIO = useQuizIO();
 
 	const quizzes = Object.values(quizzesMap);
 
@@ -50,11 +53,7 @@ export default function QuizListView(props: QuizListViewProps) {
 
 	function handleExportQuiz(event: MouseEvent<HTMLDivElement>, quiz: IQuiz) {
 		event.stopPropagation();
-		chrome.downloads.download({
-			url: Quiz.getExportedObjectURL(quiz),
-			filename: `${quiz.title}.json`,
-			saveAs: true,
-		});
+		quizIO.exportQuiz(quiz);
 	}
 
 	return quizzes.length > 0 ? (

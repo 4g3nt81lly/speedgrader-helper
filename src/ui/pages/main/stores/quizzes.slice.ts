@@ -30,18 +30,29 @@ const quizzesSlice = createSlice({
 				syncSidePanelStates();
 			});
 		},
-		set(quizzes, { payload: newQuiz }: PayloadAction<SetRequired<Partial<IQuiz>, 'id'>>) {
-			const quiz = quizzes[newQuiz.id];
-			if (!quiz) return;
-			quizzes[newQuiz.id] = {
-				...quiz,
-				...newQuiz,
-			};
+		set(
+			quizzes,
+			{
+				payload: { quiz, reload = false },
+			}: PayloadAction<{
+				quiz: SetRequired<Partial<IQuiz>, 'id'>;
+				reload?: boolean;
+			}>
+		) {
+			const oldQuiz = quizzes[quiz.id];
+			if (!oldQuiz) return;
+			const newQuiz = { ...oldQuiz, ...quiz };
+			quizzes[quiz.id] = newQuiz;
 
 			sendMessageToBackground({
 				command: BackgroundCommand.updateQuizInStore,
-				quiz: quizzes[newQuiz.id]!,
-			}).then(syncSidePanelStates);
+				quiz: newQuiz,
+			}).then(() => {
+				if (reload) {
+					reloadSpeedGraderPages(newQuiz.url);
+				}
+				syncSidePanelStates();
+			});
 		},
 		remove(quizzes, { payload: ids }: PayloadAction<IQuiz['id'] | IQuiz['id'][]>) {
 			const targetQuizIds = Array.isArray(ids) ? ids : [ids];

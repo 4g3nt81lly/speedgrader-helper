@@ -6,10 +6,13 @@ import { MainPageDispatch, useMainSelector } from '#sidepanel/pages/main/stores/
 import { setQuiz } from '#sidepanel/pages/main/stores/quizzes.slice';
 import { selectQuiz } from '#sidepanel/pages/main/stores/selection.slice';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import { Button, Checkbox, CircularProgress, Tooltip, Typography } from '@mui/joy';
+import DownloadIcon from '@mui/icons-material/Download';
+import UploadIcon from '@mui/icons-material/Upload';
+import { Button, Checkbox, CircularProgress, IconButton, Tooltip, Typography } from '@mui/joy';
 import { useEffect, useState, useTransition } from 'react';
 import { useDispatch } from 'react-redux';
 import QuestionListView from './QuestionListView';
+import useQuizIO from './hooks/useQuizIO';
 
 type QuizDetailsViewProps = {};
 
@@ -24,11 +27,11 @@ export default function QuizDetailsView(props: QuizDetailsViewProps) {
 
 	const quiz = quizzes[selectedQuizId!]!;
 
-	const navigateBack = () => {
+	function navigateBack() {
 		dispatch(selectQuiz(null));
-	};
+	}
 
-	const updateQuestion = (newQuestion: IQuestion) => {
+	function updateQuestion(newQuestion: IQuestion) {
 		const newQuiz = Quiz.updateQuestion(quiz, newQuestion.id, (oldQuestion) => {
 			if (quiz.focusMode && oldQuestion.isFocused !== newQuestion.isFocused) {
 				sendMessageToTab(
@@ -42,12 +45,12 @@ export default function QuizDetailsView(props: QuizDetailsViewProps) {
 			}
 			return newQuestion;
 		});
-		dispatch(setQuiz(newQuiz));
+		dispatch(setQuiz({ quiz: newQuiz }));
 		sendMessageToTab(
 			{ command: ContentCommand.reloadRubric, question: newQuestion },
 			{ noThrowOnNoReceiver: true }
 		);
-	};
+	}
 
 	useEffect(() => {
 		startTransition(() => setShowQuestions(true));
@@ -100,6 +103,8 @@ const enum FocusState {
 function ActionBar({ quiz }: ActionBarProps) {
 	const dispatch = useDispatch<MainPageDispatch>();
 
+	const quizIO = useQuizIO();
+
 	const focusedCount = quiz.questions.reduce((count, question) => {
 		return question.isFocused ? count + 1 : count;
 	}, 0);
@@ -112,10 +117,18 @@ function ActionBar({ quiz }: ActionBarProps) {
 				? FocusState.none
 				: FocusState.some;
 
-	const toggleFocusAllQuestions = () => {
+	async function handleImportQuiz() {
+		const newQuiz = await quizIO.importQuiz(quiz);
+		if (!newQuiz) return;
+		dispatch(setQuiz({ quiz: newQuiz, reload: true }));
+	}
+
+	function toggleFocusAllQuestions() {
 		const newFocusMode = focusState <= FocusState.some;
 		dispatch(
-			setQuiz(Quiz.updateQuestions(quiz, (question) => ({ ...question, isFocused: newFocusMode })))
+			setQuiz({
+				quiz: Quiz.updateQuestions(quiz, (question) => ({ ...question, isFocused: newFocusMode })),
+			})
 		);
 		if (quiz.focusMode) {
 			sendMessageToTab(
@@ -127,11 +140,11 @@ function ActionBar({ quiz }: ActionBarProps) {
 				{ noThrowOnNoReceiver: true }
 			);
 		}
-	};
+	}
 
-	const toggleFocusMode = () => {
+	function toggleFocusMode() {
 		const newFocusMode = !quiz.focusMode;
-		dispatch(setQuiz({ ...quiz, focusMode: newFocusMode }));
+		dispatch(setQuiz({ quiz: { ...quiz, focusMode: newFocusMode } }));
 		if (newFocusMode) {
 			sendMessageToTab(
 				{
@@ -149,7 +162,7 @@ function ActionBar({ quiz }: ActionBarProps) {
 				{ noThrowOnNoReceiver: true }
 			);
 		}
-	};
+	}
 
 	return (
 		<div className="absolute inset-x-0 bottom-0 z-100 flex items-center justify-between bg-white px-3 pt-3 pb-5">
@@ -168,7 +181,19 @@ function ActionBar({ quiz }: ActionBarProps) {
 					size="lg"
 				/>
 			</Tooltip>
-			<div className="flex">
+			<div className="flex gap-2">
+				<div className="flex">
+					<Tooltip title="Import rubric" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
+						<IconButton onClick={handleImportQuiz}>
+							<UploadIcon />
+						</IconButton>
+					</Tooltip>
+					<Tooltip title="Export rubric" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
+						<IconButton onClick={() => quizIO.exportQuiz(quiz)}>
+							<DownloadIcon />
+						</IconButton>
+					</Tooltip>
+				</div>
 				<Tooltip
 					title={`Click to turn ${quiz.focusMode ? 'off' : 'on'} focus mode`}
 					placement="top"
