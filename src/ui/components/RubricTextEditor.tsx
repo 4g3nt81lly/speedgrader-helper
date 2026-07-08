@@ -4,7 +4,7 @@ import Rubric from '#models/Rubric';
 import { isDecimalGreaterThan } from '#shared/decimal';
 import { Button, Checkbox, FormControl, FormHelperText, Textarea } from '@mui/joy';
 import Decimal from 'decimal.js';
-import { useMemo, useState, type ChangeEvent } from 'react';
+import { useState, type ChangeEvent } from 'react';
 
 type RubricTextEditorProps = {
 	rubric: IRubric;
@@ -15,9 +15,8 @@ type RubricTextEditorProps = {
 export default function RubricTextEditor(props: RubricTextEditorProps) {
 	const { rubric, maxPoints, updateRubric } = props;
 
-	const initialText = useMemo(() => Rubric.toText(rubric), []);
-	const [oldText, setOldText] = useState(initialText);
-	const [newText, setNewText] = useState(initialText);
+	const [oldText, setOldText] = useState(() => Rubric.toText(rubric));
+	const [newText, setNewText] = useState(oldText);
 
 	function handleRevert() {
 		if (!confirm('Revert to previous rubric state? Current edits will be discarded.')) return;

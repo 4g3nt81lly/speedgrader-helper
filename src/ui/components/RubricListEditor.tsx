@@ -3,7 +3,12 @@ import type { IRubric } from '#models/Rubric';
 import { type IRubricItem, RubricItem } from '#models/RubricItem';
 import { inOutTransitionMotionProps } from '#shared/animation';
 import Constants from '#shared/constants';
-import { isDecimalEqual, isDecimalGreaterThan, isDecimalPositive } from '#shared/decimal';
+import {
+	isDecimal,
+	isDecimalEqual,
+	isDecimalGreaterThan,
+	isDecimalPositive,
+} from '#shared/decimal';
 import type { Nullable } from '#shared/types/utils';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
@@ -122,8 +127,8 @@ export default function RubricListEditor(props: RubricListEditorProps) {
 							reorderable={isReordering}
 							confirmReorder={updateOrderedRubricItems}
 							draftItemId={draftItemId}
-							beginEditing={() => setDraftItemId(rubricItem.id)}
-							endEditing={handleEndEditing}
+							beginEdit={() => setDraftItemId(rubricItem.id)}
+							endEdit={handleEndEditing}
 							remove={handleRemoveRubricItem}
 						/>
 					))}
@@ -185,8 +190,8 @@ type RubricListItemProps = {
 	confirmReorder(): void;
 
 	draftItemId: Nullable<IRubricItem['id']>;
-	beginEditing(): void;
-	endEditing(newRubricItem: Nullable<IRubricItem>): void;
+	beginEdit(): void;
+	endEdit(newRubricItem: Nullable<IRubricItem>): void;
 	remove(id: IRubricItem['id']): void;
 };
 
@@ -197,8 +202,8 @@ function RubricListItem(props: RubricListItemProps) {
 		reorderable,
 		confirmReorder,
 		draftItemId,
-		beginEditing,
-		endEditing,
+		beginEdit: beginEditing,
+		endEdit: endEditing,
 		remove,
 	} = props;
 	const isEditing = draftItemId === rubricItem.id;
@@ -206,40 +211,37 @@ function RubricListItem(props: RubricListItemProps) {
 	const theme = useTheme();
 	const dragControls = useDragControls();
 
-	const [newDescription, setNewDescription] = useState(rubricItem.description);
-	const [newPoints, setNewPoints] = useState(rubricItem.points);
+	const [draftItem, setDraftItem] = useState(rubricItem);
 	const [descriptionError, setDescriptionError] = useState<Nullable<string>>(null);
 
 	function handleToggleEdit() {
 		isEditing ? discardEdit() : beginEditing();
 	}
 
-	function resetTemporaryStates() {
-		setNewDescription(rubricItem.description);
-		setNewPoints(rubricItem.points);
+	function saveEdit() {
+		if (!draftItem.description.trim()) {
+			return setDescriptionError('Description cannot be empty');
+		}
+		const newPoints = Decimal(draftItem.points).toString();
+		const newItem: IRubricItem = {
+			...rubricItem,
+			description: draftItem.description,
+			points: newPoints,
+		};
+		endEditing(newItem);
+		setDraftItem(newItem);
 		setDescriptionError(null);
 	}
 
-	function saveEdit() {
-		if (!newDescription.trim()) {
-			return setDescriptionError('Description cannot be empty');
-		}
-		endEditing({
-			...rubricItem,
-			description: newDescription,
-			points: Decimal(newPoints).toString(),
-		});
-		resetTemporaryStates();
-	}
-
 	function discardEdit() {
-		if (
-			(newDescription.trim() === rubricItem.description &&
-				isDecimalEqual(newPoints, rubricItem.points)) ||
-			confirm('Discard unsaved changes?')
-		) {
+		const unchanged =
+			draftItem.description.trim() === rubricItem.description &&
+			isDecimal(draftItem.points) &&
+			isDecimalEqual(draftItem.points, rubricItem.points);
+		if (unchanged || confirm('Discard unsaved changes?')) {
 			endEditing(null);
-			resetTemporaryStates();
+			setDraftItem(rubricItem);
+			setDescriptionError(null);
 		}
 	}
 
@@ -247,21 +249,19 @@ function RubricListItem(props: RubricListItemProps) {
 		if (descriptionError !== null) {
 			setDescriptionError(null);
 		}
-		setNewDescription(event.target.value);
+		setDraftItem({ ...draftItem, description: event.target.value });
 	}
 
 	function handleSetNewPoints(event: ChangeEvent<HTMLInputElement>) {
 		const points = event.target.value;
-		const numberPoints = Number(points);
-		if (points === '-' || points === '.') {
-			setNewPoints(points);
-		} else if (!isFinite(numberPoints)) {
-			// Invalid input, do not update state
-		} else if (
-			isDecimalEqual(numberPoints, 0) ||
-			!isDecimalGreaterThan(Decimal.abs(numberPoints), maxPoints)
+		if (
+			points === '-' ||
+			points === '+' ||
+			points === '.' ||
+			(isDecimal(points) &&
+				(isDecimalEqual(points, 0) || !isDecimalGreaterThan(Decimal.abs(points), maxPoints)))
 		) {
-			setNewPoints(points);
+			setDraftItem({ ...draftItem, points });
 		}
 	}
 
@@ -366,7 +366,7 @@ function RubricListItem(props: RubricListItemProps) {
 								<FormControl error={descriptionError !== null}>
 									<Textarea
 										placeholder="Description"
-										value={newDescription}
+										value={draftItem.description}
 										onChange={handleSetNewDescription}
 										minRows={2}
 										autoFocus
@@ -380,7 +380,7 @@ function RubricListItem(props: RubricListItemProps) {
 								</FormControl>
 								<FormControl>
 									<FormLabel>Points</FormLabel>
-									<Input value={newPoints} onChange={handleSetNewPoints} />
+									<Input value={draftItem.points} onChange={handleSetNewPoints} />
 									<FormHelperText className="mt-2 mb-2 flex flex-col items-start leading-4.5">
 										Enter the number of points this rubric item awards/deducts.
 										<ul className="my-0 pl-4">

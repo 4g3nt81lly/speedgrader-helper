@@ -1,4 +1,9 @@
 import Decimal from 'decimal.js';
+import Patterns from './patterns';
+
+export function isDecimal(value: string) {
+	return Patterns.DECIMAL.test(value);
+}
 
 // NOTE: This returns true iff the number is nonnegative
 export function isDecimalPositive(decimal: Decimal.Value) {
