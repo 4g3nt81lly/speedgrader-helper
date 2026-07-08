@@ -1,6 +1,6 @@
-import { BackgroundCommand, type ICommandMessage } from '~/shared/message';
-import QuizFeedbackLocalStore from '~/shared/stores/QuizFeedbackLocalStore';
-import QuizLocalStore from '~/shared/stores/QuizLocalStore';
+import { BackgroundCommand, ICommandMessage } from '#shared/message';
+import QuizFeedbackLocalStore from '#shared/stores/QuizFeedbackLocalStore';
+import QuizLocalStore from '#shared/stores/QuizLocalStore';
 import { quizActionQueue } from './main';
 
 type MessageHandlers = {

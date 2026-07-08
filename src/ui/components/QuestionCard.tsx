@@ -1,7 +1,7 @@
-import { questionTypeDisplayName, type IQuestion, type QuestionType } from '@models/Question';
-import type { IQuiz } from '@models/Quiz';
+import { questionTypeDisplayName, type IQuestion, type QuestionType } from '#models/Question';
+import type { IQuiz } from '#models/Quiz';
+import Constants from '#shared/constants';
 import { Checkbox, Chip, Tooltip, Typography } from '@mui/joy';
-import Constants from '@shared/constants';
 import { motion } from 'motion/react';
 import RubricAccordion from './RubricAccordion';
 

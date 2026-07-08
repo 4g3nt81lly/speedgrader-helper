@@ -1,4 +1,4 @@
-import { BackgroundCommand, sendMessageToBackground } from '@shared/message';
+import { BackgroundCommand, sendMessageToBackground } from '#shared/message';
 import { ContentEvent, dispatchContentEvent } from './event';
 import type { GradingContext } from './GradingContext';
 

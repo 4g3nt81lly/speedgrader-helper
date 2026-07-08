@@ -1,16 +1,12 @@
-import type { IQuestion } from '~/models/Question';
-import Question, { QuestionType } from '~/models/Question';
-import type { IQuiz } from '~/models/Quiz';
-import Quiz from '~/models/Quiz';
-import Patterns from '~/shared/patterns';
-import { getBaseUrl } from '~/shared/utils';
-import Selectors from './selectors';
+import Selectors from '#content/selectors';
+import Question, { type IQuestion, type QuestionType } from '#models/Question';
+import Quiz, { type IQuiz } from '#models/Quiz';
+import Patterns from '#shared/patterns';
+import { getBaseUrl } from '#shared/utils';
 
 export interface QuizLoaderPayload {}
 
 export abstract class QuizLoader {
-	public static readonly name: string;
-
 	public abstract validateURL(payload?: QuizLoaderPayload, ...args: any[]): boolean;
 
 	public abstract getTitle(payload?: QuizLoaderPayload, ...args: any[]): string;
@@ -39,8 +35,6 @@ export abstract class QuizLoader {
 }
 
 export class OldSGQuizLoader extends QuizLoader {
-	public static override readonly name: string = 'Old SG';
-
 	private static readonly assignmentIdKey = 'assignment_id';
 
 	public override validateURL() {
@@ -162,8 +156,6 @@ export class OldSGQuizLoader extends QuizLoader {
 }
 
 export class NewSGQuizLoader extends OldSGQuizLoader {
-	public static override readonly name: string = 'New SG (Experimental)';
-
 	public override get selectors() {
 		return Selectors.newSpeedGrader;
 	}

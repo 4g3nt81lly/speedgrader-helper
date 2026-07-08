@@ -1,10 +1,10 @@
+import type { IQuestion } from '#models/Question';
+import type { IRubric } from '#models/Rubric';
+import Rubric from '#models/Rubric';
+import { isDecimalGreaterThan } from '#shared/decimal';
 import { Button, Checkbox, FormControl, FormHelperText, Textarea } from '@mui/joy';
 import Decimal from 'decimal.js';
 import { useMemo, useState, type ChangeEvent } from 'react';
-import type { IQuestion } from '~/models/Question';
-import type { IRubric } from '~/models/Rubric';
-import Rubric from '~/models/Rubric';
-import { isDecimalGreaterThan } from '~/shared/utils';
 
 type RubricTextEditorProps = {
 	rubric: IRubric;

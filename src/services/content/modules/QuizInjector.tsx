@@ -1,27 +1,25 @@
-import type { QuestionFeedback } from '~/models/Feedback';
-import type { IQuestion } from '~/models/Question';
-import { type IQuiz } from '~/models/Quiz';
-import Constants from '~/shared/constants';
-import { quizLoaders } from '~/shared/modules';
-import QuizFeedbackLocalStore from '~/shared/stores/QuizFeedbackLocalStore';
-import QuizLocalStore from '~/shared/stores/QuizLocalStore';
-import { getElementByQuerySelector } from '~/shared/utils';
-import type { ISnackbarItem } from '~/types/snackbar';
-import type { Nullable, SetOptional } from '~/types/utils';
-import EventProxy from './EventProxy';
-import gradingContext from './GradingContext';
-import { injectReactShadowDOM } from './inject';
+import EventProxy from '#content/EventProxy';
+import gradingContext from '#content/GradingContext';
+import { injectReactShadowDOM } from '#content/inject';
+import Selectors from '#content/selectors';
+import GradingBox from '#content/ui/GradingBox';
+import QuestionNavBar from '#content/ui/QuestionNavBar';
+import type { ISnackbarItem } from '#content/ui/snackbar';
+import { Snackbar, postSnackbarItem } from '#content/ui/snackbar';
+import type { QuestionFeedback } from '#models/Feedback';
+import type { IQuestion } from '#models/Question';
+import type { IQuiz } from '#models/Quiz';
+import Constants from '#shared/constants';
+import QuizFeedbackLocalStore from '#shared/stores/QuizFeedbackLocalStore';
+import QuizLocalStore from '#shared/stores/QuizLocalStore';
+import type { Nullable, SetOptional } from '#shared/types/utils';
+import { getElementByQuerySelector } from '#shared/utils';
+import { quizLoaders } from '.';
 import { type QuizLoader } from './QuizLoader';
-import Selectors from './selectors';
-import GradingBox from './ui/GradingBox';
-import QuestionNavBar from './ui/QuestionNavBar';
-import Snackbar, { postSnackbarItem } from './ui/Snackbar';
 
 export interface QuizInjectorPayload {}
 
 export abstract class QuizInjector {
-	public static readonly name: string;
-
 	protected readonly quizLoader: QuizLoader;
 
 	protected quiz: Nullable<IQuiz>;
@@ -229,8 +227,6 @@ export class OldSGQuizInjector extends QuizInjector {
 }
 
 export class NewSGQuizInjector extends OldSGQuizInjector {
-	public static override readonly name: string = 'New SG (Experimental)';
-
 	protected override get selectors() {
 		return Selectors.newSpeedGrader;
 	}

@@ -1,8 +1,8 @@
-import type { IQuiz } from '@models/Quiz';
-import Quiz from '@models/Quiz';
+import type { IQuiz } from '#models/Quiz';
+import Quiz from '#models/Quiz';
+import { BackgroundCommand, sendMessageToBackground } from '#shared/message';
+import type { SetOptional, SetRequired } from '#shared/types/utils';
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { BackgroundCommand, sendMessageToBackground } from '~/shared/message';
-import type { SetOptional, SetRequired } from '~/types/utils';
 import { reloadSpeedGraderPages, syncSidePanelStates } from './helpers';
 
 const quizzesSlice = createSlice({

@@ -1,7 +1,7 @@
-import Constants from '@shared/constants';
-import { defaultAppSettings, type AppSettings } from '@shared/settings';
-import type { ILocalStore } from '~/types/store';
-import type { Nullable } from '~/types/utils';
+import Constants from '#shared/constants';
+import { defaultAppSettings, type AppSettings } from '#shared/settings';
+import type { ILocalStore } from '#shared/types/store';
+import type { Nullable } from '#shared/types/utils';
 import { getLocalStore } from './utils';
 
 export default class AppSettingsLocalStore {

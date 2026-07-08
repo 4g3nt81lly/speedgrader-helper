@@ -1,22 +1,21 @@
-import type { IQuestion } from '@models/Question';
-import Quiz, { type IQuiz } from '@models/Quiz';
+import type { IQuestion } from '#models/Question';
+import Quiz, { type IQuiz } from '#models/Quiz';
+import Constants from '#shared/constants';
+import { ContentCommand, sendMessageToTab } from '#shared/message';
+import { MainPageDispatch, useMainSelector } from '#sidepanel/pages/main/stores/main.store';
+import { setQuiz } from '#sidepanel/pages/main/stores/quizzes.slice';
+import { selectQuiz } from '#sidepanel/pages/main/stores/selection.slice';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import { Button, Checkbox, CircularProgress, Tooltip, Typography } from '@mui/joy';
-import { useMainSelector, type MainPageDispatch } from '@pages/main/stores/main.store';
-import { setQuiz } from '@pages/main/stores/quizzes.slice';
-import { selectQuiz } from '@pages/main/stores/selection.slice';
-import Constants from '@shared/constants';
-import { ContentCommand, sendMessageToTab } from '@shared/message';
 import { useEffect, useState, useTransition } from 'react';
 import { useDispatch } from 'react-redux';
 import QuestionListView from './QuestionListView';
 
-export type QuizDetailsViewProps = {};
+type QuizDetailsViewProps = {};
 
 export default function QuizDetailsView(props: QuizDetailsViewProps) {
 	const dispatch = useDispatch<MainPageDispatch>();
 	const quizzes = useMainSelector('quizzes');
-	const appSettings = useMainSelector('settings');
 
 	const { quiz: selectedQuizId } = useMainSelector('selection');
 

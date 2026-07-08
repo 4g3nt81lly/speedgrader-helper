@@ -2,12 +2,12 @@ import {
 	addMessageListener,
 	type ContentCommand,
 	type ICommandMessage,
-} from '~/shared/message';
-import Patterns from '~/shared/patterns';
-import AppSettingsLocalStore from '~/shared/stores/AppSettingsLocalStore';
+} from '#shared/message';
+import Patterns from '#shared/patterns';
+import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
 import gradingContext from './GradingContext';
 import messageHandlers from './handlers';
-import { quizInjectors } from '~/shared/modules';
+import { quizInjectors } from './modules';
 
 addMessageListener((message: ICommandMessage<ContentCommand>) => {
 	return messageHandlers[message.command]?.(<any>message);

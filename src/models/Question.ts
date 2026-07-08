@@ -1,4 +1,4 @@
-import type { Nullable, SetOptional } from '~/types/utils';
+import type { Nullable, SetOptional } from '#shared/types/utils';
 import type { IRubric } from './Rubric';
 import Rubric from './Rubric';
 

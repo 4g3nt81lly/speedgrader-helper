@@ -1,14 +1,17 @@
-import { useMainSelector, type MainPageDispatch } from '@pages/main/stores/main.store';
-import { addQuiz } from '@pages/main/stores/quizzes.slice';
+import type { QuizLoaderType } from '#content/modules';
+import type { IQuiz } from '#models/Quiz';
+import Constants from '#shared/constants';
+import { ContentCommand, sendMessageToTab } from '#shared/message';
+import { defaultAppSettings } from '#shared/settings';
+import QuizLocalStore from '#shared/stores/QuizLocalStore';
+import type { Nullable } from '#shared/types/utils';
+import {
+	useMainSelector,
+	type MainPageDispatch,
+} from '#sidepanel/pages/main/stores/main.store';
+import { addQuiz } from '#sidepanel/pages/main/stores/quizzes.slice';
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import type { IQuiz } from '~/models/Quiz';
-import type { QuizLoaderType } from '~/shared/modules';
-import Constants from '~/shared/constants';
-import { ContentCommand, sendMessageToTab } from '~/shared/message';
-import { defaultAppSettings } from '~/shared/settings';
-import QuizLocalStore from '~/shared/stores/QuizLocalStore';
-import type { Nullable } from '~/types/utils';
 
 export default function useCreateQuiz(dismiss: () => void) {
 	const dispatch = useDispatch<MainPageDispatch>();

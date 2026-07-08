@@ -1,7 +1,7 @@
+import { broadcastMessageToTabs, ContentCommand } from '#shared/message';
+import { defaultAppSettings, type AppSettings } from '#shared/settings';
+import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { broadcastMessageToTabs, ContentCommand } from '~/shared/message';
-import { defaultAppSettings, type AppSettings } from '~/shared/settings';
-import AppSettingsLocalStore from '~/shared/stores/AppSettingsLocalStore';
 import global from './global';
 import { syncSidePanelStates } from './helpers';
 import type { MainPageStates } from './main.store';

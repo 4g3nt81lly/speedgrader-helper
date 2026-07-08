@@ -1,3 +1,9 @@
+import Quiz, { type IQuiz } from '#models/Quiz';
+import Constants from '#shared/constants';
+import { useMainSelector, type MainPageDispatch } from '#sidepanel/pages/main/stores/main.store';
+import { removeQuizzes } from '#sidepanel/pages/main/stores/quizzes.slice';
+import { saveSelectionStateToLocalStorage } from '#sidepanel/pages/main/stores/selection.actions';
+import { selectQuiz } from '#sidepanel/pages/main/stores/selection.slice';
 import AddIcon from '@mui/icons-material/Add';
 import AirIcon from '@mui/icons-material/Air';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
@@ -16,15 +22,8 @@ import {
 } from '@mui/joy';
 import type { MouseEvent } from 'react';
 import { useDispatch } from 'react-redux';
-import type { IQuiz } from '~/models/Quiz';
-import Quiz from '~/models/Quiz';
-import Constants from '~/shared/constants';
-import { useMainSelector, type MainPageDispatch } from '../main/stores/main.store';
-import { removeQuizzes } from '../main/stores/quizzes.slice';
-import { saveSelectionStateToLocalStorage } from '../main/stores/selection.actions';
-import { selectQuiz } from '../main/stores/selection.slice';
 
-export type QuizListViewProps = {};
+type QuizListViewProps = {};
 
 export default function QuizListView(props: QuizListViewProps) {
 	const dispatch = useDispatch<MainPageDispatch>();

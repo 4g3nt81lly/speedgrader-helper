@@ -1,30 +1,13 @@
+import { inOutTransitionMotionProps } from '#shared/animation';
+import { addCommandHandler, ContentCommand } from '#shared/message';
 import CloseIcon from '@mui/icons-material/Close';
 import { IconButton, Typography } from '@mui/joy';
 import { AnimatePresence, motion } from 'motion/react';
-import { useLayoutEffect, useSyncExternalStore } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import { inOutTransitionMotionProps } from '~/shared/animation';
-import Constants from '~/shared/constants';
-import { addCommandHandler, ContentCommand } from '~/shared/message';
-import {
-	defaultSnackbarBackgroundColors,
-	defaultSnackbarIcons,
-	defaultSnackbarTitles,
-	type ISnackbarItem,
-} from '~/types/snackbar';
-
-type SnackbarState = {
-	stack: string[];
-	items: Record<string, ISnackbarItem>;
-};
-
-let snackbar: SnackbarState = {
-	stack: [],
-	items: {},
-};
+import { useLayoutEffect } from 'react';
+import { postSnackbarItem, removeSnackbarItems, useSnackbarState, type SnackbarItemType } from '.';
 
 export default function Snackbar() {
-	const state = useSyncExternalStore(subscribe, () => snackbar);
+	const state = useSnackbarState();
 
 	useLayoutEffect(() => {
 		// Register message listener for cross-context invocation
@@ -52,10 +35,7 @@ export default function Snackbar() {
 							key={itemId}
 							className="control-shadow flex gap-4 rounded-2xl pt-1.5 pr-5 pb-2.5 pl-4.5"
 							style={{ backgroundColor: defaultSnackbarBackgroundColors[item.type ?? 'neutral'] }}
-							{...inOutTransitionMotionProps({
-								opacity: [0, 1],
-								scale: [0.9, 1],
-							})}
+							{...inOutTransitionMotionProps({ opacity: [0, 1], scale: [0.9, 1] })}
 							layout
 						>
 							<motion.div className="flex justify-center" layout="position">
@@ -67,7 +47,9 @@ export default function Snackbar() {
 								<Typography level="body-md" fontWeight="bold">
 									{item.title ?? defaultSnackbarTitles[item.type ?? 'neutral']}
 								</Typography>
-								<Typography level="body-sm">{item.message}</Typography>
+								<Typography level="body-sm" className="leading-snug">
+									{item.message}
+								</Typography>
 							</motion.div>
 							{item.closeReason === 'manual' && (
 								<IconButton
@@ -85,36 +67,23 @@ export default function Snackbar() {
 	);
 }
 
-const listeners = new Set<() => void>();
+const defaultSnackbarTitles: Record<SnackbarItemType, string> = {
+	neutral: 'Message',
+	success: 'Success',
+	error: 'Error',
+	warning: 'Warning',
+};
 
-function subscribe(listener: () => void) {
-	listeners.add(listener);
-	return () => listeners.delete(listener);
-}
+const defaultSnackbarIcons: Record<SnackbarItemType, string> = {
+	neutral: 'ℹ️',
+	success: '✅',
+	error: '❌',
+	warning: '⚠️',
+};
 
-function notifyAll() {
-	listeners.forEach((listener) => listener());
-}
-
-export function postSnackbarItem(item: Omit<ISnackbarItem, 'id'>) {
-	const id = uuidv4();
-	if (!item.closeReason || item.closeReason === 'timeout') {
-		setTimeout(() => removeSnackbarItems(id), item.timeoutMs ?? 5 * Constants.SECOND_MS);
-	}
-	snackbar = {
-		stack: [...snackbar.stack, id],
-		items: { ...snackbar.items, [id]: { ...item, id } },
-	};
-	notifyAll();
-}
-
-export function removeSnackbarItems(items: string | string[]) {
-	const itemIds = Array.isArray(items) ? items : [items];
-	const newStack = snackbar.stack.filter((itemId) => !itemIds.includes(itemId));
-	const newItems = { ...snackbar.items };
-	for (const itemId of itemIds) {
-		delete newItems[itemId];
-	}
-	snackbar = { stack: newStack, items: newItems };
-	notifyAll();
-}
+const defaultSnackbarBackgroundColors: Record<SnackbarItemType, string> = {
+	neutral: '#f5f5f5',
+	success: '#e8f5e9',
+	error: '#ffebee',
+	warning: '#fff8e1',
+};

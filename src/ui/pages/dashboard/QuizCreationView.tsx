@@ -1,16 +1,17 @@
-import DropdownMenu from '@components/DropdownMenu';
+import { type QuizLoaderType } from '#content/modules';
+import { quizLoaderNames } from '#shared/modules';
+import DropdownMenu from '#sidepanel/components/DropdownMenu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchOffIcon from '@mui/icons-material/SearchOff';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Button, CircularProgress, Typography } from '@mui/joy';
-import { quizLoaders, type QuizLoaderType } from '~/shared/modules';
 import Decimal from 'decimal.js';
 import { useEffect, useMemo } from 'react';
 import QuestionListView from './QuestionListView';
 import useCreateQuiz from './hooks/useCreateQuiz';
 
-export type QuizCreationViewProps = {
+type QuizCreationViewProps = {
 	dismiss(): void;
 };
 
@@ -73,7 +74,7 @@ export default function QuizCreationView(props: QuizCreationViewProps) {
 			{isLoading ? (
 				<div className="mx-15 mb-20 flex flex-1 flex-col items-center justify-center gap-3">
 					<CircularProgress />
-					<Typography className="text-center">Detecting Canvas quiz from SpeedGrader...</Typography>
+					<Typography className="text-center">Loading Canvas quiz from SpeedGrader...</Typography>
 				</div>
 			) : newQuiz ? (
 				<div className="mb-5">
@@ -92,17 +93,16 @@ export default function QuizCreationView(props: QuizCreationViewProps) {
 					<Typography className="mx-15">
 						Unable to fetch Canvas quiz from SpeedGrader. Please try again.
 					</Typography>
-					<Typography level="body-sm" className="mx-15 my-3">
+					<Typography level="body-sm" className="mx-15 my-3 leading-snug">
 						Error message: {errorMessage}
 					</Typography>
 
 					<div className="mb-3 flex items-center gap-2">
 						<Typography>Try another quiz loader:</Typography>
 						<DropdownMenu
-							items={quizLoaders}
+							items={quizLoaderNames}
 							selectedItem={quizLoader}
 							onSelect={setQuizLoader}
-							render={(_quizLoaderId, quizLoaderClass) => quizLoaderClass.name}
 						/>
 					</div>
 
@@ -146,10 +146,9 @@ function ActionBar(props: ActionBarProps) {
 				</Button>
 				<div className="flex gap-0.5">
 					<DropdownMenu
-						items={quizLoaders}
+						items={quizLoaderNames}
 						selectedItem={quizLoader}
 						onSelect={setQuizLoader}
-						render={(_quizLoaderId, quizLoaderClass) => quizLoaderClass.name}
 					/>
 				</div>
 				<Button variant="solid" onClick={confirmQuiz}>

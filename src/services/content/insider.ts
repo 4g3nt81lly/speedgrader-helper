@@ -1,5 +1,5 @@
-import { addContentEventListener, ContentEvent } from '~/services/content/event';
-import Patterns from '~/shared/patterns';
+import { addContentEventListener, ContentEvent } from '#content/event';
+import Patterns from '#shared/patterns';
 import Selectors from './selectors';
 
 interface SpeedGraderWindow extends Window {

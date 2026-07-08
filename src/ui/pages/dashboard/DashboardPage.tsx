@@ -1,8 +1,7 @@
+import { useMainSelector } from '#sidepanel/pages/main/stores/main.store';
 import AddIcon from '@mui/icons-material/Add';
-
 import { Button, TabPanel, Tabs, Typography } from '@mui/joy';
 import { useState } from 'react';
-import { useMainSelector } from '../main/stores/main.store';
 import QuizCreationView from './QuizCreationView';
 import QuizDetailsView from './QuizDetailsView';
 import QuizListView from './QuizListView';

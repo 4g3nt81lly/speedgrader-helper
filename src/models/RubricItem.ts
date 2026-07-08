@@ -1,7 +1,7 @@
+import { isDecimalPositive } from '#shared/decimal';
+import type { Nullable } from '#shared/types/utils';
 import Decimal from 'decimal.js';
 import { v4 as uuidv4 } from 'uuid';
-import { isDecimalPositive } from '~/shared/utils';
-import type { Nullable } from '~/types/utils';
 
 export interface IRubricItem {
 	id: string;

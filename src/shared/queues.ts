@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { Nullable } from '~/types/utils';
+import type { Nullable } from './types/utils';
 
 export default class TaskQueues {
 	private readonly queues: Map<string, TaskQueue>;

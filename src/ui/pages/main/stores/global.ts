@@ -1,5 +1,5 @@
-import Constants from '~/shared/constants';
-import { TaskQueue } from '~/shared/queues';
+import Constants from '#shared/constants';
+import { TaskQueue } from '#shared/queues';
 
 export default {
 	sidePanelChannel: new BroadcastChannel(Constants.SIDEPANEL_CHANNEL),

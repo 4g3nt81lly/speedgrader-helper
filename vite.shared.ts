@@ -4,13 +4,12 @@ import { type ConfigPluginContext, type PluginOption } from 'vite';
 
 export const resolveOptions = {
 	alias: {
-		'~': resolve(__dirname, 'src'),
-		'@models': resolve(__dirname, 'src/models'),
-		'@schemas': resolve(__dirname, 'src/schemas'),
-		'@services': resolve(__dirname, 'src/services'),
-		'@shared': resolve(__dirname, 'src/shared'),
-		'@components': resolve(__dirname, 'src/ui/components'),
-		'@pages': resolve(__dirname, 'src/ui/pages'),
+		'#models': resolve(__dirname, 'src/models'),
+		'#schemas': resolve(__dirname, 'src/schemas'),
+		'#background': resolve(__dirname, 'src/services/background'),
+		'#content': resolve(__dirname, 'src/services/content'),
+		'#shared': resolve(__dirname, 'src/shared'),
+		'#sidepanel': resolve(__dirname, 'src/ui'),
 	},
 };
 

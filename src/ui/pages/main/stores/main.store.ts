@@ -1,8 +1,8 @@
-import type { IQuiz } from '@models/Quiz';
+import type { IQuiz } from '#models/Quiz';
+import { useReduxSelector } from '#shared/hooks';
+import type { AppSettings } from '#shared/settings';
+import type { Nullable } from '#shared/types/utils';
 import { configureStore } from '@reduxjs/toolkit';
-import { useReduxSelector } from '@shared/hooks';
-import type { AppSettings } from '~/shared/settings';
-import type { Nullable } from '~/types/utils';
 import type { MainTab } from '..';
 import quizzes from './quizzes.slice';
 import selection from './selection.slice';

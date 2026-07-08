@@ -1,4 +1,4 @@
-import type { Optional } from '~/types/utils';
+import type { Optional } from '#shared/types/utils';
 
 interface GetLocalStoreFunction<Store> {
 	<Key extends keyof Store>(key: Key): Promise<Optional<Store[Key]>>;

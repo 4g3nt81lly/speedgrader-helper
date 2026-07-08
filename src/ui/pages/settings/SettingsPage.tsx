@@ -1,15 +1,14 @@
-import DropdownMenu from '@components/DropdownMenu';
-import HotkeysButton from '@components/HotkeysButton';
-import { RubricEditorSelector } from '@components/RubricAccordion';
+import { quizInjectorNames, quizLoaderNames } from '#shared/modules';
+import { AppHotKeySettings, AppSettings, defaultAppSettings } from '#shared/settings';
+import QuizFeedbackLocalStore from '#shared/stores/QuizFeedbackLocalStore';
+import DropdownMenu from '#sidepanel/components/DropdownMenu';
+import HotkeysButton from '#sidepanel/components/HotkeysButton';
+import { RubricEditorSelector } from '#sidepanel/components/RubricAccordion';
+import { MainPageDispatch, useMainSelector } from '#sidepanel/pages/main/stores/main.store';
+import { removeAllQuizzes } from '#sidepanel/pages/main/stores/quizzes.slice';
+import { selectQuiz } from '#sidepanel/pages/main/stores/selection.slice';
+import { updateAppSettings } from '#sidepanel/pages/main/stores/settings.slice';
 import { Button, Switch, Typography } from '@mui/joy';
-import { useMainSelector, type MainPageDispatch } from '@pages/main/stores/main.store';
-import { removeAllQuizzes } from '@pages/main/stores/quizzes.slice';
-import { selectQuiz } from '@pages/main/stores/selection.slice';
-import { updateAppSettings } from '@pages/main/stores/settings.slice';
-import { quizInjectors } from '~/shared/modules';
-import { quizLoaders } from '~/shared/modules';
-import { defaultAppSettings, type AppHotKeySettings, type AppSettings } from '@shared/settings';
-import QuizFeedbackLocalStore from '@shared/stores/QuizFeedbackLocalStore';
 import { type ReactNode } from 'react';
 import { useDispatch } from 'react-redux';
 
@@ -134,10 +133,9 @@ export default function SettingsPage() {
 						description="The preferred module for injecting grading controls into SpeedGrader."
 					>
 						<DropdownMenu
-							items={quizInjectors}
+							items={quizInjectorNames}
 							selectedItem={settings.defaultQuizInjector}
 							onSelect={setSetting.bind(null, 'defaultQuizInjector')}
-							render={(_quizInjectorId, quizInjectorClass) => quizInjectorClass.name}
 						/>
 					</SettingItem>
 					<SettingItem
@@ -145,10 +143,9 @@ export default function SettingsPage() {
 						description="The preferred module for loading Canvas quiz from SpeedGrader."
 					>
 						<DropdownMenu
-							items={quizLoaders}
+							items={quizLoaderNames}
 							selectedItem={settings.defaultQuizLoader}
 							onSelect={setSetting.bind(null, 'defaultQuizLoader')}
-							render={(_quizLoaderId, quizLoaderClass) => quizLoaderClass.name}
 						/>
 					</SettingItem>
 				</SettingsSection>

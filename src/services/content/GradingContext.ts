@@ -1,7 +1,7 @@
-import type { IQuestion } from '~/models/Question';
-import type { IQuiz } from '~/models/Quiz';
-import { defaultAppSettings, type AppSettings } from '~/shared/settings';
-import type { Nullable } from '~/types/utils';
+import type { IQuestion } from '#models/Question';
+import type { IQuiz } from '#models/Quiz';
+import { defaultAppSettings, type AppSettings } from '#shared/settings';
+import type { Nullable } from '#shared/types/utils';
 import navigateSubmission from './navigate';
 import { submitFeedback } from './submit';
 

@@ -1,5 +1,5 @@
+import QuizLocalStore from '#shared/stores/QuizLocalStore';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import QuizLocalStore from '~/shared/stores/QuizLocalStore';
 import type { MainPageThunkAPI } from './main.store';
 import { loadQuizzes } from './quizzes.slice';
 import { selectQuiz } from './selection.slice';

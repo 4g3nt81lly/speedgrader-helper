@@ -1,5 +1,5 @@
+import type { Nullable } from '#shared/types/utils';
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { Nullable } from '~/types/utils';
 import type { MainTab } from '..';
 import type { MainPageStates } from './main.store';
 import {

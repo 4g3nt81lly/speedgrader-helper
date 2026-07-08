@@ -1,9 +1,9 @@
-import type { QuestionFeedback } from '~/models/Feedback';
-import type { IQuestion } from '~/models/Question';
-import type { IQuiz } from '~/models/Quiz';
-import { isDecimalWithinRange } from '~/shared/utils';
-import type { Nullable } from '~/types/utils';
-import Selectors from '../selectors';
+import Selectors from '#content/selectors';
+import type { QuestionFeedback } from '#models/Feedback';
+import type { IQuestion } from '#models/Question';
+import type { IQuiz } from '#models/Quiz';
+import { isDecimalWithinRange } from '#shared/decimal';
+import type { Nullable } from '#shared/types/utils';
 import RubricControls from './RubricControls';
 import useGradingState from './useGradingState';
 

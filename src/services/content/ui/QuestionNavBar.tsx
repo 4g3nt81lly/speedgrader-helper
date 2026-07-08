@@ -1,7 +1,7 @@
+import gradingContext from '#content/GradingContext';
+import { useFeedbackSubmitState } from '#content/hooks';
+import type { IQuestion } from '#models/Question';
 import { useState, type MouseEvent } from 'react';
-import type { IQuestion } from '~/models/Question';
-import gradingContext from '../GradingContext';
-import { useFeedbackSubmitState } from '../hooks';
 
 type QuestionNavBarProps = {
 	question: Pick<IQuestion, 'id'>;

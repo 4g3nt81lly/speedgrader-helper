@@ -1,6 +1,6 @@
-import type { ExportedRubricJson } from '@schemas/ExportedRubricJson.schema';
+import type { ExportedRubricJson } from '#schemas/ExportedRubricJson.schema';
+import type { SetOptional } from '#shared/types/utils';
 import { v4 as uuidv4 } from 'uuid';
-import type { SetOptional } from '~/types/utils';
 import type { IQuestion } from './Question';
 import Question from './Question';
 

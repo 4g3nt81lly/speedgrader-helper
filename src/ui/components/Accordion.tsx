@@ -1,8 +1,8 @@
+import { inOutTransitionMotionProps } from '#shared/animation';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useTheme } from '@mui/joy';
 import { AnimatePresence, motion } from 'motion/react';
 import { useMemo, useState, type ReactNode } from 'react';
-import { inOutTransitionMotionProps } from '../../shared/animation';
 
 type AccordionProps = {
 	summary: ReactNode;

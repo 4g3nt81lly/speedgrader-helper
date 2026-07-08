@@ -18,26 +18,23 @@
 		"jsx": "react-jsx",
 		"strict": true,
 		"paths": {
-			"~/*": [
-				"./src/*"
-			],
-			"@models/*": [
+			"#models/*": [
 				"./src/models/*"
 			],
-			"@schemas/*": [
+			"#schemas/*": [
 				"./src/schemas/*"
 			],
-			"@services/*": [
-				"./src/services/*"
+			"#background/*": [
+				"./src/services/background/*"
 			],
-			"@shared/*": [
+			"#content/*": [
+				"./src/services/content/*"
+			],
+			"#shared/*": [
 				"./src/shared/*"
 			],
-			"@components/*": [
-				"./src/ui/components/*"
-			],
-			"@pages/*": [
-				"./src/ui/pages/*"
+			"#sidepanel/*": [
+				"./src/ui/*"
 			]
 		},
 		"noImplicitOverride": true,

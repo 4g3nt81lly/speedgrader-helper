@@ -1,7 +1,7 @@
-import Constants from '~/shared/constants';
+import Constants from '#shared/constants';
 import type { GradingContext } from './GradingContext';
 import { ContentEvent, dispatchContentEvent } from './event';
-import { postSnackbarItem } from './ui/Snackbar';
+import { postSnackbarItem } from './ui/snackbar';
 
 export async function submitFeedback(
 	this: GradingContext,

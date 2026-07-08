@@ -1,7 +1,6 @@
-import type { GradingMode } from '~/models/Rubric';
-import type { QuizInjectorType } from './modules';
-import type { QuizLoaderType } from './modules';
-import type { RubricEditorType } from '~/ui/components/RubricAccordion';
+import type { QuizInjectorType, QuizLoaderType } from '#content/modules';
+import type { GradingMode } from '#models/Rubric';
+import type { RubricEditorType } from '#sidepanel/components/RubricAccordion';
 
 export type AppSettings = {
 	scrollToLastGradedQuestion: boolean;

@@ -1,7 +1,7 @@
+import Constants from '#shared/constants';
 import { Chip, ChipDelete, Tooltip, Typography, useTheme } from '@mui/joy';
 import { type KeyboardEvent, type MouseEvent } from 'react';
 import { useRecordHotkeys } from 'react-hotkeys-hook';
-import Constants from '~/shared/constants';
 
 type HotkeysRecorderButtonProps = {
 	hotkeys: string;

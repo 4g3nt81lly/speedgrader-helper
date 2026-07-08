@@ -1,6 +1,6 @@
+import { getLocalStore } from '#shared/stores/utils';
+import type { ILocalStore } from '#shared/types/store';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { getLocalStore } from '~/shared/stores/utils';
-import type { ILocalStore } from '~/types/store';
 import type { MainPageThunkAPI } from './main.store';
 
 export const loadSelectionStateFromLocalStorage = createAsyncThunk<

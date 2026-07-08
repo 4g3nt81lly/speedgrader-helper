@@ -1,7 +1,7 @@
-import QuestionCard, { type QuestionCardOptions } from '@components/QuestionCard';
+import type { IQuestion } from '#models/Question';
+import QuestionCard, { type QuestionCardOptions } from '#sidepanel/components/QuestionCard';
 import { useTheme } from '@mui/joy';
 import { LayoutGroup, motion } from 'motion/react';
-import type { IQuestion } from '~/models/Question';
 
 type QuestionListViewProps = {
 	questions: IQuestion[];

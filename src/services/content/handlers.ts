@@ -1,9 +1,9 @@
-import { ContentCommand, ICommandMessage } from '~/shared/message';
-import { defaultAppSettings } from '~/shared/settings';
-import AppSettingsLocalStore from '~/shared/stores/AppSettingsLocalStore';
-import { quizLoaders } from '~/shared/modules';
+import { ContentCommand, ICommandMessage } from '#shared/message';
+import { defaultAppSettings } from '#shared/settings';
+import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
 import gradingContext from './GradingContext';
-import { postSnackbarItem } from './ui/Snackbar';
+import { quizLoaders } from './modules';
+import { postSnackbarItem } from './ui/snackbar';
 
 type MessageHandlers = {
 	[C in ContentCommand]?: (message: ICommandMessage<C>) => any;

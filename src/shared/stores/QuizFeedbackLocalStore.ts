@@ -1,12 +1,12 @@
-import type { ISubmissionFeedback, QuestionFeedback } from '~/models/Feedback';
-import type { IQuestion } from '~/models/Question';
-import type { IQuiz } from '~/models/Quiz';
+import type { ISubmissionFeedback, QuestionFeedback } from '#models/Feedback';
+import type { IQuestion } from '#models/Question';
+import type { IQuiz } from '#models/Quiz';
 import type {
 	ILocalStore,
 	StoreQuizFeedbackKey,
 	StoreQuizSubmissionFeedbackKey,
-} from '~/types/store';
-import type { Nullable } from '~/types/utils';
+} from '#shared/types/store';
+import type { Nullable } from '#shared/types/utils';
 import { getLocalStore } from './utils';
 
 export default class QuizFeedbackLocalStore {

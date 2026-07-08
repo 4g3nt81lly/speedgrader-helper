@@ -1,7 +1,7 @@
+import { isDecimalGreaterThan } from '#shared/decimal';
+import { defaultAppSettings } from '#shared/settings';
+import type { SetOptional } from '#shared/types/utils';
 import Decimal from 'decimal.js';
-import { defaultAppSettings } from '~/shared/settings';
-import { isDecimalGreaterThan } from '~/shared/utils';
-import type { SetOptional } from '~/types/utils';
 import type { IQuestion } from './Question';
 import { RubricItem, type IRubricItem } from './RubricItem';
 

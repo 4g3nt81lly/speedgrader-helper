@@ -1,11 +1,11 @@
-import type { QuestionFeedback } from '~/models/Feedback';
-import type { IQuestion } from '~/models/Question';
-import type { IQuiz } from '~/models/Quiz';
-import type { QuizLoaderPayload } from '~/services/content/QuizLoader';
-import type { QuizLoaderType } from './modules';
-import type { ISnackbarItem } from '../types/snackbar';
-import type { SetOptional } from '../types/utils';
+import type { QuizLoaderType } from '#content/modules';
+import type { QuizLoaderPayload } from '#content/modules/QuizLoader';
+import type { ISnackbarItem } from '#content/ui/snackbar';
+import type { QuestionFeedback } from '#models/Feedback';
+import type { IQuestion } from '#models/Question';
+import type { IQuiz } from '#models/Quiz';
 import Constants from './constants';
+import type { SetOptional } from './types/utils';
 
 export const enum BackgroundCommand {
 	addQuizToStore = 0x00,

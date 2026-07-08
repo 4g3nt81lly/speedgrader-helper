@@ -1,5 +1,5 @@
-import type { IQuiz } from '~/models/Quiz';
-import { OldSGQuizLoader } from '~/services/content/QuizLoader';
+import { OldSGQuizLoader } from '#content/modules/QuizLoader';
+import type { IQuiz } from '#models/Quiz';
 import { SidePanelEvent } from '..';
 import global from './global';
 

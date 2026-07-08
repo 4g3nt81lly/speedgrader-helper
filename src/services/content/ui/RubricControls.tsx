@@ -1,6 +1,6 @@
+import { isDecimalPositive } from '#shared/decimal';
 import SubdirectoryArrowRightIcon from '@mui/icons-material/SubdirectoryArrowRight';
 import type { ChangeEvent } from 'react';
-import { isDecimalPositive } from '~/shared/utils';
 import {
 	DiffDescriptor,
 	type DiffRubricItem,

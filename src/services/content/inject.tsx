@@ -1,9 +1,9 @@
+import type { Nullable } from '#shared/types/utils';
 import createCache from '@emotion/cache';
 import { CacheProvider } from '@emotion/react';
 import { StyledEngineProvider } from '@mui/joy';
 import { type ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
-import type { Nullable } from '~/types/utils';
 import baseStyles from './ui/base.css?inline';
 
 type InjectDOMOptions = {

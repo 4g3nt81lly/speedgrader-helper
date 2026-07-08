@@ -1,6 +1,6 @@
+import DashboardPage from '#sidepanel/pages/dashboard/DashboardPage';
+import SettingsPage from '#sidepanel/pages/settings/SettingsPage';
 import { StyledEngineProvider, Tab, tabClasses, TabList, TabPanel, Tabs } from '@mui/joy';
-import DashboardPage from '@pages/dashboard/DashboardPage';
-import SettingsPage from '@pages/settings/SettingsPage';
 import { useLayoutEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider as ReduxProvider, useDispatch } from 'react-redux';

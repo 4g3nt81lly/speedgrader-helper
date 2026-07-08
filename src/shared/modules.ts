@@ -1,28 +1,11 @@
-import {
-	type QuizInjector,
-	NewSGQuizInjector,
-	OldSGQuizInjector,
-} from '~/services/content/QuizInjector';
-import {
-	type QuizLoader,
-	NewSGQuizLoader,
-	OldSGQuizLoader,
-} from '~/services/content/QuizLoader';
+import type { QuizInjectorType, QuizLoaderType } from '#content/modules';
 
-export const quizInjectorTypes = ['oldSG', 'newSG'] as const;
-
-export type QuizInjectorType = (typeof quizInjectorTypes)[number];
-
-export const quizInjectors: Record<QuizInjectorType, new () => QuizInjector> = {
-	oldSG: OldSGQuizInjector,
-	newSG: NewSGQuizInjector,
+export const quizInjectorNames: Record<QuizInjectorType, string> = {
+	oldSG: 'Old SG',
+	newSG: 'New SG (Experimental)',
 };
 
-export const quizLoaderTypes = ['oldSG', 'newSG'] as const;
-
-export type QuizLoaderType = (typeof quizLoaderTypes)[number];
-
-export const quizLoaders: Record<QuizLoaderType, new () => QuizLoader> = {
-	oldSG: OldSGQuizLoader,
-	newSG: NewSGQuizLoader,
+export const quizLoaderNames: Record<QuizLoaderType, string> = {
+	oldSG: 'Old SG',
+	newSG: 'New SG (Experimental)',
 };

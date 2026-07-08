@@ -1,14 +1,14 @@
-import type { IQuestion } from '~/models/Question';
-import type { IQuiz } from '~/models/Quiz';
+import type { IQuestion } from '#models/Question';
+import type { IQuiz } from '#models/Quiz';
+import Constants from '#shared/constants';
 import type {
 	ILocalStore,
 	StoreQuizIdKey,
 	StoreQuizIndex,
 	StoreQuizLastGradedQuestionIdKey,
 	StoreQuizUrlKey,
-} from '~/types/store';
-import type { Nullable, Optional } from '~/types/utils';
-import Constants from '../constants';
+} from '#shared/types/store';
+import type { Nullable, Optional } from '#shared/types/utils';
 import QuizFeedbackLocalStore from './QuizFeedbackLocalStore';
 import { getLocalStore } from './utils';
 

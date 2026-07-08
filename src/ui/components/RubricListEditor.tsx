@@ -1,3 +1,10 @@
+import type { IQuestion } from '#models/Question';
+import type { IRubric } from '#models/Rubric';
+import { type IRubricItem, RubricItem } from '#models/RubricItem';
+import { inOutTransitionMotionProps } from '#shared/animation';
+import Constants from '#shared/constants';
+import { isDecimalEqual, isDecimalGreaterThan, isDecimalPositive } from '#shared/decimal';
+import type { Nullable } from '#shared/types/utils';
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -22,14 +29,7 @@ import {
 } from '@mui/joy';
 import Decimal from 'decimal.js';
 import { AnimatePresence, motion, Reorder, useDragControls } from 'motion/react';
-import { useRef, useState, type ChangeEvent, type SubmitEvent } from 'react';
-import type { IQuestion } from '~/models/Question';
-import type { IRubric } from '~/models/Rubric';
-import { RubricItem, type IRubricItem } from '~/models/RubricItem';
-import Constants from '~/shared/constants';
-import { isDecimalEqual, isDecimalGreaterThan, isDecimalPositive } from '~/shared/utils';
-import type { Nullable } from '~/types/utils';
-import { inOutTransitionMotionProps } from '../../shared/animation';
+import { type ChangeEvent, type SubmitEvent, useRef, useState } from 'react';
 
 type RubricListEditorProps = {
 	rubric: IRubric;

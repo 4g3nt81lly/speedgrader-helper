@@ -1,10 +1,10 @@
-import Constants from '~/shared/constants';
+import Constants from '#shared/constants';
 import {
 	addMessageListener,
-	BackgroundCommand,
+	type BackgroundCommand,
 	type ICommandMessage,
-} from '~/shared/message';
-import { TaskQueue } from '~/shared/queues';
+} from '#shared/message';
+import { TaskQueue } from '#shared/queues';
 import configDev from './dev';
 import messageHandlers from './handlers';
 

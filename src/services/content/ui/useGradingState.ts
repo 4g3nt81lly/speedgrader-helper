@@ -1,29 +1,29 @@
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { IQuestion } from '~/models/Question';
 import {
 	addContentEventListener,
 	ContentEvent,
 	type ContentEventPayload,
-} from '~/services/content/event';
+} from '#content/event';
+import gradingContext from '#content/GradingContext';
+import { useAppSettings, useFeedbackSubmitState } from '#content/hooks';
+import Selectors from '#content/selectors';
+import type { IQuestion } from '#models/Question';
+import { isDecimalEqual, isDecimalWithinRange } from '#shared/decimal';
 import {
 	addCommandHandler,
 	BackgroundCommand,
 	ContentCommand,
 	sendMessageToBackground,
 	type ICommandMessage,
-} from '~/shared/message';
-import { isDecimalEqual, isDecimalWithinRange } from '~/shared/utils';
-import type { Nullable } from '~/types/utils';
-import gradingContext from '../GradingContext';
-import { useAppSettings, useFeedbackSubmitState } from '../hooks';
-import Selectors from '../selectors';
+} from '#shared/message';
+import type { Nullable } from '#shared/types/utils';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { GradingBoxProps } from './GradingBox';
 import {
 	QuestionGradingState,
 	type DiffRubricItem,
 	type IQuestionGradingState,
 } from './QuestionGradingState';
-import { postSnackbarItem } from './Snackbar';
+import { postSnackbarItem } from './snackbar';
 
 export default function useGradingState(props: GradingBoxProps) {
 	const {
