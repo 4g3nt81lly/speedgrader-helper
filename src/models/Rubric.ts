@@ -1,9 +1,7 @@
-import { isDecimalGreaterThan } from '#shared/decimal';
 import { defaultAppSettings } from '#shared/settings';
 import type { SetOptional } from '#shared/types/utils';
-import Decimal from 'decimal.js';
-import type { IQuestion } from './Question';
 import { RubricItem, type IRubricItem } from './RubricItem';
+import { RubricParser } from './RubricParser';
 
 export interface IRubric {
 	items: IRubricItem[];
@@ -22,26 +20,11 @@ export default class Rubric {
 		};
 	}
 
-	public static validate(rubric: IRubric, question: IQuestion) {
-		return !rubric.items.some(({ points }) =>
-			isDecimalGreaterThan(Decimal.abs(points), question.points)
-		);
-	}
-
-	public static fromText(text: string): IRubric {
-		const delimiterPattern = /(?<=[^\\\s])\n+/;
-		const parsedItems = text
-			.trim()
-			.split(delimiterPattern)
-			.flatMap((rubricItemText) => RubricItem.fromText(rubricItemText) ?? []);
-
-		return {
-			items: parsedItems,
-			gradingMode: 'positive',
-		};
+	public static fromText(text: string, rubric?: IRubric): IRubric {
+		return RubricParser.parse(text, rubric);
 	}
 
 	public static toText(rubric: IRubric) {
-		return rubric.items.map(RubricItem.toText).join('\n');
+		return RubricParser.stringify(rubric);
 	}
 }

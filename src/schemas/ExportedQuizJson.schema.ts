@@ -1,3 +1,4 @@
+import Patterns from '#shared/patterns';
 import * as z from 'zod';
 
 export const ExportedRubricJsonSchema = z.object({
@@ -12,10 +13,7 @@ export const ExportedRubricJsonSchema = z.object({
 					z.object({
 						id: z.uuidv4(),
 						description: z.string(),
-						points: z.stringFormat(
-							'points',
-							(pointsString) => pointsString && isFinite(Number(pointsString))
-						),
+						points: z.stringFormat('points', Patterns.DECIMAL_STRING),
 					})
 				),
 				gradingMode: z.union([z.literal('positive'), z.literal('negative')]),

@@ -2,7 +2,7 @@ import Decimal from 'decimal.js';
 import Patterns from './patterns';
 
 export function isDecimal(value: string) {
-	return Patterns.DECIMAL.test(value);
+	return Patterns.DECIMAL_STRING.test(value);
 }
 
 // NOTE: This returns true iff the number is nonnegative

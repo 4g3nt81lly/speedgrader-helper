@@ -2,9 +2,10 @@ import type { IQuestion } from '#models/Question';
 import type { IRubric } from '#models/Rubric';
 import Rubric from '#models/Rubric';
 import { isDecimalGreaterThan } from '#shared/decimal';
-import { Button, Checkbox, FormControl, FormHelperText, Textarea } from '@mui/joy';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import { Button, Checkbox, FormControl, FormHelperText, Textarea, Typography } from '@mui/joy';
 import Decimal from 'decimal.js';
-import { useState, type ChangeEvent } from 'react';
+import { useMemo, useState, type ChangeEvent } from 'react';
 
 type RubricTextEditorProps = {
 	rubric: IRubric;
@@ -18,19 +19,21 @@ export default function RubricTextEditor(props: RubricTextEditorProps) {
 	const [oldText, setOldText] = useState(() => Rubric.toText(rubric));
 	const [newText, setNewText] = useState(oldText);
 
+	const rubricText = useMemo(() => Rubric.toText(rubric), [rubric]);
+	const changedSinceLastSaved = useMemo(() => rubricText !== oldText, [rubricText, oldText]);
+
 	function handleRevert() {
-		if (!confirm('Revert to previous rubric state? Current edits will be discarded.')) return;
-		setNewText(oldText);
+		if (!confirm('Discard edits to revert to previous rubric?')) return;
+		if (changedSinceLastSaved) {
+			setOldText(rubricText);
+			setNewText(rubricText);
+		} else {
+			setNewText(oldText);
+		}
 	}
 
 	function handleCompile() {
-		if (
-			rubric.items.length > 0 &&
-			!confirm('Warning: This will replace the existing rubric items, continue?')
-		)
-			return;
-
-		let newRubric = Rubric.fromText(newText);
+		let newRubric = Rubric.fromText(newText, rubric);
 		newRubric = {
 			...newRubric,
 			items: newRubric.items.filter((rubricItem) => {
@@ -53,38 +56,54 @@ export default function RubricTextEditor(props: RubricTextEditorProps) {
 
 	return (
 		<div className="mt-2 mb-3 flex flex-col gap-1">
-			<FormControl>
+			<FormControl color={changedSinceLastSaved ? 'warning' : 'neutral'}>
 				<Textarea
 					placeholder="Rubric markup"
+					className="font-mono text-sm"
 					value={newText}
 					onChange={(event) => setNewText(event.target.value)}
 					minRows={3}
 					autoFocus
 				/>
-				<FormHelperText className="mt-0">
-					<ul className="pl-4">
-						<li>
-							Rubric item format: <code>&lt;points&gt;&emsp;&lt;description&gt;</code>
-							(separated by at least one whitespace character)
-							<br />
-							Example: <code>+2&emsp;Correct explanation.</code>
-						</li>
-						<li>Each rubric item should start on a new line.</li>
-						<li>
-							Use "<code>\</code>" at the end of a line for multi-line description.
-						</li>
-						<li>Use a negative number for deduction.</li>
-						<li>
-							The magnitude of the points awarded/deducted must be no greater than {maxPoints}{' '}
-							point(s).
-						</li>
-						<li>Malformed rubric items will be ignored and discarded.</li>
-					</ul>
-				</FormHelperText>
+				{changedSinceLastSaved && (
+					<FormHelperText className="mt-2 flex items-start gap-1">
+						<WarningAmberIcon />
+						Rubric was modified elsewhere, current text content may be stale. Use "Revert" to
+						discard edits and sync.
+					</FormHelperText>
+				)}
 			</FormControl>
+			<Typography component="div" level="body-sm" color="neutral">
+				<ul className="mt-1 pl-4">
+					<li>
+						Format: <code>&lt;index&gt;. (&lt;points&gt;)&emsp;&lt;description&gt;</code>
+						<br />
+						Example: <code>1.&thinsp;(+2)&thinsp;Correct answer</code>
+					</li>
+					<li>
+						The index is a transient ID used to identify rubric items. Each rubric item should start
+						on a new line with a <em>unique</em> index.
+					</li>
+					<li>
+						Rubric items are <strong>ordered by lines</strong>, not by the index.
+					</li>
+					<li>
+						Use "<code>\</code>" at the end of a line for multi-line description.
+					</li>
+					<li>
+						The magnitude of the points awarded/deducted must be no greater than {maxPoints}{' '}
+						point(s).
+					</li>
+					<li>Careful, malformed rubric items will be ignored and discarded!</li>
+				</ul>
+			</Typography>
 
 			<div className="flex justify-between">
-				<Button variant="outlined" disabled={newText.trim() === oldText} onClick={handleRevert}>
+				<Button
+					variant="outlined"
+					disabled={!changedSinceLastSaved && newText.trim() === oldText}
+					onClick={handleRevert}
+				>
 					Revert
 				</Button>
 				<Checkbox

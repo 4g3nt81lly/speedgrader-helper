@@ -92,35 +92,47 @@ function RubricItemControls(props: RubricItemControlsProps) {
 
 	return (
 		<div className="flex flex-col">
-			<label className="flex cursor-pointer items-center gap-1">
-				<input type="checkbox" checked={isSelected} disabled={!canToggle} onChange={toggleSelect} />
-				<span
-					style={{
-						color: isDecimalPositive(upperItem.points) ? 'green' : 'red',
-						fontWeight: 'bold',
-					}}
-				>
-					({isDecimalPositive(upperItem.points) ? '+' : ''}
-					{upperItem.points})
-				</span>
-				<span>{upperItem.description}</span>
+			<label className="flex cursor-pointer items-start gap-1.5">
+				<div className="flex items-center gap-1.5">
+					<input
+						type="checkbox"
+						className="mt-0.5"
+						checked={isSelected}
+						disabled={!canToggle}
+						onChange={toggleSelect}
+					/>
+					<span
+						style={{
+							color: isDecimalPositive(upperItem.points) ? 'green' : 'red',
+							fontWeight: 'bold',
+						}}
+					>
+						({isDecimalPositive(upperItem.points) ? '+' : ''}
+						{upperItem.points})
+					</span>
+				</div>
+				<span className="mt-0.5 leading-tight whitespace-pre-wrap">{upperItem.description}</span>
 			</label>
 			{showDiff &&
 				(lowerItem ? (
-					<div className="ml-7 flex items-center gap-1">
-						<span className="text-md">
-							<SubdirectoryArrowRightIcon fontSize="inherit" />
+					<div className="ml-7 flex items-start gap-1.5">
+						<div className="flex items-center gap-1.5">
+							<span className="text-md">
+								<SubdirectoryArrowRightIcon fontSize="inherit" />
+							</span>
+							<span
+								style={{
+									color: isDecimalPositive(lowerItem.points) ? 'green' : 'red',
+									fontWeight: 'bold',
+								}}
+							>
+								({isDecimalPositive(lowerItem.points) ? '+' : ''}
+								{lowerItem.points})
+							</span>
+						</div>
+						<span className="mt-0.5 leading-tight whitespace-pre-wrap">
+							{lowerItem.description}
 						</span>
-						<span
-							style={{
-								color: isDecimalPositive(lowerItem.points) ? 'green' : 'red',
-								fontWeight: 'bold',
-							}}
-						>
-							({isDecimalPositive(lowerItem.points) ? '+' : ''}
-							{lowerItem.points})
-						</span>
-						<span>{lowerItem.description}</span>
 					</div>
 				) : (
 					<div>(This rubric item was removed)</div>

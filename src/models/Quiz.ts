@@ -1,11 +1,12 @@
 import type { ExportedRubricJson } from '#schemas/ExportedQuizJson.schema';
 import { isDecimalWithinRange } from '#shared/decimal';
-import type { SetOptional } from '#shared/types/utils';
+import type { Nullable, SetOptional } from '#shared/types/utils';
 import Decimal from 'decimal.js';
 import { v4 as uuidv4 } from 'uuid';
 import type { IQuestion } from './Question';
 import Question from './Question';
 import type { IRubric } from './Rubric';
+import type { IRubricItem } from './RubricItem';
 
 export interface IQuiz {
 	id: string;
@@ -78,13 +79,29 @@ export default class Quiz {
 			if (!newRubric || newRubric.items.length === 0) {
 				return question;
 			}
-			const invalidItem = newRubric.items.find(
-				(item) => !isDecimalWithinRange(Decimal.abs(item.points), 0, question.points)
-			);
-			if (invalidItem) {
-				throw new Error(
-					`Rubric item "${invalidItem.id}" has unexpected points "${invalidItem.points}"`
-				);
+			const itemIds = new Set<IRubricItem['id']>();
+			let invalidState: Nullable<{ item: IRubricItem; message: string }> = null;
+			for (const newItem of newRubric.items) {
+				if (itemIds.has(newItem.id)) {
+					invalidState = {
+						item: newItem,
+						message: `Duplicate rubric item ID "${newItem.id}"`,
+					};
+					break;
+				}
+				if (!isDecimalWithinRange(Decimal.abs(newItem.points), 0, question.points)) {
+					invalidState = {
+						item: newItem,
+						message: `Rubric item "${newItem.id}" has unexpected points "${newItem.points}"`,
+					};
+					break;
+				}
+				itemIds.add(newItem.id);
+				// Stardardize points
+				newItem.points = Decimal(newItem.points).toString();
+			}
+			if (invalidState) {
+				throw new Error(invalidState.message);
 			}
 			return { ...question, rubric: newRubric };
 		});

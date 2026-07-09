@@ -34,7 +34,7 @@ import {
 } from '@mui/joy';
 import Decimal from 'decimal.js';
 import { AnimatePresence, motion, Reorder, useDragControls } from 'motion/react';
-import { type ChangeEvent, type SubmitEvent, useRef, useState } from 'react';
+import { type ChangeEvent, type SubmitEvent, useEffect, useRef, useState } from 'react';
 
 type RubricListEditorProps = {
 	rubric: IRubric;
@@ -43,30 +43,19 @@ type RubricListEditorProps = {
 };
 
 export default function RubricListEditor(props: RubricListEditorProps) {
-	const { rubric, maxPoints, updateRubric: _updateRubric } = props;
+	const { rubric, maxPoints, updateRubric } = props;
 
 	const [draftItemId, setDraftItemId] = useState<Nullable<IRubricItem['id']>>(null);
 
-	const [isReordering, setIsReordering] = useState(false);
-	const [orderedRubricItems, setOrderedRubricItems] = useState(rubric.items);
+	const [orderedRubricItems, setOrderedRubricItems] = useState<Nullable<IRubricItem[]>>(null);
 	const orderedRubricItemsRef = useRef(orderedRubricItems);
 
-	function updateRubric(newRubric: IQuestion['rubric']) {
-		_updateRubric(newRubric);
-
-		const temporaryOrderedRubricItems = newRubric?.items ?? [];
-		setOrderedRubricItems(temporaryOrderedRubricItems);
-		orderedRubricItemsRef.current = temporaryOrderedRubricItems;
-	}
+	const isReordering = orderedRubricItems !== null;
+	const rubricItems = orderedRubricItems ?? rubric.items;
 
 	function addRubricItem() {
-		updateRubric({
-			...rubric,
-			items: [
-				...rubric.items,
-				RubricItem.create({ description: 'This is a new rubric item.', points: '0' }),
-			],
-		});
+		const newItem = RubricItem.create({ description: 'This is a new rubric item.', points: '0' });
+		updateRubric({ ...rubric, items: [...rubric.items, newItem] });
 	}
 
 	function toggleRubricGradingMode(_event: ChangeEvent<HTMLInputElement>) {
@@ -96,30 +85,42 @@ export default function RubricListEditor(props: RubricListEditorProps) {
 		});
 	}
 
+	function setTemporaryOrderedRubricItems(orderedRubricItems: Nullable<IRubricItem[]>) {
+		setOrderedRubricItems(orderedRubricItems);
+		orderedRubricItemsRef.current = orderedRubricItems;
+	}
+
+	function toggleReordering() {
+		const reorderedItems = isReordering ? null : rubric.items;
+		setTemporaryOrderedRubricItems(reorderedItems);
+	}
+
+	function updateOrderedRubricItems() {
+		if (!isReordering) return;
+		updateRubric({ ...rubric, items: orderedRubricItemsRef.current! });
+	}
+
 	function handleRemoveRubric() {
 		if (!confirm('Remove rubric? This cannot be undone!')) return;
 		updateRubric(null);
 	}
 
-	function setTemporaryOrderedRubricItems(orderedRubricItems: IRubricItem[]) {
-		setOrderedRubricItems(orderedRubricItems);
-		orderedRubricItemsRef.current = orderedRubricItems;
-	}
-
-	function updateOrderedRubricItems() {
-		_updateRubric({ ...rubric, items: orderedRubricItemsRef.current });
-	}
+	useEffect(() => {
+		if (!isReordering) return;
+		// In case rubric was modified elsewhere
+		setTemporaryOrderedRubricItems(rubric.items);
+	}, [rubric]);
 
 	return (
 		<motion.div className="mb-2 flex flex-col" layout="size">
 			<Reorder.Group
 				as="div"
 				className="relative"
-				values={orderedRubricItems}
+				values={rubricItems}
 				onReorder={setTemporaryOrderedRubricItems}
 			>
 				<AnimatePresence mode="popLayout">
-					{orderedRubricItems.map((rubricItem) => (
+					{rubricItems.map((rubricItem) => (
 						<RubricListItem
 							key={rubricItem.id}
 							rubricItem={rubricItem}
@@ -160,13 +161,13 @@ export default function RubricListEditor(props: RubricListEditorProps) {
 
 				<div className="flex">
 					<Tooltip
-						title={isReordering ? 'Done' : 'Reorder'}
+						title={isReordering ? 'Done reorder' : 'Reorder'}
 						size="sm"
 						enterDelay={Constants.TOOLTIP_ENTER_DELAY}
 					>
 						<IconButton
 							disabled={!isReordering && rubric.items.length === 0}
-							onClick={() => setIsReordering(!isReordering)}
+							onClick={toggleReordering}
 						>
 							{isReordering ? <DoneIcon /> : <MenuOpenIcon />}
 						</IconButton>
@@ -308,7 +309,10 @@ function RubricListItem(props: RubricListItemProps) {
 								</motion.div>
 							)}
 						</AnimatePresence>
-						<Typography level="body-sm" className="my-2 ml-2 line-clamp-5 text-start leading-4.5">
+						<Typography
+							level="body-sm"
+							className="my-2 ml-2 line-clamp-5 text-start leading-4.5 whitespace-pre-wrap"
+						>
 							{rubricItem.description}
 						</Typography>
 					</div>
