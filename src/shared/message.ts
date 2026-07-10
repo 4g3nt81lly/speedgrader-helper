@@ -5,11 +5,14 @@ import type { QuestionFeedback } from '#models/Feedback';
 import type { IQuestion } from '#models/Question';
 import type { IQuiz } from '#models/Quiz';
 import Constants from './constants';
+import type { AppSettings } from './settings';
 import type { Optional, SetOptional } from './types/utils';
 import { TimeoutError, withTimeout } from './utils';
 
 export const enum BackgroundCommand {
-	addQuizToStore = 0x00,
+	updateAppSettings = 0x00,
+
+	addQuizToStore,
 	updateQuizInStore,
 	removeQuizzesFromStore,
 
@@ -40,6 +43,10 @@ export type MessageResponse<T = any> =
 
 export type CommandMessagePayload = {
 	/* Background script command */
+
+	[BackgroundCommand.updateAppSettings]: {
+		partialSettings: Partial<AppSettings>;
+	};
 
 	[BackgroundCommand.addQuizToStore]: {
 		quiz: IQuiz;

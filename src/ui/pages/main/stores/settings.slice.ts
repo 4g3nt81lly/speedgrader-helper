@@ -1,8 +1,11 @@
-import { broadcastMessageToTabs, ContentCommand } from '#shared/message';
+import {
+	BackgroundCommand,
+	broadcastMessageToTabs,
+	ContentCommand,
+	sendMessageToBackground,
+} from '#shared/message';
 import { defaultAppSettings, type AppSettings } from '#shared/settings';
-import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import global from './global';
 import { syncSidePanelStates } from './helpers';
 import type { MainPageStates } from './main.store';
 import { loadAppSettingsFromLocalStorage } from './settings.actions';
@@ -18,8 +21,10 @@ const settingsSlice = createSlice({
 				...settings,
 				hotkeys: { ...settings.hotkeys },
 			};
-			global.appSettingsActionQueue.run(async () => {
-				await AppSettingsLocalStore.set(updatedSettings);
+			sendMessageToBackground({
+				command: BackgroundCommand.updateAppSettings,
+				partialSettings: updatedSettings,
+			}).then(() => {
 				broadcastMessageToTabs({ command: ContentCommand.reloadAppSettings });
 				syncSidePanelStates();
 			});

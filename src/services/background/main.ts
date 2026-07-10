@@ -1,11 +1,12 @@
 import Constants from '#shared/constants';
 import { addCommandHandler, BackgroundCommand } from '#shared/message';
-import { TaskQueue } from '#shared/queues';
+import TaskQueues from '#shared/queues';
+import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
 import QuizFeedbackLocalStore from '#shared/stores/QuizFeedbackLocalStore';
 import QuizLocalStore from '#shared/stores/QuizLocalStore';
 import configDev from './dev';
 
-export const quizActionQueue = new TaskQueue(Constants.QUIZ_ACTION_QUEUE_NAME);
+const taskQueues = new TaskQueues();
 
 // Allows users to open side panel by clicking on the action toolbar icon
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error) => {
@@ -16,17 +17,30 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error
 });
 
 addCommandHandler({
+	async [BackgroundCommand.updateAppSettings]({ partialSettings }) {
+		await taskQueues.run(Constants.APP_SETTINGS_ACTION_QUEUE_NAME, () =>
+			AppSettingsLocalStore.set(partialSettings)
+		);
+		return true;
+	},
+
 	async [BackgroundCommand.addQuizToStore]({ quiz: newQuiz }) {
-		await quizActionQueue.run(() => QuizLocalStore.addQuiz(newQuiz));
+		await taskQueues.run(Constants.QUIZ_ACTION_QUEUE_NAME, () =>
+			QuizLocalStore.addQuiz(newQuiz)
+		);
 		return true;
 	},
 	async [BackgroundCommand.updateQuizInStore]({ quiz: newQuiz }) {
-		await quizActionQueue.run(() => QuizLocalStore.setQuiz(newQuiz));
+		await taskQueues.run(Constants.QUIZ_ACTION_QUEUE_NAME, () =>
+			QuizLocalStore.setQuiz(newQuiz)
+		);
 		return true;
 	},
 	async [BackgroundCommand.removeQuizzesFromStore]({ quizId, quizIds }) {
 		const targetQuizIds = quizIds ?? [quizId];
-		await quizActionQueue.run(() => QuizLocalStore.removeQuizzes(targetQuizIds));
+		await taskQueues.run(Constants.QUIZ_ACTION_QUEUE_NAME, () =>
+			QuizLocalStore.removeQuizzes(targetQuizIds)
+		);
 		return true;
 	},
 
@@ -35,7 +49,7 @@ addCommandHandler({
 		submissionId,
 		question,
 	}) {
-		await quizActionQueue.run(() =>
+		await taskQueues.run(Constants.QUIZ_ACTION_QUEUE_NAME, () =>
 			question.feedback
 				? QuizFeedbackLocalStore.setQuestionFeedback(
 						quizId,
@@ -47,7 +61,7 @@ addCommandHandler({
 		return true;
 	},
 	async [BackgroundCommand.updateQuizLastGradedQuestion]({ quizId, questionId }) {
-		await quizActionQueue.run(() =>
+		await taskQueues.run(Constants.QUIZ_ACTION_QUEUE_NAME, () =>
 			QuizLocalStore.setQuizLastGradedQuestion(quizId, questionId)
 		);
 		return true;
