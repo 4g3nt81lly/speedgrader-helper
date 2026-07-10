@@ -1,28 +1,11 @@
 import { inOutTransitionMotionProps } from '#shared/animation';
-import { addCommandHandler, ContentCommand } from '#shared/message';
 import CloseIcon from '@mui/icons-material/Close';
 import { IconButton, Typography } from '@mui/joy';
 import { AnimatePresence, motion } from 'motion/react';
-import { useLayoutEffect } from 'react';
-import { postSnackbarItem, removeSnackbarItems, useSnackbarState, type SnackbarItemType } from '.';
+import { removeSnackbarItems, useSnackbarState, type SnackbarItemType } from '.';
 
 export default function Snackbar() {
 	const state = useSnackbarState();
-
-	useLayoutEffect(() => {
-		// Register message listener for cross-context invocation
-		return addCommandHandler(
-			[ContentCommand.pushSnackbarItem, ContentCommand.popSnackbarItems],
-			(message) => {
-				if (message.command === ContentCommand.pushSnackbarItem) {
-					postSnackbarItem(message.item);
-				}
-				if (message.command === ContentCommand.popSnackbarItems) {
-					removeSnackbarItems(message.itemIds);
-				}
-			}
-		);
-	}, []);
 
 	return (
 		<motion.div className="fixed bottom-7 left-7 z-1000 flex size-fit max-w-1/2 flex-col justify-end gap-4 bg-transparent">

@@ -34,22 +34,16 @@ export default function QuizDetailsView(props: QuizDetailsViewProps) {
 	function updateQuestion(newQuestion: IQuestion) {
 		const newQuiz = Quiz.updateQuestion(quiz, newQuestion.id, (oldQuestion) => {
 			if (quiz.focusMode && oldQuestion.isFocused !== newQuestion.isFocused) {
-				sendMessageToTab(
-					{
-						command: ContentCommand.updateFocusState,
-						focusMode: 'select',
-						target: { [newQuestion.id]: newQuestion.isFocused },
-					},
-					{ noThrowOnNoReceiver: true }
-				);
+				sendMessageToTab({
+					command: ContentCommand.updateFocusState,
+					focusMode: 'select',
+					target: { [newQuestion.id]: newQuestion.isFocused },
+				});
 			}
 			return newQuestion;
 		});
 		dispatch(setQuiz({ quiz: newQuiz }));
-		sendMessageToTab(
-			{ command: ContentCommand.reloadRubric, question: newQuestion },
-			{ noThrowOnNoReceiver: true }
-		);
+		sendMessageToTab({ command: ContentCommand.reloadRubric, question: newQuestion });
 	}
 
 	useEffect(() => {
@@ -131,14 +125,11 @@ function ActionBar({ quiz }: ActionBarProps) {
 			})
 		);
 		if (quiz.focusMode) {
-			sendMessageToTab(
-				{
-					command: ContentCommand.updateFocusState,
-					focusMode: 'select',
-					target: newFocusMode ? 'all' : 'none',
-				},
-				{ noThrowOnNoReceiver: true }
-			);
+			sendMessageToTab({
+				command: ContentCommand.updateFocusState,
+				focusMode: 'select',
+				target: newFocusMode ? 'all' : 'none',
+			});
 		}
 	}
 
@@ -146,21 +137,19 @@ function ActionBar({ quiz }: ActionBarProps) {
 		const newFocusMode = !quiz.focusMode;
 		dispatch(setQuiz({ quiz: { ...quiz, focusMode: newFocusMode } }));
 		if (newFocusMode) {
-			sendMessageToTab(
-				{
-					command: ContentCommand.updateFocusState,
-					focusMode: 'on',
-					target: Object.fromEntries(
-						quiz.questions.flatMap((question) => (question.isFocused ? [[question.id, true]] : []))
-					),
-				},
-				{ noThrowOnNoReceiver: true }
-			);
+			sendMessageToTab({
+				command: ContentCommand.updateFocusState,
+				focusMode: 'on',
+				target: Object.fromEntries(
+					quiz.questions.flatMap((question) => (question.isFocused ? [[question.id, true]] : []))
+				),
+			});
 		} else {
-			sendMessageToTab(
-				{ command: ContentCommand.updateFocusState, focusMode: 'off', target: null },
-				{ noThrowOnNoReceiver: true }
-			);
+			sendMessageToTab({
+				command: ContentCommand.updateFocusState,
+				focusMode: 'off',
+				target: null,
+			});
 		}
 	}
 

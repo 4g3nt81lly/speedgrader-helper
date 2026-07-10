@@ -5,7 +5,8 @@ import type { QuestionFeedback } from '#models/Feedback';
 import type { IQuestion } from '#models/Question';
 import type { IQuiz } from '#models/Quiz';
 import Constants from './constants';
-import type { SetOptional } from './types/utils';
+import type { Optional, SetOptional } from './types/utils';
+import { TimeoutError, withTimeout } from './utils';
 
 export const enum BackgroundCommand {
 	addQuizToStore = 0x00,
@@ -18,7 +19,6 @@ export const enum BackgroundCommand {
 
 export const enum ContentCommand {
 	loadQuiz = 0x10,
-	injectQuiz,
 
 	pushSnackbarItem,
 	popSnackbarItems,
@@ -31,23 +31,14 @@ export const enum ContentCommand {
 
 export type RuntimeCommand = BackgroundCommand | ContentCommand;
 
-export type ICommandMessage<
-	C extends keyof CommandMessagePayload = keyof CommandMessagePayload,
-> = { command: C } & CommandMessagePayload[C];
+type CommandMessage<C extends keyof CommandMessagePayload = keyof CommandMessagePayload> =
+	{ command: C } & CommandMessagePayload[C];
 
-export type IMessageResponse<T = any> =
-	| {
-			error: {
-				message: string;
-			};
-			data?: T;
-	  }
-	| {
-			data: T;
-			error?: undefined;
-	  };
+export type MessageResponse<T = any> =
+	| { error: { message: string }; data?: T }
+	| { data: T; error?: undefined };
 
-type CommandMessagePayload = {
+export type CommandMessagePayload = {
 	/* Background script command */
 
 	[BackgroundCommand.addQuizToStore]: {
@@ -78,7 +69,6 @@ type CommandMessagePayload = {
 		loader: QuizLoaderType;
 		payload?: QuizLoaderPayload;
 	};
-	[ContentCommand.injectQuiz]: {};
 
 	[ContentCommand.pushSnackbarItem]: {
 		item: SetOptional<ISnackbarItem, 'id'>;
@@ -107,22 +97,24 @@ type CommandMessagePayload = {
 	[ContentCommand.reloadAppSettings]: {};
 };
 
-export function addCommandHandler<C extends keyof CommandMessagePayload>(
-	command: C | C[],
-	handler: (
-		message: C extends unknown ? ICommandMessage<C> : never,
+type CommandHandlers = {
+	[Command in keyof CommandMessagePayload]: (
+		payload: CommandMessagePayload[Command],
 		sender: chrome.runtime.MessageSender
-	) => any
-) {
-	const commands = Array.isArray(command) ? command : [command];
-	return addMessageListener<ICommandMessage<C>>((message, sender) => {
-		if (!commands.includes(message.command)) return;
+	) => any;
+};
+
+export function addCommandHandler(handlers: Partial<CommandHandlers>) {
+	return addMessageListener<CommandMessage>((message, sender) => {
+		const handler = handlers[message.command];
+		if (!handler) return;
 		return handler(message as unknown as any, sender);
 	});
 }
 
-export function addMessageListener<Message>(
-	handler: (message: Message, sender: chrome.runtime.MessageSender) => any
+function addMessageListener<Message>(
+	handler: (message: Message, sender: chrome.runtime.MessageSender) => any,
+	timeout: number = 5 * Constants.SECOND_MS
 ) {
 	const listener = (
 		message: any,
@@ -132,30 +124,37 @@ export function addMessageListener<Message>(
 		try {
 			var result = handler(message, sender);
 		} catch (error) {
-			return sendResponse(makeErrorResponsePayload(error));
+			sendResponse(makeErrorResponsePayload(error));
+			return false;
 		}
 		if (result instanceof Promise) {
 			(async () => {
 				try {
-					const response = await result;
+					const response = await withTimeout(result, timeout);
 					if (response !== undefined) {
-						sendResponse({ data: response } satisfies IMessageResponse);
+						sendResponse({ data: response } satisfies MessageResponse);
 					}
 				} catch (error) {
+					if (error instanceof TimeoutError) {
+						error.message =
+							'Timed out while waiting for an asynchronous message response';
+						console.error(error.message);
+					}
 					sendResponse(makeErrorResponsePayload(error));
 				}
 			})();
 			return true;
 		}
 		if (result !== undefined) {
-			sendResponse({ data: result } satisfies IMessageResponse);
+			sendResponse({ data: result } satisfies MessageResponse);
 		}
+		return false;
 	};
 	chrome.runtime.onMessage.addListener(listener);
 	return () => chrome.runtime.onMessage.removeListener(listener);
 }
 
-function makeErrorResponsePayload(error: unknown): IMessageResponse {
+function makeErrorResponsePayload(error: unknown): MessageResponse {
 	return {
 		error: {
 			message:
@@ -169,49 +168,44 @@ type SendMessageOptions = {
 		milliseconds: number;
 		message?: string;
 	};
-	noThrowOnNoReceiver?: boolean;
+	throwOnNoReceiver?: boolean;
 };
 
 async function sendMessage<T = unknown>(
-	messagePromise: Promise<any>,
+	messagePromise: Promise<Optional<MessageResponse<T>>>,
 	options: SendMessageOptions = {}
-): Promise<T> {
-	const { timeout } = options;
-	const promises = [
-		messagePromise.then((response: IMessageResponse<T>) => {
-			if (response.error) {
-				// The receiver responded with an error object
-				throw new Error(response.error.message);
-			}
-			return response.data;
-		}),
-	];
-	if (timeout && timeout.milliseconds > 0) {
-		promises.push(
-			new Promise((_, reject) =>
-				setTimeout(() => reject('TIMEOUT'), timeout.milliseconds)
-			)
-		);
-	}
+): Promise<Optional<T>> {
+	const { timeout, throwOnNoReceiver } = options;
+	let response: Optional<MessageResponse<T>>;
 	try {
-		return await Promise.race(promises);
+		if (timeout && timeout.milliseconds > 0) {
+			response = await withTimeout(messagePromise, timeout.milliseconds);
+		} else {
+			response = await messagePromise;
+		}
 	} catch (error) {
-		if (error === 'TIMEOUT') {
-			throw new Error(
-				timeout?.message
-					? `${timeout.message} (${timeout.milliseconds}ms)`
-					: `Message timeout (${timeout!.milliseconds}ms)`
-			);
+		if (error instanceof TimeoutError) {
+			throw new Error(`Message timed out (${timeout!.milliseconds}ms)`);
+		}
+		if (!(error instanceof Error)) {
+			throw new Error('An error occurred while messaging');
 		}
 		if (
-			options.noThrowOnNoReceiver &&
-			error instanceof Error &&
-			error.message.endsWith(Constants.RECEIVING_END_DNE_MESSAGE)
+			error.message.endsWith(Constants.RECEIVING_END_DNE_MESSAGE) &&
+			!throwOnNoReceiver
 		) {
-			return <T>undefined;
+			return undefined;
 		}
 		throw error;
 	}
+	if (!response) {
+		return undefined;
+	}
+	if (response.error) {
+		// The receiver responded with an error object
+		throw new Error(response.error.message);
+	}
+	return response.data;
 }
 
 type SendMessageToRuntimeOptions = {} & SendMessageOptions;
@@ -219,8 +213,8 @@ type SendMessageToRuntimeOptions = {} & SendMessageOptions;
 export function sendMessageToRuntime<
 	T = unknown,
 	C extends RuntimeCommand = RuntimeCommand,
->(message: ICommandMessage<C>, options: SendMessageToRuntimeOptions = {}) {
-	return sendMessage<T>(chrome.runtime.sendMessage(message), options);
+>(message: CommandMessage<C>, options: SendMessageToRuntimeOptions = {}) {
+	return <Promise<T>>sendMessage<T>(chrome.runtime.sendMessage(message), options);
 }
 
 export const sendMessageToBackground = sendMessageToRuntime;
@@ -229,10 +223,27 @@ type SendMessageToTabOptions = {
 	tabId?: number;
 } & SendMessageOptions;
 
-export async function sendMessageToTab<
+interface SendMessageToTabFunction {
+	<T = unknown, C extends ContentCommand = ContentCommand>(
+		message: CommandMessage<C>
+	): Promise<Optional<T>>;
+	<T = unknown, C extends ContentCommand = ContentCommand>(
+		message: CommandMessage<C>,
+		options: Omit<SendMessageToTabOptions, 'throwOnNoReceiver'> & {
+			throwOnNoReceiver: true;
+		}
+	): Promise<T>;
+	<T = unknown, C extends ContentCommand = ContentCommand>(
+		message: CommandMessage<C>,
+		options: Omit<SendMessageToTabOptions, 'throwOnNoReceiver'> &
+			({ throwOnNoReceiver: false } | {})
+	): Promise<Optional<T>>;
+}
+
+export const sendMessageToTab: SendMessageToTabFunction = async function <
 	T = unknown,
 	C extends ContentCommand = ContentCommand,
->(message: ICommandMessage<C>, options: SendMessageToTabOptions = {}): Promise<T> {
+>(message: CommandMessage<C>, options: SendMessageToTabOptions = {}) {
 	let { tabId } = options;
 	if (tabId === undefined) {
 		const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -242,10 +253,10 @@ export async function sendMessageToTab<
 		tabId = activeTab.id!;
 	}
 	return sendMessage<T>(chrome.tabs.sendMessage(tabId, message), options);
-}
+};
 
 export async function broadcastMessageToTabs<C extends ContentCommand = ContentCommand>(
-	message: ICommandMessage<C>,
+	message: CommandMessage<C>,
 	query: chrome.tabs.QueryInfo = {},
 	predicate?: (tab: chrome.tabs.Tab) => boolean
 ) {
@@ -260,8 +271,6 @@ export async function broadcastMessageToTabs<C extends ContentCommand = ContentC
 		);
 	}
 	await Promise.allSettled(
-		tabs.map((tab) =>
-			sendMessageToTab(message, { tabId: tab.id!, noThrowOnNoReceiver: true })
-		)
+		tabs.map((tab) => sendMessageToTab(message, { tabId: tab.id! }))
 	);
 }

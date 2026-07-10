@@ -2,7 +2,6 @@ import type { QuizLoaderType } from '#content/modules';
 import type { IQuiz } from '#models/Quiz';
 import Constants from '#shared/constants';
 import { ContentCommand, sendMessageToTab } from '#shared/message';
-import { defaultAppSettings } from '#shared/settings';
 import QuizLocalStore from '#shared/stores/QuizLocalStore';
 import type { Nullable } from '#shared/types/utils';
 import {
@@ -18,7 +17,7 @@ export default function useCreateQuiz(dismiss: () => void) {
 	const appSettings = useMainSelector('settings');
 
 	const [quizLoader, setQuizLoader] = useState<QuizLoaderType>(
-		appSettings.defaultQuizLoader ?? defaultAppSettings.defaultQuizLoader
+		appSettings.defaultQuizLoader
 	);
 	const [newQuiz, setNewQuiz] = useState<Nullable<IQuiz>>(null);
 
@@ -35,18 +34,36 @@ export default function useCreateQuiz(dismiss: () => void) {
 		try {
 			var quiz = await sendMessageToTab<IQuiz, ContentCommand.loadQuiz>(
 				{ command: ContentCommand.loadQuiz, loader: quizLoader },
-				{ timeout: { milliseconds: 5 * Constants.SECOND_MS } }
+				{ timeout: { milliseconds: 5 * Constants.SECOND_MS }, throwOnNoReceiver: true }
 			);
 			var oldQuiz = await QuizLocalStore.getQuizByUrl(quiz.url);
 		} catch (error) {
 			return setErrorMessage(
-				(<Error>error)?.message ?? 'An error occurred while loading quiz'
+				error instanceof Error ? error.message : 'An error occurred while loading quiz'
 			);
 		} finally {
 			setIsLoading(false);
 		}
 		setNewQuiz(quiz);
 		if (oldQuiz) setIsOverwrite(true);
+	}
+
+	function handleQuizLoaderChange(quizLoader: QuizLoaderType) {
+		setQuizLoader(quizLoader);
+		loadQuiz(quizLoader);
+	}
+
+	async function confirmQuiz() {
+		if (!newQuiz) return;
+		if (
+			isOverwrite &&
+			!confirm(
+				'Warning: A quiz with this URL already exists, this will replace it and consequently remove all rubrics and cached feedbacks. This cannot be undone!'
+			)
+		)
+			return;
+		dismiss();
+		dispatch(addQuiz(newQuiz));
 	}
 
 	return {
@@ -56,26 +73,8 @@ export default function useCreateQuiz(dismiss: () => void) {
 		isOverwrite,
 		errorMessage,
 
-		setQuizLoader(quizLoader: QuizLoaderType) {
-			setQuizLoader(quizLoader);
-			loadQuiz(quizLoader);
-		},
-
-		loadQuiz() {
-			loadQuiz(quizLoader);
-		},
-
-		async confirmQuiz() {
-			if (!newQuiz) return;
-			if (
-				isOverwrite &&
-				!confirm(
-					'Warning: A quiz with this URL already exists, this will replace it and consequently remove all cached feedbacks. This cannot be undone!'
-				)
-			)
-				return;
-			dismiss();
-			dispatch(addQuiz(newQuiz));
-		},
+		setQuizLoader: handleQuizLoaderChange,
+		loadQuiz: () => loadQuiz(quizLoader),
+		confirmQuiz,
 	};
 }

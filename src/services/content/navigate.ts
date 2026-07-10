@@ -13,14 +13,11 @@ export default async function navigateSubmission(
 	}
 	// Update last-graded question before navigating
 	if (this.lastGradedQuestionId) {
-		await sendMessageToBackground(
-			{
-				command: BackgroundCommand.updateQuizLastGradedQuestion,
-				quizId: this.quiz!.id,
-				questionId: this.lastGradedQuestionId,
-			},
-			{ noThrowOnNoReceiver: true }
-		);
+		await sendMessageToBackground({
+			command: BackgroundCommand.updateQuizLastGradedQuestion,
+			quizId: this.quiz!.id,
+			questionId: this.lastGradedQuestionId,
+		});
 	}
 	dispatchContentEvent(ContentEvent.navigateSubmission, { direction }, window);
 }

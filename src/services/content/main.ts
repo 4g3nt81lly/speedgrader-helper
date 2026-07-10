@@ -1,16 +1,42 @@
-import {
-	addMessageListener,
-	type ContentCommand,
-	type ICommandMessage,
-} from '#shared/message';
+import { addCommandHandler, ContentCommand } from '#shared/message';
 import Patterns from '#shared/patterns';
+import { defaultAppSettings } from '#shared/settings';
 import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
 import gradingContext from './GradingContext';
-import messageHandlers from './handlers';
-import { quizInjectors } from './modules';
+import { quizInjectors, quizLoaders } from './modules';
+import { postSnackbarItem, removeSnackbarItems } from './ui/snackbar';
 
-addMessageListener((message: ICommandMessage<ContentCommand>) => {
-	return messageHandlers[message.command]?.(<any>message);
+addCommandHandler({
+	[ContentCommand.loadQuiz](payload) {
+		const { loader: loaderType, payload: loaderPayload } = payload;
+		const quizLoader = new quizLoaders[loaderType]();
+		const newQuiz = quizLoader.getQuiz(loaderPayload);
+		return newQuiz;
+	},
+
+	[ContentCommand.pushSnackbarItem]({ item }) {
+		postSnackbarItem(item);
+	},
+	[ContentCommand.popSnackbarItems]({ itemIds }) {
+		removeSnackbarItems(itemIds);
+	},
+
+	[ContentCommand.reloadAppSettings]() {
+		(async () => {
+			try {
+				gradingContext.appSettings = {
+					...defaultAppSettings,
+					...(await AppSettingsLocalStore.getAll()),
+				};
+			} catch (error) {
+				postSnackbarItem({
+					message:
+						'An error occurred while reloading app settings, please refresh the page.',
+					closeReason: 'manual',
+				});
+			}
+		})();
+	},
 });
 
 if (import.meta.env.DEV || document.URL.match(Patterns.SG_URL_ORIGIN)) {

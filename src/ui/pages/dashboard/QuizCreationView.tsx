@@ -36,7 +36,9 @@ export default function QuizCreationView(props: QuizCreationViewProps) {
 		);
 	}, [newQuiz]);
 
-	useEffect(loadQuiz, []);
+	useEffect(() => {
+		loadQuiz();
+	}, []);
 
 	return (
 		<div className="flex h-full flex-col overflow-y-scroll">

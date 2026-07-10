@@ -13,7 +13,7 @@ import {
 	BackgroundCommand,
 	ContentCommand,
 	sendMessageToBackground,
-	type ICommandMessage,
+	type CommandMessagePayload,
 } from '#shared/message';
 import type { Nullable } from '#shared/types/utils';
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -306,21 +306,21 @@ export default function useGradingState(props: GradingBoxProps) {
 	}, []);
 
 	const updateFocusState = useCallback(
-		(message: ICommandMessage<ContentCommand.updateFocusState>) => {
+		(payload: CommandMessagePayload[ContentCommand.updateFocusState]) => {
 			if (
-				message.focusMode === 'select' &&
-				typeof message.target === 'object' &&
-				message.target[initialQuestion.id] === undefined
+				payload.focusMode === 'select' &&
+				typeof payload.target === 'object' &&
+				payload.target[initialQuestion.id] === undefined
 			) {
 				// Not the target, no need to update visibility
 				return;
 			}
 			const isVisible =
-				message.focusMode === 'off' ||
-				(message.focusMode === 'on' && message.target[initialQuestion.id]) ||
-				(message.focusMode === 'select' &&
-					(message.target === 'all' ||
-						(message.target !== 'none' && message.target[initialQuestion.id]!)));
+				payload.focusMode === 'off' ||
+				(payload.focusMode === 'on' && payload.target[initialQuestion.id]) ||
+				(payload.focusMode === 'select' &&
+					(payload.target === 'all' ||
+						(payload.target !== 'none' && payload.target[initialQuestion.id]!)));
 
 			if (!isVisible) {
 				reset(false);
@@ -353,18 +353,13 @@ export default function useGradingState(props: GradingBoxProps) {
 			submissionWindow
 		);
 
-		const removeCommandListener = addCommandHandler(
-			[ContentCommand.reloadRubric, ContentCommand.updateFocusState],
-			async (message) => {
-				if (message.command === ContentCommand.reloadRubric) {
-					if (message.question.id !== initialQuestion.id) return;
-					reloadRubric(message.question);
-				}
-				if (message.command === ContentCommand.updateFocusState) {
-					updateFocusState(message);
-				}
-			}
-		);
+		const removeCommandListener = addCommandHandler({
+			[ContentCommand.reloadRubric]({ question }) {
+				if (question.id !== initialQuestion.id) return;
+				reloadRubric(question);
+			},
+			[ContentCommand.updateFocusState]: updateFocusState,
+		});
 
 		return () => {
 			pointsInput.removeEventListener('input', handleSGPointsInputChange);

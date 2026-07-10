@@ -1,12 +1,9 @@
 import Constants from '#shared/constants';
-import {
-	addMessageListener,
-	type BackgroundCommand,
-	type ICommandMessage,
-} from '#shared/message';
+import { addCommandHandler, BackgroundCommand } from '#shared/message';
 import { TaskQueue } from '#shared/queues';
+import QuizFeedbackLocalStore from '#shared/stores/QuizFeedbackLocalStore';
+import QuizLocalStore from '#shared/stores/QuizLocalStore';
 import configDev from './dev';
-import messageHandlers from './handlers';
 
 export const quizActionQueue = new TaskQueue(Constants.QUIZ_ACTION_QUEUE_NAME);
 
@@ -18,8 +15,43 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error
 	);
 });
 
-addMessageListener((message: ICommandMessage<BackgroundCommand>) => {
-	return messageHandlers[message.command]?.(<any>message);
+addCommandHandler({
+	async [BackgroundCommand.addQuizToStore]({ quiz: newQuiz }) {
+		await quizActionQueue.run(() => QuizLocalStore.addQuiz(newQuiz));
+		return true;
+	},
+	async [BackgroundCommand.updateQuizInStore]({ quiz: newQuiz }) {
+		await quizActionQueue.run(() => QuizLocalStore.setQuiz(newQuiz));
+		return true;
+	},
+	async [BackgroundCommand.removeQuizzesFromStore]({ quizId, quizIds }) {
+		const targetQuizIds = quizIds ?? [quizId];
+		await quizActionQueue.run(() => QuizLocalStore.removeQuizzes(targetQuizIds));
+		return true;
+	},
+
+	async [BackgroundCommand.updateQuestionFeedbackInStore]({
+		quizId,
+		submissionId,
+		question,
+	}) {
+		await quizActionQueue.run(() =>
+			question.feedback
+				? QuizFeedbackLocalStore.setQuestionFeedback(
+						quizId,
+						submissionId,
+						question.feedback
+					)
+				: QuizFeedbackLocalStore.removeQuestionFeedback(quizId, submissionId, question.id)
+		);
+		return true;
+	},
+	async [BackgroundCommand.updateQuizLastGradedQuestion]({ quizId, questionId }) {
+		await quizActionQueue.run(() =>
+			QuizLocalStore.setQuizLastGradedQuestion(quizId, questionId)
+		);
+		return true;
+	},
 });
 
 if (import.meta.env.DEV) {
