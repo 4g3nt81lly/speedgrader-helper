@@ -17,10 +17,7 @@
 		"unlimitedStorage",
 		"downloads"
 	],
-	"host_permissions": [
-		"https://*/*",
-		"http://*/*"
-	],
+	"host_permissions": ["https://*/*", "http://*/*"],
 	"action": {
 		"default_title": "Click to open panel"
 	},
@@ -29,35 +26,20 @@
 	},
 	"content_scripts": [
 		{
-			"matches": [
-				"https://*/*",
-				"http://*/*"
-			],
-			"css": [
-				"injected.css"
-			],
+			"matches": ["https://*/*", "http://*/*"],
+			"css": ["injected.css"],
 			"run_at": "document_start",
 			"all_frames": true
 		},
 		{
-			"matches": [
-				"https://*/*",
-				"http://*/*"
-			],
-			"js": [
-				"content-scripts/insider.js"
-			],
+			"matches": ["https://*/*", "http://*/*"],
+			"js": ["content-scripts/insider.js"],
 			"run_at": "document_start",
 			"world": "MAIN"
 		},
 		{
-			"matches": [
-				"https://*/*",
-				"http://*/*"
-			],
-			"js": [
-				"content-scripts/main.js"
-			],
+			"matches": ["https://*/*", "http://*/*"],
+			"js": ["content-scripts/main.js"],
 			"run_at": "document_idle",
 			"world": "ISOLATED"
 		}

@@ -2,12 +2,7 @@
 	"compilerOptions": {
 		"target": "ES2020",
 		"useDefineForClassFields": true,
-		"lib": [
-			"ES2020",
-			"DOM",
-			"DOM.Iterable",
-			"WebWorker"
-		],
+		"lib": ["ES2020", "DOM", "DOM.Iterable", "WebWorker"],
 		"module": "ESNext",
 		"moduleResolution": "bundler",
 		"skipLibCheck": true,
@@ -18,35 +13,16 @@
 		"jsx": "react-jsx",
 		"strict": true,
 		"paths": {
-			"#models/*": [
-				"./src/models/*"
-			],
-			"#schemas/*": [
-				"./src/schemas/*"
-			],
-			"#background/*": [
-				"./src/services/background/*"
-			],
-			"#content/*": [
-				"./src/services/content/*"
-			],
-			"#shared/*": [
-				"./src/shared/*"
-			],
-			"#sidepanel/*": [
-				"./src/ui/*"
-			]
+			"#models/*": ["./src/models/*"],
+			"#schemas/*": ["./src/schemas/*"],
+			"#background/*": ["./src/services/background/*"],
+			"#content/*": ["./src/services/content/*"],
+			"#shared/*": ["./src/shared/*"],
+			"#sidepanel/*": ["./src/ui/*"]
 		},
 		"noImplicitOverride": true,
 		"noUncheckedIndexedAccess": true
 	},
-	"include": [
-		"src",
-		"vite-env.d.ts"
-	],
-	"references": [
-		{
-			"path": "./tsconfig.build.json"
-		}
-	]
+	"include": ["src", "vite-env.d.ts"],
+	"references": [{ "path": "./tsconfig.build.json" }]
 }

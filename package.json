@@ -8,7 +8,7 @@
 		"build": "tsc && tsx build.ts",
 		"clean": "rm -rf dist",
 		"clean:dev": "rm -rf build",
-		"format": "prettier --write \"**/*.{js,jsx,ts,tsx,css,json,md}\""
+		"format": "prettier --write --list-different \"**/*.{js,jsx,ts,tsx,css,json,md}\""
 	},
 	"devDependencies": {
 		"@dotenvx/dotenvx": "^1.75.1",
