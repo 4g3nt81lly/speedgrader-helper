@@ -13,7 +13,6 @@ import type { Nullable } from '#shared/types/utils';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import CloseIcon from '@mui/icons-material/Close';
-import DeleteIcon from '@mui/icons-material/Delete';
 import DoneIcon from '@mui/icons-material/Done';
 import EditIcon from '@mui/icons-material/Edit';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -120,11 +119,6 @@ export default function RubricListEditor(props: RubricListEditorProps) {
 		updateRubric({ ...rubric, items: orderedRubricItemsRef.current! });
 	}
 
-	function handleRemoveRubric() {
-		if (!confirm('Remove rubric? This cannot be undone!')) return;
-		updateRubric(null);
-	}
-
 	useEffect(() => {
 		if (!isReordering) return;
 		// In case rubric was modified elsewhere
@@ -183,7 +177,6 @@ export default function RubricListEditor(props: RubricListEditorProps) {
 					</ButtonGroup>
 					<Tooltip
 						title="Points will default to maximum"
-						size="sm"
 						enterDelay={Constants.TOOLTIP_ENTER_DELAY}
 					>
 						<Checkbox
@@ -197,25 +190,17 @@ export default function RubricListEditor(props: RubricListEditorProps) {
 					</Tooltip>
 				</div>
 
-				<div className="flex">
-					<Tooltip
-						title={isReordering ? 'Done reorder' : 'Reorder'}
-						size="sm"
-						enterDelay={Constants.TOOLTIP_ENTER_DELAY}
+				<Tooltip
+					title={isReordering ? 'Done reorder' : 'Reorder'}
+					enterDelay={Constants.TOOLTIP_ENTER_DELAY}
+				>
+					<IconButton
+						disabled={!isReordering && rubric.items.length === 0}
+						onClick={toggleReordering}
 					>
-						<IconButton
-							disabled={!isReordering && rubric.items.length === 0}
-							onClick={toggleReordering}
-						>
-							{isReordering ? <DoneIcon /> : <MenuOpenIcon />}
-						</IconButton>
-					</Tooltip>
-					<Tooltip title="Remove All" size="sm" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
-						<IconButton color="danger" disabled={isReordering} onClick={handleRemoveRubric}>
-							<DeleteIcon />
-						</IconButton>
-					</Tooltip>
-				</div>
+						{isReordering ? <DoneIcon /> : <MenuOpenIcon />}
+					</IconButton>
+				</Tooltip>
 			</motion.div>
 		</motion.div>
 	);

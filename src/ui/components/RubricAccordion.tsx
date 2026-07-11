@@ -2,9 +2,9 @@ import type { IQuestion } from '#models/Question';
 import Rubric from '#models/Rubric';
 import { inOutTransitionMotionProps } from '#shared/animation';
 import Constants from '#shared/constants';
-import { defaultAppSettings } from '#shared/settings';
 import type { SetNonNullable } from '#shared/types/utils';
 import { useMainSelector } from '#sidepanel/pages/main/stores/main.store';
+import DeleteIcon from '@mui/icons-material/Delete';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 import TuneIcon from '@mui/icons-material/Tune';
 import { Button, Chip, IconButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/joy';
@@ -53,9 +53,7 @@ export default function RubricAccordion(props: RubricAccordionProps) {
 					>
 						<RubricEditor
 							question={question as SetNonNullable<IQuestion, 'rubric'>}
-							defaultRubricEditor={
-								appSettings.defaultRubricEditor ?? defaultAppSettings.defaultRubricEditor
-							}
+							defaultRubricEditor={appSettings.defaultRubricEditor}
 							updateRubric={updateRubric}
 						/>
 					</motion.div>
@@ -85,6 +83,11 @@ type RubricEditorProps = {
 
 function RubricEditor({ question, defaultRubricEditor, updateRubric }: RubricEditorProps) {
 	const [editorType, setEditorType] = useState<RubricEditorType>(defaultRubricEditor);
+
+	function handleRemoveRubric() {
+		if (!confirm('Remove rubric? This cannot be undone!')) return;
+		updateRubric(null);
+	}
 
 	return (
 		<>
@@ -116,8 +119,15 @@ function RubricEditor({ question, defaultRubricEditor, updateRubric }: RubricEdi
 				)}
 			</AnimatePresence>
 
-			<motion.div layout="position">
-				<RubricEditorSelector editorType={editorType} setEditorType={setEditorType} />
+			<motion.div className="flex items-center justify-between" layout="position">
+				<div>
+					<RubricEditorSelector editorType={editorType} setEditorType={setEditorType} />
+				</div>
+				<Tooltip title="Remove rubric" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
+					<IconButton color="danger" onClick={handleRemoveRubric}>
+						<DeleteIcon />
+					</IconButton>
+				</Tooltip>
 			</motion.div>
 		</>
 	);
