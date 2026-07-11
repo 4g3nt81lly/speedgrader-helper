@@ -4,6 +4,7 @@ import Constants from '#shared/constants';
 import { ContentCommand, sendMessageToTab } from '#shared/message';
 import { MainPageDispatch, useMainSelector } from '#sidepanel/pages/main/stores/main.store';
 import { setQuiz } from '#sidepanel/pages/main/stores/quizzes.slice';
+import { saveSelectionStateToLocalStorage } from '#sidepanel/pages/main/stores/selection.actions';
 import { selectQuiz } from '#sidepanel/pages/main/stores/selection.slice';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -29,6 +30,7 @@ export default function QuizDetailsView(props: QuizDetailsViewProps) {
 
 	function navigateBack() {
 		dispatch(selectQuiz(null));
+		dispatch(saveSelectionStateToLocalStorage());
 	}
 
 	function updateQuestion(newQuestion: IQuestion) {
