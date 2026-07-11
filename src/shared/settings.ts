@@ -30,7 +30,7 @@ export const defaultAppSettings: AppSettings = {
 	defaultQuizLoader: 'oldSG',
 
 	hotkeys: {
-		quizSubmitFeedback: 'ctrl+s',
+		quizSubmitFeedback: 'meta+s',
 		quizNextSubmission: 'ctrl+period',
 		quizPrevSubmission: 'ctrl+comma',
 	},

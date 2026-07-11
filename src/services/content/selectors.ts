@@ -29,13 +29,8 @@ const Selectors = {
 
 	app: {
 		SNACKBAR_ROOT_ID: 'sgh_snackbar_root',
-		get SNACKBAR_ROOT() {
-			return `#${this.SNACKBAR_ROOT_ID}`;
-		},
+		EVENT_PROXY_ID: 'sgh_event_proxy',
 		GRADING_BOX_CLASS: 'sgh_grading_box_host',
-		get GRADING_BOX() {
-			return `.${this.GRADING_BOX_CLASS}`;
-		},
 		HIDDEN_QUESTION_CLASS: 'sgh_question_hidden',
 	},
 };

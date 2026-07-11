@@ -1,4 +1,4 @@
-import EventProxy from '#content/EventProxy';
+import { SubmissionEventProxy, ToplevelEventProxy } from '#content/EventProxy';
 import gradingContext from '#content/GradingContext';
 import { injectReactShadowDOM } from '#content/inject';
 import Selectors from '#content/selectors';
@@ -44,7 +44,7 @@ export class OldSGQuizInjector extends QuizInjector {
 	protected submissionIframe: Nullable<HTMLIFrameElement> = null;
 
 	public override async inject() {
-		injectReactShadowDOM(document.body, <Snackbar />);
+		injectReactShadowDOM(document.body, <Snackbar />, { hostId: Selectors.app.SNACKBAR_ROOT_ID });
 		try {
 			this.canonicalUrl = this.quizLoader.getCanonicalURL();
 
@@ -69,7 +69,7 @@ export class OldSGQuizInjector extends QuizInjector {
 			this.quiz = await QuizLocalStore.getQuizByUrl(this.canonicalUrl);
 			await this.initializeGradingContext();
 			if (this.quiz?.isEnabled) {
-				this.registerEventProxy();
+				this.registerEventProxies();
 				await this.injectGradingControls();
 			}
 		} catch (error) {
@@ -97,26 +97,43 @@ export class OldSGQuizInjector extends QuizInjector {
 			this.submissionIframe = submissionIframe;
 			await this.handleInject();
 		}
+		const onLoadHandler = this.handleInject.bind(this);
 		// Add mutation observer to continuously registering onload handler
 		const mutationObserver = new MutationObserver((mutations) => {
-			if (mutations.some((mutation) => mutation.addedNodes.length > 0)) {
-				// Some nodes were added to subtree, check if submission iframe can be found
-				const submissionIframe = this.submissionIframeHolder!.querySelector<HTMLIFrameElement>(
-					this.selectors.SUBMISSION_IFRAME
-				);
-				if (submissionIframe) this.submissionIframe = submissionIframe;
-				if (submissionIframe?.onload) return;
-
-				console.log('Submission iframe added, registering injection handler...');
-				submissionIframe!.onload = () => this.handleInject();
+			for (const mutation of mutations) {
+				if (mutation.addedNodes.length === 0) continue;
+				for (const node of mutation.addedNodes) {
+					if (
+						!(node instanceof HTMLIFrameElement) ||
+						!node.matches(this.selectors.SUBMISSION_IFRAME)
+					) {
+						continue;
+					}
+					console.log('Submission iframe added, registering injection handler...');
+					this.submissionIframe = node;
+					this.submissionIframe.removeEventListener('load', onLoadHandler);
+					this.submissionIframe.addEventListener('load', onLoadHandler);
+					return;
+				}
 			}
 		});
 		mutationObserver.observe(this.submissionIframeHolder, { childList: true });
 	}
 
-	protected registerEventProxy() {
+	protected registerEventProxies() {
+		if (!document.getElementById(Selectors.app.EVENT_PROXY_ID)) {
+			injectReactShadowDOM(document.body, <ToplevelEventProxy />, {
+				document,
+				hostId: Selectors.app.EVENT_PROXY_ID,
+			});
+		}
 		const submissionDocument = this.submissionIframe!.contentDocument!;
-		injectReactShadowDOM(submissionDocument.body, <EventProxy />, { document: submissionDocument });
+		if (!submissionDocument.getElementById(Selectors.app.EVENT_PROXY_ID)) {
+			injectReactShadowDOM(submissionDocument.body, <SubmissionEventProxy />, {
+				document: submissionDocument,
+				hostId: Selectors.app.EVENT_PROXY_ID,
+			});
+		}
 	}
 
 	protected async initializeGradingContext() {

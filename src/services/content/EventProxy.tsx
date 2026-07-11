@@ -3,9 +3,36 @@ import { useHotkeys } from 'react-hotkeys-hook';
 import gradingContext from './GradingContext';
 import { useAppSettings } from './hooks';
 
-type EventProxyProps = {};
+export function ToplevelEventProxy() {
+	const appSettings = useAppSettings();
 
-export default function EventProxy(props: EventProxyProps) {
+	useHotkeys(appSettings.hotkeys.quizSubmitFeedback, () => gradingContext.submitFeedback(), {
+		preventDefault: true,
+		eventListenerOptions: { capture: true },
+	});
+
+	useHotkeys(
+		appSettings.hotkeys.quizNextSubmission,
+		() => gradingContext.navigateSubmission('next'),
+		{
+			preventDefault: true,
+			eventListenerOptions: { capture: true },
+		}
+	);
+
+	useHotkeys(
+		appSettings.hotkeys.quizPrevSubmission,
+		() => gradingContext.navigateSubmission('prev'),
+		{
+			preventDefault: true,
+			eventListenerOptions: { capture: true },
+		}
+	);
+
+	return <></>;
+}
+
+export function SubmissionEventProxy() {
 	const document = gradingContext.submissionWindow!.document;
 
 	const appSettings = useAppSettings();
@@ -27,18 +54,31 @@ export default function EventProxy(props: EventProxyProps) {
 
 	useHotkeys(appSettings.hotkeys.quizSubmitFeedback, () => gradingContext.submitFeedback(), {
 		document,
+		enableOnFormTags: ['textarea'],
+		preventDefault: true,
+		eventListenerOptions: { capture: true },
 	});
 
 	useHotkeys(
 		appSettings.hotkeys.quizNextSubmission,
 		() => gradingContext.navigateSubmission('next'),
-		{ document }
+		{
+			document,
+			enableOnFormTags: ['textarea'],
+			preventDefault: true,
+			eventListenerOptions: { capture: true },
+		}
 	);
 
 	useHotkeys(
 		appSettings.hotkeys.quizPrevSubmission,
 		() => gradingContext.navigateSubmission('prev'),
-		{ document }
+		{
+			document,
+			enableOnFormTags: ['textarea'],
+			preventDefault: true,
+			eventListenerOptions: { capture: true },
+		}
 	);
 
 	useLayoutEffect(() => {
