@@ -1,4 +1,4 @@
-import Constants from '#shared/constants';
+import { secondsToMilliseconds } from 'motion/react';
 import type { GradingContext } from './GradingContext';
 import { ContentEvent, dispatchContentEvent } from './event';
 import { postSnackbarItem } from './ui/snackbar';
@@ -55,7 +55,7 @@ export async function submitFeedback(
 		postSnackbarItem({
 			message: 'Successfully submitted feedback!',
 			type: 'success',
-			timeoutMs: 2 * Constants.SECOND_MS,
+			timeoutMs: secondsToMilliseconds(2),
 		});
 		if (navigate) {
 			this.navigateSubmission(navigate, false);
@@ -65,7 +65,7 @@ export async function submitFeedback(
 		postSnackbarItem({
 			message: 'Unable to submit feedback. Please refresh the page and try again!',
 			type: 'error',
-			timeoutMs: 3 * Constants.SECOND_MS,
+			timeoutMs: secondsToMilliseconds(3),
 		});
 	}
 	// Notify whomever might be interested in this event

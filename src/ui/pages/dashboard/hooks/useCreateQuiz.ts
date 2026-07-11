@@ -1,6 +1,5 @@
 import type { QuizLoaderType } from '#content/modules';
 import type { IQuiz } from '#models/Quiz';
-import Constants from '#shared/constants';
 import { ContentCommand, sendMessageToTab } from '#shared/message';
 import QuizLocalStore from '#shared/stores/QuizLocalStore';
 import type { Nullable } from '#shared/types/utils';
@@ -9,6 +8,7 @@ import {
 	type MainPageDispatch,
 } from '#sidepanel/pages/main/stores/main.store';
 import { addQuiz } from '#sidepanel/pages/main/stores/quizzes.slice';
+import { secondsToMilliseconds } from 'motion/react';
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 
@@ -34,7 +34,7 @@ export default function useCreateQuiz(dismiss: () => void) {
 		try {
 			var quiz = await sendMessageToTab<IQuiz, ContentCommand.loadQuiz>(
 				{ command: ContentCommand.loadQuiz, loader: quizLoader },
-				{ timeout: { milliseconds: 5 * Constants.SECOND_MS }, throwOnNoReceiver: true }
+				{ timeout: { milliseconds: secondsToMilliseconds(5) }, throwOnNoReceiver: true }
 			);
 			var oldQuiz = await QuizLocalStore.getQuizByUrl(quiz.url);
 		} catch (error) {

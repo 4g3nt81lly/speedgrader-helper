@@ -4,6 +4,7 @@ import type { ISnackbarItem } from '#content/ui/snackbar';
 import type { QuestionFeedback } from '#models/Feedback';
 import type { IQuestion } from '#models/Question';
 import type { IQuiz } from '#models/Quiz';
+import { secondsToMilliseconds } from 'motion/react';
 import Constants from './constants';
 import type { AppSettings } from './settings';
 import type { Optional, SetOptional } from './types/utils';
@@ -121,7 +122,7 @@ export function addCommandHandler(handlers: Partial<CommandHandlers>) {
 
 function addMessageListener<Message>(
 	handler: (message: Message, sender: chrome.runtime.MessageSender) => any,
-	timeout: number = 5 * Constants.SECOND_MS
+	timeout: number = secondsToMilliseconds(5)
 ) {
 	const listener = (
 		message: any,

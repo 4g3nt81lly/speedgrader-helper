@@ -11,6 +11,7 @@ import {
 } from '#shared/decimal';
 import type { Nullable } from '#shared/types/utils';
 import AddIcon from '@mui/icons-material/Add';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DoneIcon from '@mui/icons-material/Done';
@@ -21,12 +22,17 @@ import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import ReorderIcon from '@mui/icons-material/Reorder';
 import {
 	Button,
+	ButtonGroup,
 	Checkbox,
+	Dropdown,
 	FormControl,
 	FormHelperText,
 	FormLabel,
 	IconButton,
 	Input,
+	Menu,
+	MenuButton,
+	MenuItem,
 	Textarea,
 	Tooltip,
 	Typography,
@@ -55,6 +61,20 @@ export default function RubricListEditor(props: RubricListEditorProps) {
 
 	function addRubricItem() {
 		const newItem = RubricItem.create({ description: 'This is a new rubric item.', points: '0' });
+		updateRubric({ ...rubric, items: [...rubric.items, newItem] });
+	}
+
+	function addNoCreditRubricItem() {
+		const newItem = RubricItem.create({
+			description: 'Incorrect answer',
+			points: rubric.gradingMode === 'positive' ? '0' : Decimal.sub(0, maxPoints).toString(),
+		});
+		updateRubric({ ...rubric, items: [...rubric.items, newItem] });
+	}
+
+	function addFullCreditRubricItem() {
+		if (rubric.gradingMode === 'negative') return;
+		const newItem = RubricItem.create({ description: 'Correct answer', points: maxPoints });
 		updateRubric({ ...rubric, items: [...rubric.items, newItem] });
 	}
 
@@ -137,12 +157,30 @@ export default function RubricListEditor(props: RubricListEditorProps) {
 			</Reorder.Group>
 
 			<motion.div className="flex justify-between" layout="position">
-				<div className="flex items-center justify-start">
-					<Tooltip title="New" size="sm" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
-						<IconButton disabled={isReordering} onClick={addRubricItem}>
-							<AddIcon />
-						</IconButton>
-					</Tooltip>
+				<div className="flex items-center justify-start gap-1">
+					<ButtonGroup variant="plain" sx={{ '--ButtonGroup-separatorColor': 'none' }}>
+						<Tooltip title="Add rubric item" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
+							<IconButton variant="soft" size="sm" disabled={isReordering} onClick={addRubricItem}>
+								<AddIcon />
+							</IconButton>
+						</Tooltip>
+						<Dropdown>
+							<Tooltip title="Rubric presets" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
+								<MenuButton variant="soft" size="sm" className="rounded-r-md border-0 p-0">
+									<ArrowDropDownIcon fontSize="small" />
+								</MenuButton>
+							</Tooltip>
+							<Menu>
+								<MenuItem
+									onClick={addFullCreditRubricItem}
+									disabled={rubric.gradingMode === 'negative'}
+								>
+									Full credit
+								</MenuItem>
+								<MenuItem onClick={addNoCreditRubricItem}>No credit</MenuItem>
+							</Menu>
+						</Dropdown>
+					</ButtonGroup>
 					<Tooltip
 						title="Points will default to maximum"
 						size="sm"

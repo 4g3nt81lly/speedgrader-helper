@@ -9,11 +9,11 @@ import { Snackbar, postSnackbarItem } from '#content/ui/snackbar';
 import type { QuestionFeedback } from '#models/Feedback';
 import type { IQuestion } from '#models/Question';
 import type { IQuiz } from '#models/Quiz';
-import Constants from '#shared/constants';
 import QuizFeedbackLocalStore from '#shared/stores/QuizFeedbackLocalStore';
 import QuizLocalStore from '#shared/stores/QuizLocalStore';
 import type { Nullable, SetOptional } from '#shared/types/utils';
 import { getElementByQuerySelector } from '#shared/utils';
+import { secondsToMilliseconds } from 'motion/react';
 import { quizLoaders } from '.';
 import { type QuizLoader } from './QuizLoader';
 
@@ -81,7 +81,7 @@ export class OldSGQuizInjector extends QuizInjector {
 		this.submissionIframeHolder = await getElementByQuerySelector<HTMLElement>(
 			this.selectors.SUBMISSION_IFRAME_HOLDER,
 			document,
-			{ timeout: 5 * Constants.SECOND_MS }
+			{ timeout: secondsToMilliseconds(5) }
 		);
 		if (!this.submissionIframeHolder) {
 			return this.postErrorItem({
