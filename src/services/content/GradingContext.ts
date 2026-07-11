@@ -13,6 +13,11 @@ export type GradingContext = {
 
 	submissionWindow: Nullable<Window>;
 	submissionForm: Nullable<HTMLFormElement>;
+
+	readonly submissionFormFields: Map<
+		IQuestion['id'],
+		{ pointsField: string; commentsField: string }
+	>;
 	readonly dirtyQuestions: Set<IQuestion['id']>;
 	isFeedbackSubmitting: boolean;
 
@@ -36,7 +41,9 @@ const gradingContext: GradingContext = {
 
 	submissionWindow: null,
 	submissionForm: null,
-	dirtyQuestions: new Set<IQuestion['id']>(),
+
+	submissionFormFields: new Map(),
+	dirtyQuestions: new Set(),
 	isFeedbackSubmitting: false,
 
 	submitFeedback,

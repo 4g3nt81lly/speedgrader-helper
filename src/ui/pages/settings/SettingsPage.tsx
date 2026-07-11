@@ -66,6 +66,15 @@ export default function SettingsPage() {
 							onChange={(event) => setSetting('scrollToLastGradedQuestion', event.target.checked)}
 						/>
 					</SettingItem>
+					<SettingItem
+						title="Submit updated feedback only (Experimental)"
+						description="Submit feedback only for questions whose grades and comments have been updated. This aims to avoid overwriting grades for other questions submitted by other graders for the same submission at the same time."
+					>
+						<Switch
+							checked={settings.submitDirtyFeedbackOnly}
+							onChange={(event) => setSetting('submitDirtyFeedbackOnly', event.target.checked)}
+						/>
+					</SettingItem>
 				</SettingsSection>
 
 				<SettingsSection heading="Rubric">

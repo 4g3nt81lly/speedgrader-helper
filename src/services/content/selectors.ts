@@ -9,6 +9,7 @@ const oldSpeedGrader = {
 	QUESTION_CONTAINER: '.question_holder[aria-label="Question"] .display_question',
 	QUESTION_HEADER: '.header',
 	QUESTION_POINTS_HOLDER: '.question_points_holder',
+	QUESTION_HIDDEN_POINTS_INPUT: 'input.question_input_hidden[type="hidden"]',
 	QUESTION_POINTS_INPUT: 'input.question_input',
 	QUESTION_MAX_POINTS: '.points.question_points',
 	QUESTION_TEXT: '.text',

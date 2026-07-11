@@ -1,5 +1,6 @@
 import { secondsToMilliseconds } from 'motion/react';
 import type { GradingContext } from './GradingContext';
+import gradingContext from './GradingContext';
 import { ContentEvent, dispatchContentEvent } from './event';
 import { postSnackbarItem } from './ui/snackbar';
 
@@ -31,11 +32,44 @@ export async function submitFeedback(
 	event?.stopPropagation();
 
 	// Manually submit using form data
+	const rawFormData = new FormData(this.submissionForm!);
+	let formData = rawFormData;
+	if (gradingContext.appSettings.submitDirtyFeedbackOnly) {
+		formData = new FormData();
+		const extraFields = new Set([
+			'utf8',
+			'_method',
+			'authenticity_token',
+			'override_scores',
+			'headless',
+			'submission_version_number',
+			'fudge_points',
+		]);
+		for (const field of extraFields) {
+			const value = rawFormData.get(field);
+			if (value === null) continue;
+			formData.set(field, value);
+		}
+		for (const [questionId, field] of gradingContext.submissionFormFields.entries()) {
+			if (!gradingContext.dirtyQuestions.has(questionId)) {
+				continue;
+			}
+			const { pointsField, commentsField } = field;
+			const points = rawFormData.get(pointsField);
+			const comments = rawFormData.get(commentsField);
+			if (points !== null) {
+				formData.set(pointsField, points);
+			}
+			if (comments !== null) {
+				formData.set(commentsField, comments);
+			}
+		}
+	}
 	let success = false;
 	try {
 		var response = await fetch(this.submissionForm!.action, {
 			method: this.submissionForm!.method,
-			body: new FormData(this.submissionForm!),
+			body: formData,
 			redirect: 'follow',
 		});
 		success = response.ok;

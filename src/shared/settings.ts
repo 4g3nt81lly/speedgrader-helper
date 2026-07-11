@@ -4,6 +4,8 @@ import type { RubricEditorType } from '#sidepanel/components/RubricAccordion';
 
 export type AppSettings = {
 	scrollToLastGradedQuestion: boolean;
+	submitDirtyFeedbackOnly: boolean;
+
 	defaultRubricEditor: RubricEditorType;
 	defaultGradingMode: GradingMode;
 	defaultQuizInjector: QuizInjectorType;
@@ -20,6 +22,8 @@ export type AppHotKeySettings = {
 
 export const defaultAppSettings: AppSettings = {
 	scrollToLastGradedQuestion: true,
+	submitDirtyFeedbackOnly: true,
+
 	defaultRubricEditor: 'list',
 	defaultGradingMode: 'positive',
 	defaultQuizInjector: 'oldSG',

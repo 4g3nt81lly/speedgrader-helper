@@ -127,6 +127,7 @@ export class OldSGQuizInjector extends QuizInjector {
 			this.submissionIframe!.contentDocument!.querySelector<HTMLFormElement>(
 				this.selectors.SUBMISSION_FORM
 			);
+		gradingContext.submissionFormFields.clear();
 		gradingContext.dirtyQuestions.clear();
 		gradingContext.isFeedbackSubmitting = false;
 
@@ -182,10 +183,17 @@ export class OldSGQuizInjector extends QuizInjector {
 		const pointsInput = questionContainer?.querySelector<HTMLInputElement>(
 			this.selectors.QUESTION_POINTS_INPUT
 		);
+		const hiddenPointsInput = questionContainer?.querySelector<HTMLInputElement>(
+			this.selectors.QUESTION_HIDDEN_POINTS_INPUT
+		);
 		const commentsTextarea = questionContainer?.querySelector<HTMLTextAreaElement>(
 			this.selectors.QUESTION_COMMENTS_TEXTAREA
 		);
-		if (!textElement || !pointsInput || !commentsTextarea) return;
+		if (!textElement || !pointsInput || !hiddenPointsInput || !commentsTextarea) return;
+		gradingContext.submissionFormFields.set(question.id, {
+			pointsField: hiddenPointsInput.name,
+			commentsField: commentsTextarea.name,
+		});
 
 		this.injectQuestionNavBar(question, questionContainer);
 
