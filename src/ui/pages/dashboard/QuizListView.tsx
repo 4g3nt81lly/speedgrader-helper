@@ -1,7 +1,7 @@
 import { type IQuiz } from '#models/Quiz';
 import Constants from '#shared/constants';
 import { useMainSelector, type MainPageDispatch } from '#sidepanel/pages/main/stores/main.store';
-import { removeQuizzes } from '#sidepanel/pages/main/stores/quizzes.slice';
+import { removeQuizzes, setQuiz } from '#sidepanel/pages/main/stores/quizzes.slice';
 import { saveSelectionStateToLocalStorage } from '#sidepanel/pages/main/stores/selection.actions';
 import { selectQuiz } from '#sidepanel/pages/main/stores/selection.slice';
 import AddIcon from '@mui/icons-material/Add';
@@ -9,6 +9,7 @@ import AirIcon from '@mui/icons-material/Air';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
+	Chip,
 	Dropdown,
 	IconButton,
 	List,
@@ -39,16 +40,23 @@ export default function QuizListView(props: QuizListViewProps) {
 		dispatch(saveSelectionStateToLocalStorage());
 	}
 
+	function handleOpenInNewTab(event: MouseEvent<HTMLAnchorElement>, quiz: IQuiz) {
+		event.stopPropagation();
+		chrome.tabs.create({ url: quiz.url });
+	}
+
+	function handleToggleQuizEnabled(event: MouseEvent<HTMLDivElement>, quiz: IQuiz) {
+		event.stopPropagation();
+		if (confirm(`${quiz.isEnabled ? 'Disable' : 'Enable'} helper for "${quiz.title}"?`)) {
+			dispatch(setQuiz({ quiz: { ...quiz, isEnabled: !quiz.isEnabled }, reload: true }));
+		}
+	}
+
 	function handleRemoveQuiz(event: MouseEvent<HTMLDivElement>, quiz: IQuiz) {
 		event.stopPropagation();
 		if (confirm(getRemoveQuizPrompt(quiz))) {
 			dispatch(removeQuizzes(quiz.id));
 		}
-	}
-
-	function handleOpenInNewTab(event: MouseEvent<HTMLAnchorElement>, quiz: IQuiz) {
-		event.stopPropagation();
-		chrome.tabs.create({ url: quiz.url });
 	}
 
 	function handleExportQuiz(event: MouseEvent<HTMLDivElement>, quiz: IQuiz) {
@@ -91,13 +99,19 @@ export default function QuizListView(props: QuizListViewProps) {
 										<MoreHorizIcon fontSize="small" />
 									</MenuButton>
 									<Menu>
+										<MenuItem onClick={(event) => handleToggleQuizEnabled(event, quiz)}>
+											{quiz.isEnabled ? 'Disable' : 'Enable'}
+										</MenuItem>
 										<MenuItem onClick={(event) => handleRemoveQuiz(event, quiz)}>Remove</MenuItem>
 										<MenuItem onClick={(event) => handleExportQuiz(event, quiz)}>Export</MenuItem>
 									</Menu>
 								</Dropdown>
 							</div>
 						</div>
-						<Typography level="body-sm">{getQuizSummaryText(quiz)}</Typography>
+						<div className="flex items-center gap-1.5">
+							{!quiz.isEnabled && <Chip>Disabled</Chip>}
+							<Typography level="body-sm">{getQuizSummaryText(quiz)}</Typography>
+						</div>
 						<Typography
 							level="body-xs"
 							className="mt-0.5 line-clamp-2 leading-4 wrap-anywhere text-ellipsis"
@@ -130,7 +144,7 @@ const getQuizSummaryText = (quiz: IQuiz) => {
 			inFocusQuestionCount++;
 		}
 	}
-	return `${quiz.questions.length} Questions, ${nonEmptyRubricCount} has rubric${quiz.focusMode && inFocusQuestionCount > 0 ? `, ${inFocusQuestionCount} in focus` : ''}`;
+	return `${quiz.questions.length} questions, ${nonEmptyRubricCount} has rubric${quiz.focusMode && inFocusQuestionCount > 0 ? `, ${inFocusQuestionCount} in focus` : ''}`;
 };
 
 const getRemoveQuizPrompt = (quiz: IQuiz) => {

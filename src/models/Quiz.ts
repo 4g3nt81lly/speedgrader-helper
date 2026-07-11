@@ -16,12 +16,13 @@ export interface IQuiz {
 	title: string;
 	questions: IQuestion[];
 
+	isEnabled: boolean;
 	focusMode: boolean;
 }
 
 export default class Quiz {
 	public static create(
-		quiz: SetOptional<Omit<IQuiz, 'id'>, 'questions' | 'focusMode'>
+		quiz: SetOptional<Omit<IQuiz, 'id'>, 'questions' | 'isEnabled' | 'focusMode'>
 	): IQuiz {
 		return {
 			id: uuidv4(),
@@ -31,6 +32,7 @@ export default class Quiz {
 			title: quiz.title,
 			questions: quiz.questions?.map((question) => Question.create(question)) ?? [],
 
+			isEnabled: quiz.isEnabled ?? true,
 			focusMode: quiz.focusMode ?? false,
 		};
 	}

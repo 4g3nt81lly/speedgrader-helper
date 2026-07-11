@@ -33,7 +33,7 @@ export default function QuizDetailsView(props: QuizDetailsViewProps) {
 
 	function updateQuestion(newQuestion: IQuestion) {
 		const newQuiz = Quiz.updateQuestion(quiz, newQuestion.id, (oldQuestion) => {
-			if (quiz.focusMode && oldQuestion.isFocused !== newQuestion.isFocused) {
+			if (quiz.isEnabled && quiz.focusMode && oldQuestion.isFocused !== newQuestion.isFocused) {
 				sendMessageToTab({
 					command: ContentCommand.updateFocusState,
 					focusMode: 'select',
@@ -43,7 +43,9 @@ export default function QuizDetailsView(props: QuizDetailsViewProps) {
 			return newQuestion;
 		});
 		dispatch(setQuiz({ quiz: newQuiz }));
-		sendMessageToTab({ command: ContentCommand.reloadRubric, question: newQuestion });
+		if (quiz.isEnabled) {
+			sendMessageToTab({ command: ContentCommand.reloadRubric, question: newQuestion });
+		}
 	}
 
 	useEffect(() => {
@@ -124,7 +126,7 @@ function ActionBar({ quiz }: ActionBarProps) {
 				quiz: Quiz.updateQuestions(quiz, (question) => ({ ...question, isFocused: newFocusMode })),
 			})
 		);
-		if (quiz.focusMode) {
+		if (quiz.isEnabled && quiz.focusMode) {
 			sendMessageToTab({
 				command: ContentCommand.updateFocusState,
 				focusMode: 'select',
@@ -136,6 +138,8 @@ function ActionBar({ quiz }: ActionBarProps) {
 	function toggleFocusMode() {
 		const newFocusMode = !quiz.focusMode;
 		dispatch(setQuiz({ quiz: { ...quiz, focusMode: newFocusMode } }));
+
+		if (!quiz.isEnabled) return;
 		if (newFocusMode) {
 			sendMessageToTab({
 				command: ContentCommand.updateFocusState,

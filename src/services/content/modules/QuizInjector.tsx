@@ -68,7 +68,7 @@ export class OldSGQuizInjector extends QuizInjector {
 		try {
 			this.quiz = await QuizLocalStore.getQuizByUrl(this.canonicalUrl);
 			await this.initializeGradingContext();
-			if (this.quiz) {
+			if (this.quiz?.isEnabled) {
 				this.registerEventProxy();
 				await this.injectGradingControls();
 			}
