@@ -4,10 +4,10 @@ import {
 	type ContentEventPayload,
 } from '#content/event';
 import gradingContext from '#content/GradingContext';
-import { useAppSettings, useFeedbackSubmitState } from '#content/hooks';
+import { useFeedbackSubmitState } from '#content/hooks';
 import Selectors from '#content/selectors';
 import type { IQuestion } from '#models/Question';
-import { isDecimalEqual, isDecimalWithinRange } from '#shared/decimal';
+import { isDecimal, isDecimalEqual, isDecimalWithinRange } from '#shared/decimal';
 import {
 	addCommandHandler,
 	BackgroundCommand,
@@ -38,8 +38,6 @@ export default function useGradingState(props: GradingBoxProps) {
 	} = props;
 	const submissionWindow = gradingContext.submissionWindow!;
 
-	const appSettings = useAppSettings();
-
 	const [question, setQuestion] = useState(initialQuestion);
 
 	const [sgState, setSGState] = useState(() =>
@@ -68,11 +66,16 @@ export default function useGradingState(props: GradingBoxProps) {
 	const isSubmitting = useFeedbackSubmitState();
 
 	const { current: stateRef } = useRef({
-		gradingState: state,
-		savedFeedback,
+		state,
 		sgState,
+		savedFeedback,
 		isRegrading,
 	});
+
+	const canGrade = Boolean(!isSubmitting && state?.isGradable);
+	const canRegrade = Boolean(!isSubmitting && !isRegrading && state);
+	const canReset = Boolean(!isSubmitting && savedFeedback && state?.isGradable);
+	const canSubmit = Boolean(!isSubmitting && state?.isGradable && state.isDirty);
 
 	function updateState(
 		newState: Nullable<IQuestionGradingState>,
@@ -88,7 +91,7 @@ export default function useGradingState(props: GradingBoxProps) {
 				newState ? QuestionGradingState.getComments(newState) : defaultComments
 			);
 		}
-		stateRef.gradingState = newState;
+		stateRef.state = newState;
 		setState(newState);
 	}
 
@@ -114,6 +117,7 @@ export default function useGradingState(props: GradingBoxProps) {
 	}
 
 	function handleNewManualPointsChange(event: React.ChangeEvent<HTMLInputElement>) {
+		if (isSubmitting || !state?.isGradable) return;
 		setManualPoints(event.target.value);
 
 		gradingContext.lastGradedQuestionId = initialQuestion.id;
@@ -123,7 +127,7 @@ export default function useGradingState(props: GradingBoxProps) {
 		if (isSubmitting || !state?.isGradable) return;
 		if (
 			!manualPoints ||
-			!isFinite(Number(manualPoints)) ||
+			!isDecimal(manualPoints) ||
 			!isDecimalWithinRange(manualPoints, 0, question.points)
 		)
 			return;
@@ -139,38 +143,37 @@ export default function useGradingState(props: GradingBoxProps) {
 	}
 
 	function handleRegrade() {
-		if (isSubmitting || !state) return;
-		// Clear current feedback state
+		if (!canRegrade) return;
 		if (
-			!state.isGradable ||
-			confirm(
+			state!.isGradable &&
+			!confirm(
 				'Grade this question from scratch? This will not delete feedback already submitted and saved.'
 			)
-		) {
-			setRegradeMode(true);
+		)
+			return;
 
-			updateState(QuestionGradingState.create(question, null, sgState), false);
-			updatePointsInput(pointsInput, '');
-			updateCommentsTextarea(commentsTextarea, '');
+		setRegradeMode(true);
+		updateState(
+			QuestionGradingState.create(question, null, { points: '', comments: '' })
+		);
 
-			gradingContext.lastGradedQuestionId = initialQuestion.id;
-		}
+		gradingContext.lastGradedQuestionId = initialQuestion.id;
 	}
 
 	function reset(prompt: boolean = true) {
-		if (isSubmitting || !state?.isDirty || !state.isGradable) return;
+		if (!canReset) return;
 		if (prompt && !confirm('Reset to last-saved feedback?')) return;
 
 		const lastSavedState = QuestionGradingState.create(question, savedFeedback, sgState);
 		updateState(lastSavedState, false);
-		restoreSGState();
+		resetSGState();
 		setRegradeMode(false);
 
 		gradingContext.lastGradedQuestionId = initialQuestion.id;
 	}
 
 	function handleSubmit() {
-		if (isSubmitting || !state?.isDirty || !state.isGradable) return;
+		if (!canSubmit) return;
 		gradingContext.lastGradedQuestionId = initialQuestion.id;
 		gradingContext.submitFeedback();
 	}
@@ -183,7 +186,7 @@ export default function useGradingState(props: GradingBoxProps) {
 
 	const saveQuestionFeedback = useCallback(async () => {
 		const newSavedFeedback = QuestionGradingState.toPersistentState(
-			stateRef.gradingState,
+			stateRef.state,
 			initialQuestion.id
 		);
 		try {
@@ -217,7 +220,7 @@ export default function useGradingState(props: GradingBoxProps) {
 	}, []);
 
 	const handleSGPointsInputChange = useCallback(() => {
-		if (stateRef.gradingState) return;
+		if (stateRef.state) return;
 
 		const oldSGPoints = stateRef.sgState.points;
 		const { points: newSGPoints } = QuestionGradingState.createSGState(
@@ -238,7 +241,7 @@ export default function useGradingState(props: GradingBoxProps) {
 	}, []);
 
 	const handleSGCommentsChange = useCallback(() => {
-		if (stateRef.gradingState) return;
+		if (stateRef.state) return;
 
 		const newComments = commentsTextarea.value;
 		commentsTextarea.textContent = newComments;
@@ -278,7 +281,7 @@ export default function useGradingState(props: GradingBoxProps) {
 		[]
 	);
 
-	const restoreSGState = useCallback(() => {
+	const resetSGState = useCallback(() => {
 		updatePointsInput(pointsInput, stateRef.sgState.points ?? '');
 		updateCommentsTextarea(commentsTextarea, stateRef.sgState.comments);
 	}, []);
@@ -300,7 +303,7 @@ export default function useGradingState(props: GradingBoxProps) {
 		setQuestion(newQuestion);
 		updateState(newState, false);
 
-		restoreSGState();
+		resetSGState();
 		setRegradeMode(false);
 	}, []);
 
@@ -336,7 +339,7 @@ export default function useGradingState(props: GradingBoxProps) {
 		}
 		setQuestionContainerVisible(questionContainer, isContainerVisible);
 		if (
-			appSettings.scrollToLastGradedQuestion &&
+			gradingContext.appSettings.scrollToLastGradedQuestion &&
 			gradingContext.lastGradedQuestionId === initialQuestion.id
 		) {
 			questionContainer.scrollIntoView();
@@ -385,10 +388,10 @@ export default function useGradingState(props: GradingBoxProps) {
 		isContainerVisible,
 		isRegrading,
 		isSubmitting,
-		canGrade: Boolean(!isSubmitting && state?.isGradable),
-		canRegrade: !isSubmitting && !isRegrading,
-		canReset: Boolean(!isSubmitting && savedFeedback && state?.isGradable),
-		canSubmit: Boolean(!isSubmitting && state?.isGradable && state.isDirty),
+		canGrade,
+		canRegrade,
+		canReset,
+		canSubmit,
 
 		rubricItemCanToggle,
 		toggleSelectRubricItem,

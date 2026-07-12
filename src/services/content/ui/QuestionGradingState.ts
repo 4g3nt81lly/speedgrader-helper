@@ -2,31 +2,14 @@ import type { QuestionFeedback } from '#models/Feedback';
 import type { IQuestion } from '#models/Question';
 import type { GradingMode, IRubric } from '#models/Rubric';
 import type { IRubricItem } from '#models/RubricItem';
-import { isDecimalEqual, isDecimalPositive, isDecimalWithinRange } from '#shared/decimal';
+import {
+	isDecimal,
+	isDecimalEqual,
+	isDecimalPositive,
+	isDecimalWithinRange,
+} from '#shared/decimal';
 import type { Nullable } from '#shared/types/utils';
 import Decimal from 'decimal.js';
-
-/**
- * The question is gradable iff the controls are editable as is. If the question is not gradable,
- * then it is displayed in read-only mode. There are three possible grading states.
- * Case 1. [+] feedback, [-] rubric; the rubric was removed after last grading activity.
- *   If SG state has diverged since last saved, the question is not gradable and an error message
- *   is shown. Otherwise, the question remains gradable, with a message that indicates the removal
- *   of the rubric.
- * Case 2. [+] feedback, [+] rubric
- *   Two separate calculations will be performed: 1) feedback points and 2) rubric points. The
- *   feedback points will be used for state-diffing. Same as before, the question is gradable only
- *   if SG state has not diverged. There are two possible sub-cases.
- *   a) Rubric points == feedback points
- *      If diverged, question is not gradable and an error message is shown, otherwise gradable and
- *      a message is shown iff any selected items were "modified" or "removed".
- *   b) Rubric points != feedback points: the rubric has been updated
- *      Regardless of state-diff, question is not gradable and an error message is shown to
- *      indicate this difference and whether the new rubric points is still valid.
- * Case 3. [-] feedback, [+] rubric
- *   The question is always gradable in this configuration. If already graded in SG, a note will be
- *   displayed.
- */
 
 export type IQuestionGradingState = RawGradingState & {
 	gradingMode: GradingMode;
@@ -103,14 +86,11 @@ export class QuestionGradingState {
 		let sgPoints: Nullable<string> = rawState.points;
 		if (
 			sgPoints &&
-			!(isFinite(Number(sgPoints)) && isDecimalWithinRange(sgPoints, 0, question.points))
+			(!isDecimal(sgPoints) || !isDecimalWithinRange(sgPoints, 0, question.points))
 		) {
 			sgPoints = null;
 		}
-		return {
-			points: sgPoints,
-			comments: rawState.comments,
-		};
+		return { points: sgPoints, comments: rawState.comments };
 	}
 
 	public static create(
@@ -123,7 +103,8 @@ export class QuestionGradingState {
 			return null;
 		}
 		if (!feedback) {
-			// Case 3, question rubric must be present
+			// Feedback object does not exist, question rubric must be present
+			// Gradable iff question is ungraded
 			const message = sgState.points
 				? 'This question has already been graded.'
 				: sgState.points === null
@@ -136,14 +117,14 @@ export class QuestionGradingState {
 				gradingMode: question.rubric!.gradingMode,
 				rubricItems,
 				isDirty: false,
-				isGradable: true,
+				isGradable: sgState.points === '',
 				stateDiff: { points: false, comments: null },
 				message,
 			};
 			state.isDirty = this.isDirty(state, sgState);
 			return state;
 		}
-		// Feedback object exists
+		// Feedback object exists, not gradable
 		const comments = feedback.comments;
 		const selectedRubricItems: IQuestionGradingState['selectedRubricItems'] = {};
 		// Calculate original points using feedback object
@@ -172,10 +153,6 @@ export class QuestionGradingState {
 		const oldPoints = feedbackPoints.toString();
 
 		const oldComments = this.getFeedbackComments(feedback);
-		const stateDiff: IQuestionGradingState['stateDiff'] = {
-			points: !sgState.points || !isDecimalEqual(oldPoints, sgState.points),
-			comments: sgState.comments === oldComments ? null : oldComments,
-		};
 		const state: IQuestionGradingState = {
 			selectedRubricItems,
 			points: oldPoints,
@@ -183,20 +160,21 @@ export class QuestionGradingState {
 			gradingMode: feedback.gradingMode,
 			rubricItems,
 			isDirty: false,
-			isGradable: !stateDiff.points && stateDiff.comments === null,
-			stateDiff,
+			isGradable: false,
+			stateDiff: {
+				points: !sgState.points || !isDecimalEqual(oldPoints, sgState.points),
+				comments: sgState.comments === oldComments ? null : oldComments,
+			},
 			message: null,
 		};
-		state.isDirty = this.isDirty(state, sgState);
 		if (rubricPoints === null) {
-			// Case 1
+			// Rubric was removed since last graded
 			state.message = 'The rubric has been removed since last graded. Please review.';
 			return state;
 		}
-		// Case 2
-		const newPoints = rubricPoints.toString();
+		// Question rubric still exists
 		if (isDecimalEqual(feedbackPoints, rubricPoints)) {
-			// Case 2a
+			// Same points but may or may not have been modified
 			state.message = rubricItems.some(
 				({ status }) =>
 					status === DiffDescriptor.modified || status === DiffDescriptor.removed
@@ -205,11 +183,11 @@ export class QuestionGradingState {
 				: null;
 			return state;
 		}
-		// Case 2b
+		// New question rubric yields different points than before
+		const newPoints = rubricPoints.toString();
 		const newPointsIsValid = isDecimalWithinRange(rubricPoints, 0, question.points);
-		state.isGradable = state.isDirty = false;
 		// If points already diverged, do not show the message to avoid overwhelming the user
-		if (!stateDiff.points) {
+		if (!state.stateDiff.points) {
 			state.message = `The rubric has been updated since last graded: old rubric awarded "${oldPoints}" points but new rubric awards "${newPoints}" points${newPointsIsValid ? '' : ' (which is invalid)'}. Please consider regrading this question.`;
 		}
 		return state;
@@ -267,15 +245,6 @@ export class QuestionGradingState {
 		return gradingMode === 'negative' ? maxPoints : '0';
 	}
 
-	/**
-	 * Returns whether the given state object has saveable contents (i.e. "dirty"), with reference
-	 * to the last-saved SpeedGrader state.
-	 *
-	 * @param state The current UI state.
-	 * @param lastSavedState The last-saved UI state.
-	 * @returns A boolean indicating whether the given state object is dirty relative to the last-
-	 * 			saved SpeedGrader state.
-	 */
 	private static isDirty(state: IQuestionGradingState, sgState: SGFeedbackState) {
 		if (!state.isGradable) {
 			// Invalid state is not comparable and is considered NOT dirty
@@ -284,7 +253,7 @@ export class QuestionGradingState {
 		const points = state.points;
 		const { points: sgPoints, comments: sgComments } = sgState;
 		// Points is unchanged if
-		// 1. points is null (empty)
+		// 1. Points is null (empty)
 		// 2. Points and SG points are non-empty and equal
 		const pointsUnchanged =
 			points === null || (sgPoints && isDecimalEqual(points, sgPoints));
@@ -374,7 +343,7 @@ export class QuestionGradingState {
 		const newState: IQuestionGradingState = {
 			...state,
 			selectedRubricItems: null,
-			points: manualPoints,
+			points: Decimal(manualPoints).toString(),
 		};
 		newState.isDirty = this.isDirty(newState, sgState);
 		return newState;
@@ -447,7 +416,6 @@ export class QuestionGradingState {
 			throw new Error('toPersistentState: non-gradable state');
 		}
 		if (state.selectedRubricItems === null) {
-			// No selected rubric items, nothing to save
 			return null;
 		}
 		return {
