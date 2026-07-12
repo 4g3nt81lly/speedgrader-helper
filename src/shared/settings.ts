@@ -1,10 +1,11 @@
 import type { QuizInjectorType, QuizLoaderType } from '#content/modules';
+import type { FeedbackSubmissionStrategy } from '#content/submit';
 import type { GradingMode } from '#models/Rubric';
 import type { RubricEditorType } from '#sidepanel/components/RubricAccordion';
 
 export type AppSettings = {
 	scrollToLastGradedQuestion: boolean;
-	submitDirtyFeedbackOnly: boolean;
+	feedbackSubmissionStrategy: FeedbackSubmissionStrategy;
 
 	defaultRubricEditor: RubricEditorType;
 	defaultGradingMode: GradingMode;
@@ -22,7 +23,7 @@ export type AppHotKeySettings = {
 
 export const defaultAppSettings: AppSettings = {
 	scrollToLastGradedQuestion: true,
-	submitDirtyFeedbackOnly: true,
+	feedbackSubmissionStrategy: 'focused',
 
 	defaultRubricEditor: 'list',
 	defaultGradingMode: 'positive',

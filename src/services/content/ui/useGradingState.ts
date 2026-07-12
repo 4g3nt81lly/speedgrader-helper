@@ -258,7 +258,8 @@ export default function useGradingState(props: GradingBoxProps) {
 
 	const handleEndSubmitFeedback = useCallback(
 		async (payload: ContentEventPayload[ContentEvent.endSubmitFeedback]) => {
-			if (!payload.success) return;
+			if (!payload.success || !payload.questionIds.has(initialQuestion.id)) return;
+
 			const newSGState = QuestionGradingState.createSGState(
 				{ points: pointsInput.value, comments: commentsTextarea.textContent! },
 				initialQuestion
@@ -266,9 +267,7 @@ export default function useGradingState(props: GradingBoxProps) {
 			setSGState(newSGState);
 			stateRef.sgState = newSGState;
 
-			if (payload.questionIds.has(initialQuestion.id)) {
-				await saveQuestionFeedback();
-			}
+			await saveQuestionFeedback();
 
 			updateState(
 				QuestionGradingState.create(initialQuestion, stateRef.savedFeedback, newSGState),

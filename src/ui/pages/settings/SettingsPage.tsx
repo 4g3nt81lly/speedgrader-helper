@@ -1,4 +1,9 @@
-import { quizInjectorNames, quizLoaderNames } from '#shared/modules';
+import {
+	feedbackSubmissionStrategyDescriptions,
+	feedbackSubmissionStrategyNames,
+	quizInjectorNames,
+	quizLoaderNames,
+} from '#shared/modules';
 import { AppHotKeySettings, AppSettings, defaultAppSettings } from '#shared/settings';
 import QuizFeedbackLocalStore from '#shared/stores/QuizFeedbackLocalStore';
 import DropdownMenu from '#sidepanel/components/DropdownMenu';
@@ -67,12 +72,16 @@ export default function SettingsPage() {
 						/>
 					</SettingItem>
 					<SettingItem
-						title="Submit updated feedback only (Experimental)"
-						description="Submit feedback only for questions whose grades and comments have been updated. This aims to avoid overwriting grades for other questions submitted by other graders for the same submission at the same time."
+						title="Feedback submission strategy"
+						description={
+							feedbackSubmissionStrategyDescriptions[settings.feedbackSubmissionStrategy]
+						}
+						controlPosition="start"
 					>
-						<Switch
-							checked={settings.submitDirtyFeedbackOnly}
-							onChange={(event) => setSetting('submitDirtyFeedbackOnly', event.target.checked)}
+						<DropdownMenu
+							items={feedbackSubmissionStrategyNames}
+							selectedItem={settings.feedbackSubmissionStrategy}
+							onSelect={setSetting.bind(null, 'feedbackSubmissionStrategy')}
 						/>
 					</SettingItem>
 				</SettingsSection>
@@ -217,10 +226,13 @@ function SettingsSection({ heading, children }: SettingSectionProps) {
 type SettingItemProps = {
 	title: string;
 	description?: string;
+	controlPosition?: 'start' | 'center';
 	children: ReactNode;
 };
 
-function SettingItem({ title, description, children }: SettingItemProps) {
+function SettingItem(props: SettingItemProps) {
+	const { title, description, controlPosition, children } = props;
+
 	return (
 		<div className="flex justify-between gap-5">
 			<div className="flex shrink flex-col justify-center gap-1">
@@ -234,7 +246,11 @@ function SettingItem({ title, description, children }: SettingItemProps) {
 				)}
 			</div>
 
-			<div className="flex shrink-0 items-center">{children}</div>
+			<div
+				className={`my-1 flex shrink-0 ${controlPosition === 'start' ? 'items-start' : 'items-center'}`}
+			>
+				{children}
+			</div>
 		</div>
 	);
 }

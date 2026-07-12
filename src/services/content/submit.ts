@@ -1,8 +1,19 @@
 import { secondsToMilliseconds } from 'motion/react';
 import type { GradingContext } from './GradingContext';
-import gradingContext from './GradingContext';
 import { ContentEvent, dispatchContentEvent } from './event';
 import { postSnackbarItem } from './ui/snackbar';
+
+export type FeedbackSubmissionStrategy = 'all' | 'focused' | 'updated';
+
+const essentialFields = [
+	'utf8',
+	'_method',
+	'authenticity_token',
+	'override_scores',
+	'headless',
+	'submission_version_number',
+	'fudge_points',
+];
 
 export async function submitFeedback(
 	this: GradingContext,
@@ -17,7 +28,16 @@ export async function submitFeedback(
 		});
 		return null;
 	}
-	if (this.dirtyQuestions.size === 0) {
+	if (!this.quiz) return null;
+
+	let targetQuestions = new Set(this.dirtyQuestions);
+	if (this.appSettings.feedbackSubmissionStrategy === 'focused') {
+		for (const question of this.quiz.questions) {
+			if (question.isFocused) continue;
+			targetQuestions.delete(question.id);
+		}
+	}
+	if (targetQuestions.size === 0) {
 		postSnackbarItem({ title: 'Save', message: 'Nothing to save.', type: 'success' });
 		return null;
 	}
@@ -34,24 +54,15 @@ export async function submitFeedback(
 	// Manually submit using form data
 	const rawFormData = new FormData(this.submissionForm!);
 	let formData = rawFormData;
-	if (gradingContext.appSettings.submitDirtyFeedbackOnly) {
+	if (this.appSettings.feedbackSubmissionStrategy !== 'all') {
 		formData = new FormData();
-		const extraFields = new Set([
-			'utf8',
-			'_method',
-			'authenticity_token',
-			'override_scores',
-			'headless',
-			'submission_version_number',
-			'fudge_points',
-		]);
-		for (const field of extraFields) {
+		for (const field of essentialFields) {
 			const value = rawFormData.get(field);
 			if (value === null) continue;
 			formData.set(field, value);
 		}
-		for (const [questionId, field] of gradingContext.submissionFormFields.entries()) {
-			if (!gradingContext.dirtyQuestions.has(questionId)) {
+		for (const [questionId, field] of this.submissionFormFields.entries()) {
+			if (!targetQuestions.has(questionId)) {
 				continue;
 			}
 			const { pointsField, commentsField } = field;
@@ -82,7 +93,6 @@ export async function submitFeedback(
 			closeReason: 'manual',
 		});
 	}
-	const questionIds = new Set(this.dirtyQuestions);
 	if (success) {
 		// Refresh grades and update stats in SpeedGrader header
 		dispatchContentEvent(ContentEvent.refreshGrades, {}, window);
@@ -94,7 +104,9 @@ export async function submitFeedback(
 		if (navigate) {
 			this.navigateSubmission(navigate, false);
 		}
-		this.dirtyQuestions.clear();
+		for (const questionId of targetQuestions) {
+			this.dirtyQuestions.delete(questionId);
+		}
 	} else {
 		postSnackbarItem({
 			message: 'Unable to submit feedback. Please refresh the page and try again!',
@@ -105,7 +117,7 @@ export async function submitFeedback(
 	// Notify whomever might be interested in this event
 	dispatchContentEvent(
 		ContentEvent.endSubmitFeedback,
-		{ success, questionIds },
+		{ success, questionIds: targetQuestions },
 		this.submissionWindow!
 	);
 
