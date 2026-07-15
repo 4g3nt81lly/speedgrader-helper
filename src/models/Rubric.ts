@@ -1,14 +1,17 @@
 import { defaultAppSettings } from '#shared/settings';
 import type { SetOptional } from '#shared/types/utils';
+import z from 'zod';
 import { RubricItem, type IRubricItem } from './RubricItem';
 import { RubricParser } from './RubricParser';
+
+export const GradingModeSchema = z.enum(['positive', 'negative']);
+
+export type GradingMode = z.infer<typeof GradingModeSchema>;
 
 export interface IRubric {
 	items: IRubricItem[];
 	gradingMode: GradingMode;
 }
-
-export type GradingMode = 'positive' | 'negative';
 
 export default class Rubric {
 	public static create(

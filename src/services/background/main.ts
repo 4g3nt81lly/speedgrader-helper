@@ -5,6 +5,7 @@ import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
 import QuizFeedbackLocalStore from '#shared/stores/QuizFeedbackLocalStore';
 import QuizLocalStore from '#shared/stores/QuizLocalStore';
 import configDev from './dev';
+import { quizLoadHandler } from './loader';
 
 const taskQueues = new TaskQueues();
 
@@ -22,6 +23,12 @@ addCommandHandler({
 			AppSettingsLocalStore.set(partialSettings)
 		);
 		return true;
+	},
+
+	async [BackgroundCommand.loadQuiz]({ loader, payload }) {
+		const quizLoader =
+			loader ?? (await AppSettingsLocalStore.getOrDefault('defaultQuizLoader'));
+		return quizLoadHandler[quizLoader](payload as unknown as any);
 	},
 
 	async [BackgroundCommand.addQuizToStore]({ quiz: newQuiz }) {

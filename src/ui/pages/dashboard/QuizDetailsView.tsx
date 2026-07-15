@@ -83,7 +83,7 @@ export default function QuizDetailsView(props: QuizDetailsViewProps) {
 				</div>
 			)}
 
-			<ActionBar quiz={quiz} />
+			<Footer quiz={quiz} />
 		</div>
 	);
 }
@@ -98,7 +98,7 @@ const enum FocusState {
 	all = 2,
 }
 
-function ActionBar({ quiz }: ActionBarProps) {
+function Footer({ quiz }: ActionBarProps) {
 	const dispatch = useDispatch<MainPageDispatch>();
 
 	const quizIO = useQuizIO();

@@ -45,6 +45,7 @@
 		"@mui/material": "^9.0.1",
 		"@reduxjs/toolkit": "^2.12.0",
 		"@tailwindcss/vite": "^4.3.0",
+		"cheerio": "^1.2.0",
 		"decimal.js": "^10.6.0",
 		"motion": "^12.40.0",
 		"react": "^19.2.6",

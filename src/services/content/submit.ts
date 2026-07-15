@@ -1,4 +1,4 @@
-import { secondsToMilliseconds } from 'motion/react';
+import Constants from '#shared/constants';
 import type { GradingContext } from './GradingContext';
 import { ContentEvent, dispatchContentEvent } from './event';
 import { postSnackbarItem } from './ui/snackbar';
@@ -30,7 +30,7 @@ export async function submitFeedback(
 	}
 	if (!this.quiz) return null;
 
-	let targetQuestions = new Set(this.dirtyQuestions);
+	const targetQuestions = new Set(this.dirtyQuestions);
 	if (this.appSettings.feedbackSubmissionStrategy === 'focused') {
 		for (const question of this.quiz.questions) {
 			if (question.isFocused) continue;
@@ -42,7 +42,7 @@ export async function submitFeedback(
 		return null;
 	}
 	this.isFeedbackSubmitting = true;
-	dispatchContentEvent(ContentEvent.beginSubmitFeedback, {}, this.submissionWindow!);
+	dispatchContentEvent(ContentEvent.beginSubmitFeedback, {}, this.submissionWindow);
 
 	// Prevent default form submission flow
 	event?.preventDefault();
@@ -52,9 +52,12 @@ export async function submitFeedback(
 	event?.stopPropagation();
 
 	// Manually submit using form data
-	const rawFormData = new FormData(this.submissionForm!);
+	const rawFormData = new FormData(this.submissionForm);
 	let formData = rawFormData;
-	if (this.appSettings.feedbackSubmissionStrategy !== 'all') {
+	if (
+		this.appSettings.feedbackSubmissionStrategy !== 'all' &&
+		(this.appSettings.feedbackSubmissionStrategy !== 'focused' || this.quiz.focusMode)
+	) {
 		formData = new FormData();
 		for (const field of essentialFields) {
 			const value = rawFormData.get(field);
@@ -78,8 +81,8 @@ export async function submitFeedback(
 	}
 	let success = false;
 	try {
-		var response = await fetch(this.submissionForm!.action, {
-			method: this.submissionForm!.method,
+		var response = await fetch(this.submissionForm.action, {
+			method: this.submissionForm.method,
 			body: formData,
 			redirect: 'follow',
 		});
@@ -99,7 +102,7 @@ export async function submitFeedback(
 		postSnackbarItem({
 			message: 'Successfully submitted feedback!',
 			type: 'success',
-			timeoutMs: secondsToMilliseconds(2),
+			timeoutMs: 2 * Constants.SECOND_MS,
 		});
 		if (navigate) {
 			this.navigateSubmission(navigate, false);
@@ -111,14 +114,14 @@ export async function submitFeedback(
 		postSnackbarItem({
 			message: 'Unable to submit feedback. Please refresh the page and try again!',
 			type: 'error',
-			timeoutMs: secondsToMilliseconds(3),
+			timeoutMs: 3 * Constants.SECOND_MS,
 		});
 	}
 	// Notify whomever might be interested in this event
 	dispatchContentEvent(
 		ContentEvent.endSubmitFeedback,
 		{ success, questionIds: targetQuestions },
-		this.submissionWindow!
+		this.submissionWindow
 	);
 
 	this.isFeedbackSubmitting = false;

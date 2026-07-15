@@ -3,7 +3,7 @@
 	"description": "An extension that makes Canvas SpeedGrader infinitely better",
 	"version": "0.1",
 	"manifest_version": 3,
-	"minimum_chrome_version": "115",
+	"minimum_chrome_version": "125",
 	"background": {
 		"service_worker": "background.js",
 		"type": "module"

@@ -1,4 +1,5 @@
-import type { QuizInjectorType, QuizLoaderType } from '#content/modules';
+import type { QuizLoaderType } from '#background/loader';
+import type { QuizInjectorType } from '#content/modules';
 import type { FeedbackSubmissionStrategy } from '#content/submit';
 
 export const feedbackSubmissionStrategyNames: Record<FeedbackSubmissionStrategy, string> =
@@ -27,4 +28,5 @@ export const quizInjectorNames: Record<QuizInjectorType, string> = {
 export const quizLoaderNames: Record<QuizLoaderType, string> = {
 	oldSG: 'Old SG',
 	newSG: 'New SG (Experimental)',
+	canvasAPI: 'Canvas API',
 };

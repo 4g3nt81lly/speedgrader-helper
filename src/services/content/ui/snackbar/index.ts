@@ -1,4 +1,4 @@
-import { secondsToMilliseconds } from 'motion/react';
+import Constants from '#shared/constants';
 import { useSyncExternalStore } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 export { default as Snackbar } from './Snackbar';
@@ -43,7 +43,7 @@ function notifyAll() {
 export function postSnackbarItem(item: Omit<ISnackbarItem, 'id'>) {
 	const id = uuidv4();
 	if (!item.closeReason || item.closeReason === 'timeout') {
-		setTimeout(() => removeSnackbarItems(id), item.timeoutMs ?? secondsToMilliseconds(5));
+		setTimeout(() => removeSnackbarItems(id), item.timeoutMs ?? 5 * Constants.SECOND_MS);
 	}
 	snackbar = {
 		stack: [...snackbar.stack, id],

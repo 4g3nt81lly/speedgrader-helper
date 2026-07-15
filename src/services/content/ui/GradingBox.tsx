@@ -1,15 +1,12 @@
 import Selectors from '#content/selectors';
 import type { QuestionFeedback } from '#models/Feedback';
 import type { IQuestion } from '#models/Question';
-import type { IQuiz } from '#models/Quiz';
 import { isDecimalWithinRange } from '#shared/decimal';
 import type { Nullable } from '#shared/types/utils';
 import RubricControls from './RubricControls';
 import useGradingState from './useGradingState';
 
 export type GradingBoxProps = {
-	submissionId: string;
-	initialQuiz: IQuiz;
 	initialQuestion: IQuestion;
 	initialFeedback: Nullable<QuestionFeedback>;
 

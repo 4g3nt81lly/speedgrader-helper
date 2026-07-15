@@ -33,7 +33,10 @@ export function ToplevelEventProxy() {
 }
 
 export function SubmissionEventProxy() {
-	const document = gradingContext.submissionWindow!.document;
+	if (!gradingContext.quiz) {
+		throw new Error('Fatal error: Invalid grading context');
+	}
+	const document = gradingContext.submissionWindow.document;
 
 	const appSettings = useAppSettings();
 
@@ -41,7 +44,7 @@ export function SubmissionEventProxy() {
 		if (
 			event.key !== 'Enter' ||
 			!(event.target as Element).matches('input') ||
-			(event.target as HTMLInputElement).form !== gradingContext.submissionForm!
+			(event.target as HTMLInputElement).form !== gradingContext.submissionForm
 		)
 			return;
 

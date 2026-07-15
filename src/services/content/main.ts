@@ -1,17 +1,16 @@
 import { addCommandHandler, ContentCommand } from '#shared/message';
 import Patterns from '#shared/patterns';
-import { defaultAppSettings } from '#shared/settings';
 import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
 import gradingContext from './GradingContext';
-import { quizInjectors, quizLoaders } from './modules';
+import { quizInjectors, sgQuizLoaders } from './modules';
+import { SGQuizLoader } from './modules/SGQuizLoader';
 import { postSnackbarItem, removeSnackbarItems } from './ui/snackbar';
 
 addCommandHandler({
 	[ContentCommand.loadQuiz](payload) {
-		const { loader: loaderType, payload: loaderPayload } = payload;
-		const quizLoader = new quizLoaders[loaderType]();
-		const newQuiz = quizLoader.getQuiz(loaderPayload);
-		return newQuiz;
+		const { loader: loaderType } = payload;
+		const quizLoader = new sgQuizLoaders[loaderType](gradingContext.appSettings);
+		return quizLoader.getQuiz();
 	},
 
 	[ContentCommand.pushSnackbarItem]({ item }) {
@@ -23,38 +22,32 @@ addCommandHandler({
 
 	[ContentCommand.reloadAppSettings]() {
 		(async () => {
-			try {
-				gradingContext.appSettings = {
-					...defaultAppSettings,
-					...(await AppSettingsLocalStore.getAll()),
-				};
-			} catch (error) {
-				postSnackbarItem({
-					message:
-						'An error occurred while reloading app settings, please refresh the page.',
-					closeReason: 'manual',
-				});
-			}
-		})();
+			gradingContext.appSettings = await AppSettingsLocalStore.getAll();
+		})().catch((error) => {
+			console.error('Failed to reload app settings:', error);
+			postSnackbarItem({
+				message:
+					'An error occurred while reloading app settings, please refresh the page.',
+				closeReason: 'manual',
+			});
+		});
 	},
 });
 
 if (import.meta.env.DEV || document.URL.match(Patterns.SG_URL_ORIGIN)) {
 	(async () => {
-		try {
-			gradingContext.appSettings = {
-				...gradingContext.appSettings,
-				...(await AppSettingsLocalStore.getAll()),
-			};
-			const injector = quizInjectors[gradingContext.appSettings.defaultQuizInjector];
-			new injector().inject();
-		} catch (error) {
-			console.error(
-				'An error occurred during SGH injection:',
-				error instanceof Error ? error.message : 'unknown'
-			);
-		}
-	})();
+		gradingContext.appSettings = await AppSettingsLocalStore.getAll();
+
+		const injector = quizInjectors[gradingContext.appSettings.defaultQuizInjector];
+		const canonicalUrl = SGQuizLoader.getCanonicalURL(document.URL);
+
+		await new injector(canonicalUrl).inject();
+	})().catch((error) => {
+		console.error(
+			'An error occurred during SGH injection:',
+			error instanceof Error ? error.message : 'unknown'
+		);
+	});
 }
 
 console.log('SpeedGrader Helper: Content script loaded');

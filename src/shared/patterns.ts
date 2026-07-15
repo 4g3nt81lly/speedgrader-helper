@@ -1,4 +1,5 @@
 const DECIMAL = /[+-]?(?:\d+(?:\.\d*)?|\.\d+)/;
+const CANVAS_ID = /^\d+$/;
 
 const Patterns = {
 	DECIMAL,
@@ -13,6 +14,10 @@ const Patterns = {
 
 	SG_URL_ORIGIN: /^https:\/\/canvas\.[a-z]+\.c(?:a|om)$/,
 	SG_URL_PATHNAME: /^\/courses\/(?<courseId>\d+)\/gradebook\/speed_grader$/,
+
+	CANVAS_COURSE_ID: CANVAS_ID,
+	CANVAS_QUIZ_ID: CANVAS_ID,
+	CANVAS_QUIZ_QUESTION_ID: CANVAS_ID,
 };
 
 export default Patterns;

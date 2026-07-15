@@ -35,7 +35,7 @@ const settingsSlice = createSlice({
 			.addCase(
 				loadAppSettingsFromLocalStorage.fulfilled,
 				(settings, { payload: newSettings }) => {
-					Object.assign(settings, { ...defaultAppSettings, ...newSettings });
+					Object.assign(settings, newSettings);
 				}
 			)
 			.addCase(loadAppSettingsFromLocalStorage.rejected, (_, { error }) => {

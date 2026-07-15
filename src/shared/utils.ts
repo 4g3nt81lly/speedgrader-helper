@@ -32,6 +32,11 @@ export const withTimeout: TimeoutWrapper = function <T, D>(
 	]);
 };
 
+export async function getActiveTab(): Promise<Nullable<chrome.tabs.Tab>> {
+	const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+	return activeTab ?? null;
+}
+
 type QueryElementOptions = {
 	recursive?: boolean;
 	timeout?: number;

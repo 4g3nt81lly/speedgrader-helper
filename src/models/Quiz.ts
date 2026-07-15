@@ -10,8 +10,8 @@ import type { IRubricItem } from './RubricItem';
 
 export interface IQuiz {
 	id: string;
+	canvasId: string;
 	courseId: string;
-	assignmentId: string;
 	url: string;
 	title: string;
 	questions: IQuestion[];
@@ -26,8 +26,8 @@ export default class Quiz {
 	): IQuiz {
 		return {
 			id: uuidv4(),
+			canvasId: quiz.canvasId,
 			courseId: quiz.courseId,
-			assignmentId: quiz.assignmentId,
 			url: quiz.url,
 			title: quiz.title,
 			questions: quiz.questions?.map((question) => Question.create(question)) ?? [],
@@ -112,8 +112,8 @@ export default class Quiz {
 
 	public static toExported(quiz: IQuiz): ExportedRubricJson {
 		return {
-			courseId: quiz.courseId,
-			assignmentId: quiz.assignmentId,
+			canvasCourseId: quiz.courseId,
+			canvasQuizId: quiz.canvasId,
 			url: quiz.url,
 			rubrics: quiz.questions.flatMap((question) => {
 				if (!question.rubric || question.rubric.items.length === 0) return [];

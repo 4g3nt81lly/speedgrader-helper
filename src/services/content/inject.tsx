@@ -7,7 +7,6 @@ import ReactDOM from 'react-dom/client';
 import baseStyles from './ui/base.css?inline';
 
 type InjectDOMOptions = {
-	document?: Document;
 	before?: Nullable<Node>;
 	hostId?: string;
 	hostClassNames?: string[];
@@ -18,9 +17,9 @@ export function injectReactShadowDOM(
 	element: ReactNode | (() => ReactNode),
 	options: InjectDOMOptions = {}
 ) {
-	const currentDocument = options.document ?? document;
+	const targetDocument = container.ownerDocument ?? document;
 
-	const host = currentDocument.createElement('div');
+	const host = targetDocument.createElement('div');
 	if (options.hostId !== undefined) {
 		host.id = options.hostId;
 	}
@@ -35,12 +34,12 @@ export function injectReactShadowDOM(
 	}
 
 	// Inject app base styles into shadow DOM
-	const baseStylesElement = currentDocument.createElement('style');
+	const baseStylesElement = targetDocument.createElement('style');
 	baseStylesElement.textContent = baseStyles;
 	shadowRoot.appendChild(baseStylesElement);
 
 	// Inject root container
-	const root = currentDocument.createElement('div');
+	const root = targetDocument.createElement('div');
 	root.id = 'root';
 	shadowRoot.appendChild(root);
 

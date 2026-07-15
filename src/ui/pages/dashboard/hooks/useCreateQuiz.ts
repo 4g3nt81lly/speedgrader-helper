@@ -1,6 +1,11 @@
-import type { QuizLoaderType } from '#content/modules';
+import type { QuizLoaderPayloadMap, QuizLoaderType } from '#background/loader';
 import type { IQuiz } from '#models/Quiz';
-import { ContentCommand, sendMessageToTab } from '#shared/message';
+import Constants from '#shared/constants';
+import {
+	BackgroundCommand,
+	sendMessageToBackground,
+	type CommandMessagePayload,
+} from '#shared/message';
 import QuizLocalStore from '#shared/stores/QuizLocalStore';
 import type { Nullable } from '#shared/types/utils';
 import {
@@ -8,73 +13,124 @@ import {
 	type MainPageDispatch,
 } from '#sidepanel/pages/main/stores/main.store';
 import { addQuiz } from '#sidepanel/pages/main/stores/quizzes.slice';
-import { secondsToMilliseconds } from 'motion/react';
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
+
+const defaultQuizLoaderOptions: Record<
+	QuizLoaderType,
+	Nullable<Pick<QuizLoaderPayloadMap[QuizLoaderType], 'payload'>>
+> = {
+	oldSG: {},
+	newSG: {},
+	canvasAPI: null,
+};
+
+type CreateQuizState =
+	| {
+			newQuiz: null;
+			isLoading: false;
+			isOverwrite: false;
+			errorMessage: Nullable<string>;
+	  }
+	| {
+			newQuiz: null;
+			isLoading: true;
+			isOverwrite: false;
+			errorMessage: null;
+	  }
+	| {
+			newQuiz: IQuiz;
+			isLoading: false;
+			isOverwrite: boolean;
+			errorMessage: null;
+	  };
 
 export default function useCreateQuiz(dismiss: () => void) {
 	const dispatch = useDispatch<MainPageDispatch>();
 	const appSettings = useMainSelector('settings');
 
-	const [quizLoader, setQuizLoader] = useState<QuizLoaderType>(
-		appSettings.defaultQuizLoader
+	const [quizLoader, setQuizLoader] = useState(appSettings.defaultQuizLoader);
+	const [quizLoaderOptions, setQuizLoaderOptions] = useState(
+		defaultQuizLoaderOptions[appSettings.defaultQuizLoader]
 	);
-	const [newQuiz, setNewQuiz] = useState<Nullable<IQuiz>>(null);
 
-	const [isLoading, setIsLoading] = useState(true);
-	const [isOverwrite, setIsOverwrite] = useState(false);
-	const [errorMessage, setErrorMessage] = useState<Nullable<string>>(null);
+	const [state, setState] = useState<CreateQuizState>({
+		newQuiz: null,
+		isLoading: false,
+		isOverwrite: false,
+		errorMessage: null,
+	});
 
-	async function loadQuiz(quizLoader: QuizLoaderType) {
-		if (newQuiz) setNewQuiz(null);
-		if (!isLoading) setIsLoading(true);
-		if (isOverwrite) setIsOverwrite(false);
-		if (errorMessage !== null) setErrorMessage(null);
+	function handleSetQuizLoader(quizLoader: QuizLoaderType) {
+		if (state.newQuiz) return;
+		setQuizLoader(quizLoader);
+		setQuizLoaderOptions(defaultQuizLoaderOptions[quizLoader]);
+	}
 
+	function handleSetQuizLoaderOptions<Type extends QuizLoaderType>(
+		options: Nullable<Pick<QuizLoaderPayloadMap[Type], 'payload'>>
+	) {
+		setQuizLoaderOptions(options);
+	}
+
+	async function loadQuiz() {
+		if (quizLoaderOptions === null) return;
+		setState({ newQuiz: null, isLoading: true, isOverwrite: false, errorMessage: null });
 		try {
-			var quiz = await sendMessageToTab<IQuiz, ContentCommand.loadQuiz>(
-				{ command: ContentCommand.loadQuiz, loader: quizLoader },
-				{ timeout: { milliseconds: secondsToMilliseconds(5) }, throwOnNoReceiver: true }
+			var quiz = await sendMessageToBackground<IQuiz, BackgroundCommand.loadQuiz>(
+				{
+					command: BackgroundCommand.loadQuiz,
+					...(<CommandMessagePayload[BackgroundCommand.loadQuiz]>{
+						loader: quizLoader,
+						payload: quizLoaderOptions.payload,
+					}),
+				},
+				{ timeout: { milliseconds: 5 * Constants.SECOND_MS }, throwOnNoReceiver: true }
 			);
 			var oldQuiz = await QuizLocalStore.getQuizByUrl(quiz.url);
 		} catch (error) {
-			return setErrorMessage(
-				error instanceof Error ? error.message : 'An error occurred while loading quiz'
-			);
-		} finally {
-			setIsLoading(false);
+			return setState({
+				newQuiz: null,
+				isLoading: false,
+				isOverwrite: false,
+				errorMessage:
+					error instanceof Error ? error.message : 'An error occurred while loading quiz',
+			});
 		}
-		setNewQuiz(quiz);
-		if (oldQuiz) setIsOverwrite(true);
-	}
-
-	function handleQuizLoaderChange(quizLoader: QuizLoaderType) {
-		setQuizLoader(quizLoader);
-		loadQuiz(quizLoader);
+		setState({
+			newQuiz: quiz,
+			isLoading: false,
+			isOverwrite: oldQuiz !== null,
+			errorMessage: null,
+		});
 	}
 
 	async function confirmQuiz() {
-		if (!newQuiz) return;
+		if (!state.newQuiz) return;
 		if (
-			isOverwrite &&
+			state.isOverwrite &&
 			!confirm(
 				'Warning: A quiz with this URL already exists, this will replace it and consequently remove all rubrics and cached feedbacks. This cannot be undone!'
 			)
 		)
 			return;
 		dismiss();
-		dispatch(addQuiz(newQuiz));
+		dispatch(addQuiz(state.newQuiz));
+	}
+
+	function reset() {
+		setState({ newQuiz: null, isLoading: false, isOverwrite: false, errorMessage: null });
 	}
 
 	return {
-		newQuiz,
+		state,
 		quizLoader,
-		isLoading,
-		isOverwrite,
-		errorMessage,
+		quizLoaderOptions,
 
-		setQuizLoader: handleQuizLoaderChange,
-		loadQuiz: () => loadQuiz(quizLoader),
+		setQuizLoader: handleSetQuizLoader,
+		setQuizLoaderOptions: handleSetQuizLoaderOptions,
+		loadQuiz,
 		confirmQuiz,
+		reset,
 	};
 }

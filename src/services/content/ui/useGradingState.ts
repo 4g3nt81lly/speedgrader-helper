@@ -26,9 +26,10 @@ import {
 import { postSnackbarItem } from './snackbar';
 
 export default function useGradingState(props: GradingBoxProps) {
+	if (!gradingContext.quiz) {
+		throw new Error('Fatal: Invalid grading context');
+	}
 	const {
-		submissionId,
-		initialQuiz,
 		initialQuestion,
 		initialFeedback,
 
@@ -36,7 +37,9 @@ export default function useGradingState(props: GradingBoxProps) {
 		pointsInput,
 		commentsTextarea,
 	} = props;
-	const submissionWindow = gradingContext.submissionWindow!;
+	const quiz = gradingContext.quiz;
+	const submissionId = gradingContext.submissionId;
+	const submissionWindow = gradingContext.submissionWindow;
 
 	const [question, setQuestion] = useState(initialQuestion);
 
@@ -60,7 +63,7 @@ export default function useGradingState(props: GradingBoxProps) {
 	// Transient UI states
 	const [manualPoints, setManualPoints] = useState('');
 	const [isContainerVisible, setIsContainerVisible] = useState(
-		!initialQuiz.focusMode || initialQuestion.isFocused
+		!quiz.focusMode || initialQuestion.isFocused
 	);
 	const [isRegrading, setIsRegrading] = useState(false);
 	const isSubmitting = useFeedbackSubmitState();
@@ -192,7 +195,7 @@ export default function useGradingState(props: GradingBoxProps) {
 		try {
 			await sendMessageToBackground({
 				command: BackgroundCommand.updateQuestionFeedbackInStore,
-				quizId: initialQuiz.id,
+				quizId: quiz.id,
 				submissionId,
 				question: {
 					...(newSavedFeedback

@@ -9,12 +9,13 @@ import QuizFeedbackLocalStore from '#shared/stores/QuizFeedbackLocalStore';
 import DropdownMenu from '#sidepanel/components/DropdownMenu';
 import HotkeysButton from '#sidepanel/components/HotkeysButton';
 import { RubricEditorSelector } from '#sidepanel/components/RubricAccordion';
+import useDebounce from '#sidepanel/pages/dashboard/hooks/useDebounce';
 import { MainPageDispatch, useMainSelector } from '#sidepanel/pages/main/stores/main.store';
 import { removeAllQuizzes } from '#sidepanel/pages/main/stores/quizzes.slice';
 import { selectQuiz } from '#sidepanel/pages/main/stores/selection.slice';
 import { updateAppSettings } from '#sidepanel/pages/main/stores/settings.slice';
-import { Button, Switch, Typography } from '@mui/joy';
-import { type ReactNode } from 'react';
+import { Button, Input, Switch, Typography } from '@mui/joy';
+import { type ChangeEvent, type ReactNode } from 'react';
 import { useDispatch } from 'react-redux';
 
 export default function SettingsPage() {
@@ -25,6 +26,16 @@ export default function SettingsPage() {
 	function setSetting<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
 		dispatch(updateAppSettings({ [key]: value }));
 	}
+
+	const handleCanvasBaseURLChange = useDebounce((event: ChangeEvent<HTMLInputElement>) => {
+		const newBaseURL = event.target.value || defaultAppSettings.canvasBaseURL;
+		dispatch(updateAppSettings({ canvasBaseURL: newBaseURL }));
+	});
+
+	const handleCanvasAccessTokenChange = useDebounce((event: ChangeEvent<HTMLInputElement>) => {
+		const newAccessToken = event.target.value || null;
+		dispatch(updateAppSettings({ canvasAccessToken: newAccessToken }));
+	});
 
 	function setHotkeys<K extends keyof AppHotKeySettings>(key: K, value: AppHotKeySettings[K]) {
 		setSetting('hotkeys', { ...settings.hotkeys, [key]: value });
@@ -148,7 +159,7 @@ export default function SettingsPage() {
 				<SettingsSection heading="Engine">
 					<SettingItem
 						title="Quiz Injector"
-						description="The preferred module for injecting grading controls into SpeedGrader."
+						description="The preferred method for injecting grading controls into SpeedGrader."
 					>
 						<DropdownMenu
 							items={quizInjectorNames}
@@ -158,12 +169,32 @@ export default function SettingsPage() {
 					</SettingItem>
 					<SettingItem
 						title="Quiz Loader"
-						description="The preferred module for loading Canvas quiz from SpeedGrader."
+						description="The preferred method for loading Canvas quiz."
 					>
 						<DropdownMenu
 							items={quizLoaderNames}
 							selectedItem={settings.defaultQuizLoader}
 							onSelect={setSetting.bind(null, 'defaultQuizLoader')}
+						/>
+					</SettingItem>
+				</SettingsSection>
+
+				<SettingsSection heading="Integrations">
+					<SettingItem title="Canvas Domain" description="Base URL of the Canvas domain.">
+						<Input
+							type="url"
+							size="sm"
+							defaultValue={settings.canvasBaseURL}
+							onChange={handleCanvasBaseURLChange}
+						/>
+					</SettingItem>
+					<SettingItem title="Canvas Access Token" description="Access Token for Canvas Open API.">
+						<Input
+							type="password"
+							size="sm"
+							className="w-50"
+							defaultValue={settings.canvasAccessToken ?? ''}
+							onChange={handleCanvasAccessTokenChange}
 						/>
 					</SettingItem>
 				</SettingsSection>

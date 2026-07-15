@@ -1,5 +1,3 @@
-import { secondsToMilliseconds } from 'motion/react';
-
 const Constants = {
 	/* Local storage */
 
@@ -15,10 +13,11 @@ const Constants = {
 
 	/* UI */
 
-	TOOLTIP_ENTER_DELAY: secondsToMilliseconds(0.75),
+	TOOLTIP_ENTER_DELAY: 750,
 
 	/* Miscellaneous */
 
+	SECOND_MS: 1000,
 	HOTKEYS_DELIMITER: '+',
 	RECEIVING_END_DNE_MESSAGE: 'Receiving end does not exist.',
 };

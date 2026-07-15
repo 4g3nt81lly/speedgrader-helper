@@ -21,9 +21,7 @@ export default class QuizLocalStore {
 		return `quiz:${quizId}`;
 	}
 
-	private static makeStoreQuizUrlKey(
-		quiz: string | Pick<IQuiz, 'url' | 'assignmentId'>
-	): StoreQuizUrlKey {
+	private static makeStoreQuizUrlKey(quiz: string | Pick<IQuiz, 'url'>): StoreQuizUrlKey {
 		return `quizUrl:${typeof quiz === 'string' ? quiz : quiz.url}`;
 	}
 

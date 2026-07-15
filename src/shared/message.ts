@@ -1,18 +1,18 @@
-import type { QuizLoaderType } from '#content/modules';
-import type { QuizLoaderPayload } from '#content/modules/QuizLoader';
+import type { QuizLoaderPayloadMap, QuizLoaderType } from '#background/loader';
+import type { SGQuizLoaderType } from '#content/modules';
 import type { ISnackbarItem } from '#content/ui/snackbar';
 import type { QuestionFeedback } from '#models/Feedback';
 import type { IQuestion } from '#models/Question';
 import type { IQuiz } from '#models/Quiz';
-import { secondsToMilliseconds } from 'motion/react';
 import Constants from './constants';
 import type { AppSettings } from './settings';
 import type { Optional, SetOptional } from './types/utils';
-import { TimeoutError, withTimeout } from './utils';
+import { getActiveTab, TimeoutError, withTimeout } from './utils';
 
 export const enum BackgroundCommand {
 	updateAppSettings = 0x00,
 
+	loadQuiz,
 	addQuizToStore,
 	updateQuizInStore,
 	removeQuizzesFromStore,
@@ -49,6 +49,7 @@ export type CommandMessagePayload = {
 		partialSettings: Partial<AppSettings>;
 	};
 
+	[BackgroundCommand.loadQuiz]: QuizLoaderPayloadMap[QuizLoaderType];
 	[BackgroundCommand.addQuizToStore]: {
 		quiz: IQuiz;
 	};
@@ -74,8 +75,7 @@ export type CommandMessagePayload = {
 	/* Content script command */
 
 	[ContentCommand.loadQuiz]: {
-		loader: QuizLoaderType;
-		payload?: QuizLoaderPayload;
+		loader: SGQuizLoaderType;
 	};
 
 	[ContentCommand.pushSnackbarItem]: {
@@ -122,7 +122,7 @@ export function addCommandHandler(handlers: Partial<CommandHandlers>) {
 
 function addMessageListener<Message>(
 	handler: (message: Message, sender: chrome.runtime.MessageSender) => any,
-	timeout: number = secondsToMilliseconds(5)
+	timeout: number = 5 * Constants.SECOND_MS
 ) {
 	const listener = (
 		message: any,
@@ -254,7 +254,7 @@ export const sendMessageToTab: SendMessageToTabFunction = async function <
 >(message: CommandMessage<C>, options: SendMessageToTabOptions = {}) {
 	let { tabId } = options;
 	if (tabId === undefined) {
-		const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+		const activeTab = await getActiveTab();
 		if (!activeTab) {
 			throw new Error('No active tab in the current window');
 		}

@@ -7,31 +7,47 @@ import { submitFeedback } from './submit';
 
 export type GradingContext = {
 	appSettings: AppSettings;
+} & (
+	| {
+			quiz: null;
+			lastGradedQuestionId: null;
 
-	quiz: Nullable<IQuiz>;
-	lastGradedQuestionId: Nullable<IQuestion['id']>;
+			submissionId: null;
+			submissionWindow: null;
+			submissionForm: null;
 
-	submissionWindow: Nullable<Window>;
-	submissionForm: Nullable<HTMLFormElement>;
+			isFeedbackSubmitting: false;
+	  }
+	| {
+			quiz: IQuiz;
+			lastGradedQuestionId: Nullable<IQuestion['id']>;
 
-	readonly submissionFormFields: Map<
-		IQuestion['id'],
-		{ pointsField: string; commentsField: string }
-	>;
-	readonly dirtyQuestions: Set<IQuestion['id']>;
-	isFeedbackSubmitting: boolean;
+			submissionId: string;
+			submissionWindow: Window;
+			submissionForm: HTMLFormElement;
 
-	readonly submitFeedback: (
-		this: GradingContext,
-		event?: SubmitEvent,
-		navigate?: 'next' | 'prev'
-	) => Promise<Nullable<boolean>>;
-	readonly navigateSubmission: (
-		this: GradingContext,
-		direction: 'next' | 'prev',
-		save?: boolean
-	) => Promise<void>;
-};
+			isFeedbackSubmitting: boolean;
+	  }
+) & {
+		readonly submissionFormFields: Map<
+			IQuestion['id'],
+			{ pointsField: string; commentsField: string }
+		>;
+		readonly dirtyQuestions: Set<IQuestion['id']>;
+	} & {
+		readonly reset: (this: GradingContext) => void;
+
+		readonly submitFeedback: (
+			this: GradingContext,
+			event?: SubmitEvent,
+			navigate?: 'next' | 'prev'
+		) => Promise<Nullable<boolean>>;
+		readonly navigateSubmission: (
+			this: GradingContext,
+			direction: 'next' | 'prev',
+			save?: boolean
+		) => Promise<void>;
+	};
 
 const gradingContext: GradingContext = {
 	appSettings: defaultAppSettings,
@@ -39,12 +55,26 @@ const gradingContext: GradingContext = {
 	quiz: null,
 	lastGradedQuestionId: null,
 
+	submissionId: null,
 	submissionWindow: null,
 	submissionForm: null,
 
 	submissionFormFields: new Map(),
 	dirtyQuestions: new Set(),
 	isFeedbackSubmitting: false,
+
+	reset() {
+		this.quiz = null;
+		this.lastGradedQuestionId = null;
+
+		this.submissionId = null;
+		this.submissionWindow = null;
+		this.submissionForm = null;
+
+		this.submissionFormFields.clear();
+		this.dirtyQuestions.clear();
+		this.isFeedbackSubmitting = false;
+	},
 
 	submitFeedback,
 	navigateSubmission,

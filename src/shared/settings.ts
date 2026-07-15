@@ -1,7 +1,9 @@
-import type { QuizInjectorType, QuizLoaderType } from '#content/modules';
+import type { QuizLoaderType } from '#background/loader';
+import type { QuizInjectorType } from '#content/modules';
 import type { FeedbackSubmissionStrategy } from '#content/submit';
 import type { GradingMode } from '#models/Rubric';
 import type { RubricEditorType } from '#sidepanel/components/RubricAccordion';
+import type { Nullable } from './types/utils';
 
 export type AppSettings = {
 	scrollToLastGradedQuestion: boolean;
@@ -11,6 +13,9 @@ export type AppSettings = {
 	defaultGradingMode: GradingMode;
 	defaultQuizInjector: QuizInjectorType;
 	defaultQuizLoader: QuizLoaderType;
+
+	canvasBaseURL: string;
+	canvasAccessToken: Nullable<string>;
 
 	hotkeys: AppHotKeySettings;
 };
@@ -29,6 +34,9 @@ export const defaultAppSettings: AppSettings = {
 	defaultGradingMode: 'positive',
 	defaultQuizInjector: 'oldSG',
 	defaultQuizLoader: 'oldSG',
+
+	canvasBaseURL: import.meta.env.VITE_CANVAS_BASE_URL!,
+	canvasAccessToken: import.meta.env.VITE_CANVAS_ACCESS_TOKEN ?? null,
 
 	hotkeys: {
 		quizSubmitFeedback: 'meta+s',

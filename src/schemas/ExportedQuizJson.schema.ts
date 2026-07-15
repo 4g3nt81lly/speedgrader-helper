@@ -1,9 +1,10 @@
+import { GradingModeSchema } from '#models/Rubric';
 import Patterns from '#shared/patterns';
-import * as z from 'zod';
+import z from 'zod';
 
 export const ExportedRubricJsonSchema = z.object({
-	courseId: z.stringFormat('course-id', /^\d+$/),
-	assignmentId: z.stringFormat('assignment-id', /^\d+$/),
+	canvasCourseId: z.stringFormat('canvas_course_id', Patterns.CANVAS_COURSE_ID),
+	canvasQuizId: z.stringFormat('canvas_quiz_id', Patterns.CANVAS_QUIZ_ID),
 	url: z.url(),
 	rubrics: z.array(
 		z.object({
@@ -16,7 +17,7 @@ export const ExportedRubricJsonSchema = z.object({
 						points: z.stringFormat('points', Patterns.DECIMAL_STRING),
 					})
 				),
-				gradingMode: z.union([z.literal('positive'), z.literal('negative')]),
+				gradingMode: GradingModeSchema,
 			}),
 		})
 	),
