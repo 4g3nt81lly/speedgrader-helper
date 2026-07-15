@@ -41,6 +41,7 @@ const quizzesSlice = createSlice({
 		) {
 			const oldQuiz = quizzes[quiz.id];
 			if (!oldQuiz) return;
+
 			const newQuiz = { ...oldQuiz, ...quiz };
 			quizzes[quiz.id] = newQuiz;
 

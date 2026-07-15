@@ -1,10 +1,27 @@
 import { addCommandHandler, ContentCommand } from '#shared/message';
 import Patterns from '#shared/patterns';
 import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
+import QuizLocalStore from '#shared/stores/QuizLocalStore';
 import gradingContext from './GradingContext';
 import { quizInjectors, sgQuizLoaders } from './modules';
 import { SGQuizLoader } from './modules/SGQuizLoader';
 import { postSnackbarItem, removeSnackbarItems } from './ui/snackbar';
+
+async function reloadQuiz() {
+	if (!gradingContext.quiz) return;
+
+	const quiz = await QuizLocalStore.getQuizById(gradingContext.quiz.id).catch((error) => {
+		console.error('Failed to reload quiz in grading context:', error);
+		return null;
+	});
+	if (!quiz) {
+		return postSnackbarItem({
+			message: 'An error occurred while reloading quiz, please refresh the page.',
+			closeReason: 'manual',
+		});
+	}
+	gradingContext.quiz = quiz;
+}
 
 addCommandHandler({
 	[ContentCommand.loadQuiz](payload) {
@@ -31,6 +48,12 @@ addCommandHandler({
 				closeReason: 'manual',
 			});
 		});
+	},
+	[ContentCommand.reloadRubric]() {
+		reloadQuiz();
+	},
+	[ContentCommand.updateFocusState]() {
+		reloadQuiz();
 	},
 });
 
