@@ -1,3 +1,4 @@
+import Constants from '#shared/constants';
 import { addCommandHandler } from '#shared/message';
 import Patterns from '#shared/patterns';
 import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
@@ -22,6 +23,8 @@ async function reloadQuiz() {
 		});
 	}
 	gradingContext.quiz = quiz;
+
+	postSnackbarItem({ message: 'Rubrics reloaded.', timeoutMs: 2 * Constants.SECOND_MS });
 }
 
 addCommandHandler({
@@ -34,11 +37,16 @@ addCommandHandler({
 	[ContentCommand.reloadAppSettings]() {
 		(async () => {
 			gradingContext.appSettings = await AppSettingsLocalStore.getAll();
+
+			postSnackbarItem({
+				message: 'SpeedGrader Helper settings updated.',
+				timeoutMs: 2 * Constants.SECOND_MS,
+			});
 		})().catch((error) => {
 			console.error('Failed to reload app settings:', error);
 			postSnackbarItem({
 				message:
-					'An error occurred while reloading app settings, please refresh the page.',
+					'An error occurred while reloading SpeedGrader Helper settings, please refresh the page.',
 				closeReason: 'manual',
 			});
 		});
