@@ -1,11 +1,11 @@
-import type { QuizLoaderPayload, QuizLoaderPayloadMap } from '#background/loader';
+import CanvasAPI from '#models/CanvasAPI';
 import type { CanvasCourse } from '#schemas/CanvasCourse.schema';
 import type { CanvasQuiz } from '#schemas/CanvasQuiz.schema';
-import CanvasAPI from '#shared/CanvasAPI';
 import Constants from '#shared/constants';
 import Patterns from '#shared/patterns';
+import type { QuizLoaderPayload, QuizLoaderPayloadMap } from '#shared/types/loader';
 import type { Nullable } from '#shared/types/utils';
-import useDebounce from '#sidepanel/pages/dashboard/hooks/useDebounce';
+import { useDebounce } from '#shared/utils/browser/hooks';
 import { useMainSelector } from '#sidepanel/pages/main/stores/main.store';
 import ReplayIcon from '@mui/icons-material/Replay';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';

@@ -1,4 +1,4 @@
-import { inOutTransitionMotionProps } from '#shared/animation';
+import { inOutTransitionMotionProps } from '#shared/utils/browser/animation';
 import CloseIcon from '@mui/icons-material/Close';
 import { IconButton, Typography } from '@mui/joy';
 import { AnimatePresence, motion } from 'motion/react';
@@ -13,22 +13,21 @@ export default function Snackbar() {
 				{state.stack.flatMap((itemId) => {
 					const item = state.items[itemId]!;
 					if (!item) return [];
+					const type = item.type ?? 'neutral';
 					return (
 						<motion.div
 							key={itemId}
 							className="control-shadow flex gap-4 rounded-2xl pt-1.5 pr-5 pb-2.5 pl-4.5"
-							style={{ backgroundColor: defaultSnackbarBackgroundColors[item.type ?? 'neutral'] }}
+							style={{ backgroundColor: defaultSnackbarBackgroundColors[type] }}
 							{...inOutTransitionMotionProps({ opacity: [0, 1], scale: [0.9, 1] })}
 							layout
 						>
 							<motion.div className="flex justify-center" layout="position">
-								<Typography level="h2">
-									{item.icon ?? defaultSnackbarIcons[item.type ?? 'neutral']}
-								</Typography>
+								<Typography level="h2">{item.icon ?? defaultSnackbarIcons[type]}</Typography>
 							</motion.div>
 							<motion.div className="flex flex-col" layout="position">
 								<Typography level="body-md" fontWeight="bold">
-									{item.title ?? defaultSnackbarTitles[item.type ?? 'neutral']}
+									{item.title ?? defaultSnackbarTitles[type]}
 								</Typography>
 								<Typography level="body-sm" className="leading-snug">
 									{item.message}

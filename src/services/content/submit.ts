@@ -3,8 +3,6 @@ import type { GradingContext } from './GradingContext';
 import { ContentEvent, dispatchContentEvent } from './event';
 import { postSnackbarItem } from './ui/snackbar';
 
-export type FeedbackSubmissionStrategy = 'all' | 'focused' | 'updated';
-
 const essentialFields = [
 	'utf8',
 	'_method',

@@ -1,28 +1,8 @@
 {
-	"compilerOptions": {
-		"target": "ES2020",
-		"useDefineForClassFields": true,
-		"lib": ["ES2020", "DOM", "DOM.Iterable", "WebWorker"],
-		"module": "ESNext",
-		"moduleResolution": "bundler",
-		"skipLibCheck": true,
-		"esModuleInterop": true,
-		"resolveJsonModule": true,
-		"isolatedModules": true,
-		"noEmit": true,
-		"jsx": "react-jsx",
-		"strict": true,
-		"paths": {
-			"#models/*": ["./src/models/*"],
-			"#schemas/*": ["./src/schemas/*"],
-			"#background/*": ["./src/services/background/*"],
-			"#content/*": ["./src/services/content/*"],
-			"#shared/*": ["./src/shared/*"],
-			"#sidepanel/*": ["./src/ui/*"]
-		},
-		"noImplicitOverride": true,
-		"noUncheckedIndexedAccess": true
-	},
-	"include": ["src", "vite-env.d.ts"],
-	"references": [{ "path": "./tsconfig.build.json" }]
+	"files": [],
+	"references": [
+		{ "path": "./tsconfig.browser.json" },
+		{ "path": "./tsconfig.worker.json" },
+		{ "path": "./tsconfig.build.json" }
+	]
 }

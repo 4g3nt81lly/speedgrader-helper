@@ -1,4 +1,4 @@
-import { inOutTransitionMotionProps } from '#shared/animation';
+import { inOutTransitionMotionProps } from '#shared/utils/browser/animation';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useTheme } from '@mui/joy';
 import { AnimatePresence, motion } from 'motion/react';

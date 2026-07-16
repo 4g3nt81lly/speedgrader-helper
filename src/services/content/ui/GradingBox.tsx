@@ -1,8 +1,8 @@
 import Selectors from '#content/selectors';
 import type { QuestionFeedback } from '#models/Feedback';
 import type { IQuestion } from '#models/Question';
-import { isDecimalWithinRange } from '#shared/decimal';
 import type { Nullable } from '#shared/types/utils';
+import { isDecimalWithinRange } from '#shared/utils/decimal';
 import RubricControls from './RubricControls';
 import useGradingState from './useGradingState';
 

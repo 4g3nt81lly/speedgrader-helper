@@ -1,4 +1,4 @@
-import { isDecimalPositive } from '#shared/decimal';
+import { isDecimalPositive } from '#shared/utils/decimal';
 import SubdirectoryArrowRightIcon from '@mui/icons-material/SubdirectoryArrowRight';
 import type { ChangeEvent } from 'react';
 import {

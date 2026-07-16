@@ -1,6 +1,6 @@
-import { isDecimalPositive } from '#shared/decimal';
 import Patterns from '#shared/patterns';
 import type { Nullable } from '#shared/types/utils';
+import { isDecimalPositive } from '#shared/utils/decimal';
 import type { IRubric } from './Rubric';
 import Rubric from './Rubric';
 import { RubricItem, type IRubricItem } from './RubricItem';

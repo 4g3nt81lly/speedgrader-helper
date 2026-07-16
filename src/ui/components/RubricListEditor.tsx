@@ -1,15 +1,15 @@
 import type { IQuestion } from '#models/Question';
 import type { IRubric } from '#models/Rubric';
 import { type IRubricItem, RubricItem } from '#models/RubricItem';
-import { inOutTransitionMotionProps } from '#shared/animation';
 import Constants from '#shared/constants';
+import type { Nullable } from '#shared/types/utils';
+import { inOutTransitionMotionProps } from '#shared/utils/browser/animation';
 import {
 	isDecimal,
 	isDecimalEqual,
 	isDecimalGreaterThan,
 	isDecimalPositive,
-} from '#shared/decimal';
-import type { Nullable } from '#shared/types/utils';
+} from '#shared/utils/decimal';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import CloseIcon from '@mui/icons-material/Close';

@@ -2,13 +2,13 @@ import type { QuestionFeedback } from '#models/Feedback';
 import type { IQuestion } from '#models/Question';
 import type { GradingMode, IRubric } from '#models/Rubric';
 import type { IRubricItem } from '#models/RubricItem';
+import type { Nullable } from '#shared/types/utils';
 import {
 	isDecimal,
 	isDecimalEqual,
 	isDecimalPositive,
 	isDecimalWithinRange,
-} from '#shared/decimal';
-import type { Nullable } from '#shared/types/utils';
+} from '#shared/utils/decimal';
 import Decimal from 'decimal.js';
 
 export type IQuestionGradingState = RawGradingState & {

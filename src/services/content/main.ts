@@ -1,11 +1,12 @@
-import { addCommandHandler, ContentCommand } from '#shared/message';
+import { addCommandHandler } from '#shared/message';
 import Patterns from '#shared/patterns';
 import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
 import QuizLocalStore from '#shared/stores/QuizLocalStore';
+import { ContentCommand } from '#shared/types/message';
 import gradingContext from './GradingContext';
 import { quizInjectors, sgQuizLoaders } from './modules';
 import { SGQuizLoader } from './modules/SGQuizLoader';
-import { postSnackbarItem, removeSnackbarItems } from './ui/snackbar';
+import { postSnackbarItem } from './ui/snackbar';
 
 async function reloadQuiz() {
 	if (!gradingContext.quiz) return;
@@ -28,13 +29,6 @@ addCommandHandler({
 		const { loader: loaderType } = payload;
 		const quizLoader = new sgQuizLoaders[loaderType](gradingContext.appSettings);
 		return quizLoader.getQuiz();
-	},
-
-	[ContentCommand.pushSnackbarItem]({ item }) {
-		postSnackbarItem(item);
-	},
-	[ContentCommand.popSnackbarItems]({ itemIds }) {
-		removeSnackbarItems(itemIds);
 	},
 
 	[ContentCommand.reloadAppSettings]() {

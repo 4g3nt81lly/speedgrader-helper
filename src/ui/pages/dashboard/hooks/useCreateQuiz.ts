@@ -1,12 +1,9 @@
-import type { QuizLoaderPayloadMap, QuizLoaderType } from '#background/loader';
 import type { IQuiz } from '#models/Quiz';
 import Constants from '#shared/constants';
-import {
-	BackgroundCommand,
-	sendMessageToBackground,
-	type CommandMessagePayload,
-} from '#shared/message';
+import { sendMessageToBackground } from '#shared/message';
 import QuizLocalStore from '#shared/stores/QuizLocalStore';
+import type { QuizLoaderPayloadMap, QuizLoaderType } from '#shared/types/loader';
+import { BackgroundCommand, type CommandMessagePayload } from '#shared/types/message';
 import type { Nullable } from '#shared/types/utils';
 import {
 	useMainSelector,

@@ -1,6 +1,6 @@
 import type { ExportedRubricJson } from '#schemas/ExportedQuizJson.schema';
-import { isDecimalWithinRange } from '#shared/decimal';
 import type { Nullable, SetOptional } from '#shared/types/utils';
+import { isDecimalWithinRange } from '#shared/utils/decimal';
 import Decimal from 'decimal.js';
 import { v4 as uuidv4 } from 'uuid';
 import type { IQuestion } from './Question';

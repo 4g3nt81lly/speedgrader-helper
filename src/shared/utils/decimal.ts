@@ -1,5 +1,5 @@
 import Decimal from 'decimal.js';
-import Patterns from './patterns';
+import Patterns from '../patterns';
 
 export function isDecimal(value: string) {
 	return Patterns.DECIMAL_STRING.test(value);

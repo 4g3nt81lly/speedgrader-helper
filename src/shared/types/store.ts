@@ -3,7 +3,6 @@ import type { IQuestion } from '#models/Question';
 import type { IQuiz } from '#models/Quiz';
 import type Constants from '#shared/constants';
 import type { AppSettings } from '#shared/settings';
-import type { MainTab } from '#sidepanel/pages/main';
 import type { Nullable } from './utils';
 
 export type ILocalStore = {
@@ -37,3 +36,5 @@ export type StoreQuizLastGradedQuestionIdKey = `quizLastGradedQuestion:${IQuiz['
 export type StoreQuizFeedbackKey = `quizFeedback:${IQuiz['id']}`;
 export type StoreQuizSubmissionFeedbackKey =
 	`quizSubmissionFeedback:${IQuiz['id']}:${string}`;
+
+export type MainTab = 'dashboard' | 'settings';

@@ -1,6 +1,6 @@
+import type { MainTab } from '#shared/types/store';
 import type { Nullable } from '#shared/types/utils';
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { MainTab } from '..';
 import type { MainPageStates } from './main.store';
 import {
 	loadSelectionStateFromLocalStorage,

@@ -1,27 +1,10 @@
 import type { IQuiz } from '#models/Quiz';
 import Constants from '#shared/constants';
-import { ContentCommand, sendMessageToTab } from '#shared/message';
+import { sendMessageToTab } from '#shared/message';
 import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
+import type { QuizLoaderPayload, QuizLoaderType } from '#shared/types/loader';
+import { ContentCommand } from '#shared/types/message';
 import CanvasQuizLoader from './CanvasQuizLoader';
-
-export type QuizLoaderPayload = {
-	oldSG: undefined;
-	newSG: undefined;
-	canvasAPI: {
-		courseId: string;
-		quizId: string;
-	};
-};
-
-export type QuizLoaderType = keyof QuizLoaderPayload;
-
-export type QuizLoaderPayloadMap = {
-	[Loader in QuizLoaderType]: {
-		loader: Loader;
-	} & (QuizLoaderPayload[Loader] extends undefined
-		? { payload?: undefined }
-		: { payload: QuizLoaderPayload[Loader] });
-};
 
 export const quizLoadHandler: {
 	[Loader in QuizLoaderType]: (

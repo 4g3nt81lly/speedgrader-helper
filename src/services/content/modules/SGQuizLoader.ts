@@ -1,11 +1,11 @@
 import Selectors from '#content/selectors';
 import Question, { type IQuestion, type QuestionType } from '#models/Question';
-import { isDecimal } from '#shared/decimal';
 import Patterns from '#shared/patterns';
 import type { AppSettings } from '#shared/settings';
+import type { SGQuizLoaderType } from '#shared/types/loader';
 import QuizLoader from '#shared/types/loader';
-import { getBaseUrl } from '#shared/utils';
-import type { SGQuizLoaderType } from '.';
+import { getBaseUrl } from '#shared/utils/browser/index';
+import { isDecimal } from '#shared/utils/decimal';
 
 export abstract class SGQuizLoader<
 	Type extends SGQuizLoaderType = SGQuizLoaderType,

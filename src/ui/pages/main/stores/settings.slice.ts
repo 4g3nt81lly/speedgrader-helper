@@ -1,10 +1,6 @@
-import {
-	BackgroundCommand,
-	broadcastMessageToTabs,
-	ContentCommand,
-	sendMessageToBackground,
-} from '#shared/message';
+import { broadcastMessageToTabs, sendMessageToBackground } from '#shared/message';
 import { defaultAppSettings, type AppSettings } from '#shared/settings';
+import { BackgroundCommand, ContentCommand } from '#shared/types/message';
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { syncSidePanelStates } from './helpers';
 import type { MainPageStates } from './main.store';

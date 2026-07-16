@@ -1,8 +1,6 @@
-import type { QuizLoaderType } from '#background/loader';
-import type { QuizInjectorType } from '#content/modules';
-import type { FeedbackSubmissionStrategy } from '#content/submit';
 import type { GradingMode } from '#models/Rubric';
-import type { RubricEditorType } from '#sidepanel/components/RubricAccordion';
+import type { QuizInjectorType } from './types/injector';
+import type { QuizLoaderType } from './types/loader';
 import type { Nullable } from './types/utils';
 
 export type AppSettings = {
@@ -19,6 +17,10 @@ export type AppSettings = {
 
 	hotkeys: AppHotKeySettings;
 };
+
+export type FeedbackSubmissionStrategy = 'all' | 'focused' | 'updated';
+
+export type RubricEditorType = 'list' | 'text';
 
 export type AppHotKeySettings = {
 	quizSubmitFeedback: string;

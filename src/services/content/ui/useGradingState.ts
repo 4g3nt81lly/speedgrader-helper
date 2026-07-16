@@ -7,15 +7,14 @@ import gradingContext from '#content/GradingContext';
 import { useFeedbackSubmitState } from '#content/hooks';
 import Selectors from '#content/selectors';
 import type { IQuestion } from '#models/Question';
-import { isDecimal, isDecimalEqual, isDecimalWithinRange } from '#shared/decimal';
+import { addCommandHandler, sendMessageToBackground } from '#shared/message';
 import {
-	addCommandHandler,
 	BackgroundCommand,
 	ContentCommand,
-	sendMessageToBackground,
 	type CommandMessagePayload,
-} from '#shared/message';
+} from '#shared/types/message';
 import type { Nullable } from '#shared/types/utils';
+import { isDecimal, isDecimalEqual, isDecimalWithinRange } from '#shared/utils/decimal';
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { GradingBoxProps } from './GradingBox';
 import {

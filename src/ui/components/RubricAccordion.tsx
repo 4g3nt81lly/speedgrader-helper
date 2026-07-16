@@ -1,8 +1,9 @@
 import type { IQuestion } from '#models/Question';
 import Rubric from '#models/Rubric';
-import { inOutTransitionMotionProps } from '#shared/animation';
 import Constants from '#shared/constants';
+import type { RubricEditorType } from '#shared/settings';
 import type { SetNonNullable } from '#shared/types/utils';
+import { inOutTransitionMotionProps } from '#shared/utils/browser/animation';
 import { useMainSelector } from '#sidepanel/pages/main/stores/main.store';
 import DeleteIcon from '@mui/icons-material/Delete';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
@@ -72,8 +73,6 @@ export default function RubricAccordion(props: RubricAccordionProps) {
 		</Accordion>
 	);
 }
-
-export type RubricEditorType = 'list' | 'text';
 
 type RubricEditorProps = {
 	question: SetNonNullable<IQuestion, 'rubric'>;

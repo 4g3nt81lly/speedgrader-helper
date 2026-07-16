@@ -5,9 +5,10 @@
 	"type": "module",
 	"scripts": {
 		"dev": "BUILD_MODE=development tsx build.ts",
-		"build": "tsc && tsx build.ts",
+		"build": "tsc -b && tsx build.ts",
 		"clean": "rm -rf dist",
 		"clean:dev": "rm -rf build",
+		"typecheck": "tsc -b",
 		"format": "prettier --write --list-different \"**/*.{js,jsx,ts,tsx,css,json,md}\""
 	},
 	"devDependencies": {

@@ -5,8 +5,8 @@ import {
 	type CanvasQuiz,
 	type CanvasQuizQuestion,
 } from '#schemas/CanvasQuiz.schema';
+import Constants from '#shared/constants';
 import z from 'zod';
-import Constants from './constants';
 
 export default class CanvasAPI {
 	private static timeoutMS = 10 * Constants.TOOLTIP_ENTER_DELAY;
@@ -27,6 +27,7 @@ export default class CanvasAPI {
 				`Unable to fetch Canvas courses: ${error instanceof Error ? error.message : 'Unknown error'}`
 			);
 		}
+
 		return courses;
 	}
 

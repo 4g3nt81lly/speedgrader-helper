@@ -12,7 +12,7 @@ import Constants from '#shared/constants';
 import QuizFeedbackLocalStore from '#shared/stores/QuizFeedbackLocalStore';
 import QuizLocalStore from '#shared/stores/QuizLocalStore';
 import type { Nullable, SetOptional } from '#shared/types/utils';
-import { getElementByQuerySelector } from '#shared/utils';
+import { getElementByQuerySelector } from '#shared/utils/browser/index';
 
 export abstract class QuizInjector {
 	protected canonicalUrl: string;

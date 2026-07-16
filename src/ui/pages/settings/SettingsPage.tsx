@@ -1,15 +1,9 @@
-import {
-	feedbackSubmissionStrategyDescriptions,
-	feedbackSubmissionStrategyNames,
-	quizInjectorNames,
-	quizLoaderNames,
-} from '#shared/modules';
 import { AppHotKeySettings, AppSettings, defaultAppSettings } from '#shared/settings';
 import QuizFeedbackLocalStore from '#shared/stores/QuizFeedbackLocalStore';
+import { useDebounce } from '#shared/utils/browser/hooks';
 import DropdownMenu from '#sidepanel/components/DropdownMenu';
 import HotkeysButton from '#sidepanel/components/HotkeysButton';
 import { RubricEditorSelector } from '#sidepanel/components/RubricAccordion';
-import useDebounce from '#sidepanel/pages/dashboard/hooks/useDebounce';
 import { MainPageDispatch, useMainSelector } from '#sidepanel/pages/main/stores/main.store';
 import { removeAllQuizzes } from '#sidepanel/pages/main/stores/quizzes.slice';
 import { selectQuiz } from '#sidepanel/pages/main/stores/selection.slice';
@@ -17,6 +11,12 @@ import { updateAppSettings } from '#sidepanel/pages/main/stores/settings.slice';
 import { Button, Input, Switch, Typography } from '@mui/joy';
 import { type ChangeEvent, type ReactNode } from 'react';
 import { useDispatch } from 'react-redux';
+import {
+	feedbackSubmissionStrategyDescriptions,
+	feedbackSubmissionStrategyNames,
+	quizInjectorNames,
+	quizLoaderNames,
+} from './descriptions';
 
 export default function SettingsPage() {
 	const dispatch = useDispatch<MainPageDispatch>();

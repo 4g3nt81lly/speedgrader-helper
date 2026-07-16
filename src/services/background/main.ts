@@ -1,9 +1,10 @@
 import Constants from '#shared/constants';
-import { addCommandHandler, BackgroundCommand } from '#shared/message';
-import TaskQueues from '#shared/queues';
+import { addCommandHandler } from '#shared/message';
 import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
 import QuizFeedbackLocalStore from '#shared/stores/QuizFeedbackLocalStore';
 import QuizLocalStore from '#shared/stores/QuizLocalStore';
+import { BackgroundCommand } from '#shared/types/message';
+import TaskQueues from '#shared/utils/queues';
 import configDev from './dev';
 import { quizLoadHandler } from './loader';
 

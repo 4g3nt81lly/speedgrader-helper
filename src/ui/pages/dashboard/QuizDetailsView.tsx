@@ -1,7 +1,8 @@
 import type { IQuestion } from '#models/Question';
 import Quiz, { type IQuiz } from '#models/Quiz';
 import Constants from '#shared/constants';
-import { ContentCommand, sendMessageToTab } from '#shared/message';
+import { sendMessageToTab } from '#shared/message';
+import { ContentCommand } from '#shared/types/message';
 import { MainPageDispatch, useMainSelector } from '#sidepanel/pages/main/stores/main.store';
 import { setQuiz } from '#sidepanel/pages/main/stores/quizzes.slice';
 import { saveSelectionStateToLocalStorage } from '#sidepanel/pages/main/stores/selection.actions';

@@ -1,109 +1,13 @@
-import type { QuizLoaderPayloadMap, QuizLoaderType } from '#background/loader';
-import type { SGQuizLoaderType } from '#content/modules';
-import type { ISnackbarItem } from '#content/ui/snackbar';
-import type { QuestionFeedback } from '#models/Feedback';
-import type { IQuestion } from '#models/Question';
-import type { IQuiz } from '#models/Quiz';
 import Constants from './constants';
-import type { AppSettings } from './settings';
-import type { Optional, SetOptional } from './types/utils';
+import type {
+	CommandMessage,
+	CommandMessagePayload,
+	ContentCommand,
+	MessageResponse,
+	RuntimeCommand,
+} from './types/message';
+import type { Optional } from './types/utils';
 import { getActiveTab, TimeoutError, withTimeout } from './utils';
-
-export const enum BackgroundCommand {
-	updateAppSettings = 0x00,
-
-	loadQuiz,
-	addQuizToStore,
-	updateQuizInStore,
-	removeQuizzesFromStore,
-
-	updateQuestionFeedbackInStore,
-	updateQuizLastGradedQuestion,
-}
-
-export const enum ContentCommand {
-	loadQuiz = 0x10,
-
-	pushSnackbarItem,
-	popSnackbarItems,
-
-	reloadRubric,
-	updateFocusState,
-
-	reloadAppSettings,
-}
-
-export type RuntimeCommand = BackgroundCommand | ContentCommand;
-
-type CommandMessage<C extends keyof CommandMessagePayload = keyof CommandMessagePayload> =
-	{ command: C } & CommandMessagePayload[C];
-
-export type MessageResponse<T = any> =
-	| { error: { message: string }; data?: T }
-	| { data: T; error?: undefined };
-
-export type CommandMessagePayload = {
-	/* Background script command */
-
-	[BackgroundCommand.updateAppSettings]: {
-		partialSettings: Partial<AppSettings>;
-	};
-
-	[BackgroundCommand.loadQuiz]: QuizLoaderPayloadMap[QuizLoaderType];
-	[BackgroundCommand.addQuizToStore]: {
-		quiz: IQuiz;
-	};
-	[BackgroundCommand.updateQuizInStore]: {
-		quiz: IQuiz;
-	};
-	[BackgroundCommand.removeQuizzesFromStore]:
-		| { quizId: IQuiz['id']; quizIds?: undefined }
-		| { quizId?: undefined; quizIds: IQuiz['id'][] };
-
-	[BackgroundCommand.updateQuestionFeedbackInStore]: {
-		quizId: IQuiz['id'];
-		submissionId: string;
-		question:
-			| { id?: undefined; feedback: QuestionFeedback }
-			| { id: IQuestion['id']; feedback?: undefined };
-	};
-	[BackgroundCommand.updateQuizLastGradedQuestion]: {
-		quizId: IQuiz['id'];
-		questionId: IQuestion['id'];
-	};
-
-	/* Content script command */
-
-	[ContentCommand.loadQuiz]: {
-		loader: SGQuizLoaderType;
-	};
-
-	[ContentCommand.pushSnackbarItem]: {
-		item: SetOptional<ISnackbarItem, 'id'>;
-	};
-	[ContentCommand.popSnackbarItems]: {
-		itemIds: ISnackbarItem['id'] | ISnackbarItem['id'][];
-	};
-
-	[ContentCommand.reloadRubric]: {
-		question: IQuestion;
-	};
-	[ContentCommand.updateFocusState]:
-		| {
-				focusMode: 'on';
-				target: Record<IQuestion['id'], true>;
-		  }
-		| {
-				focusMode: 'select';
-				target: 'all' | Record<IQuestion['id'], boolean> | 'none';
-		  }
-		| {
-				focusMode: 'off';
-				target: null;
-		  };
-
-	[ContentCommand.reloadAppSettings]: {};
-};
 
 type CommandHandlers = {
 	[Command in keyof CommandMessagePayload]: (

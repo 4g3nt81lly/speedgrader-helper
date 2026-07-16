@@ -1,3 +1,4 @@
+import type { MainTab } from '#shared/types/store';
 import DashboardPage from '#sidepanel/pages/dashboard/DashboardPage';
 import SettingsPage from '#sidepanel/pages/settings/SettingsPage';
 import { StyledEngineProvider, Tab, tabClasses, TabList, TabPanel, Tabs } from '@mui/joy';
@@ -18,8 +19,6 @@ import { loadAppSettingsFromLocalStorage } from './stores/settings.actions';
 export const enum SidePanelEvent {
 	syncState = 'syncState',
 }
-
-export type MainTab = 'dashboard' | 'settings';
 
 function App() {
 	const dispatch = useDispatch<MainPageDispatch>();

@@ -1,7 +1,7 @@
 import type { IQuestion } from '#models/Question';
 import type { IRubric } from '#models/Rubric';
 import Rubric from '#models/Rubric';
-import { isDecimalGreaterThan } from '#shared/decimal';
+import { isDecimalGreaterThan } from '#shared/utils/decimal';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Button, Checkbox, FormControl, FormHelperText, Textarea, Typography } from '@mui/joy';
 import Decimal from 'decimal.js';

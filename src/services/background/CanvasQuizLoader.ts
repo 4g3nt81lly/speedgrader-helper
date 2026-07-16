@@ -1,11 +1,11 @@
+import CanvasAPI from '#models/CanvasAPI';
 import Question from '#models/Question';
 import type { CanvasQuiz, CanvasQuizQuestion } from '#schemas/CanvasQuiz.schema';
-import CanvasAPI from '#shared/CanvasAPI';
 import type { AppSettings } from '#shared/settings';
+import type { QuizLoaderPayload } from '#shared/types/loader';
 import QuizLoader from '#shared/types/loader';
 import type { Nullable } from '#shared/types/utils';
 import * as cheerio from 'cheerio';
-import type { QuizLoaderPayload } from './loader';
 
 export default class CanvasQuizLoader extends QuizLoader<'canvasAPI'> {
 	private accessToken: Nullable<string>;

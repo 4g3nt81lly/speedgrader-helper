@@ -1,6 +1,6 @@
-import type { QuizLoaderType } from '#background/loader';
-import type { QuizInjectorType } from '#content/modules';
-import type { FeedbackSubmissionStrategy } from '#content/submit';
+import type { FeedbackSubmissionStrategy } from '#shared/settings';
+import type { QuizInjectorType } from '#shared/types/injector';
+import type { QuizLoaderType } from '#shared/types/loader';
 
 export const feedbackSubmissionStrategyNames: Record<FeedbackSubmissionStrategy, string> =
 	{
