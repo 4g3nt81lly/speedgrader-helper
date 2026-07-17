@@ -1,19 +1,15 @@
+import SettingsPage from '#pages/settings/SettingsPage';
 import type { MainTab } from '#shared/types/store';
-import DashboardPage from '#sidepanel/pages/dashboard/DashboardPage';
-import SettingsPage from '#sidepanel/pages/settings/SettingsPage';
 import { StyledEngineProvider, Tab, tabClasses, TabList, TabPanel, Tabs } from '@mui/joy';
 import { useLayoutEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { io } from 'socket.io-client';
-import global from './stores/global';
+import DashboardPage from './dashboard/DashboardPage';
+import global, { SidePanelEvent } from './stores/global';
 import { useMainSelection } from './stores/main.store';
 import { loadQuizzesFromLocalStore } from './stores/quizzes.actions';
 import { loadSelectionStateFromLocalStorage, selectMainTab } from './stores/selection.actions';
 import { loadAppSettingsFromLocalStorage } from './stores/settings.actions';
-
-export const enum SidePanelEvent {
-	syncState = 'syncState',
-}
 
 function App() {
 	const mainTab = useMainSelection().mainTab;

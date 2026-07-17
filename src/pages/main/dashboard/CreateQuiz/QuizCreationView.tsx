@@ -1,7 +1,7 @@
-import DropdownMenu from '#sidepanel/components/DropdownMenu';
-import useCreateQuiz from '#sidepanel/pages/dashboard/hooks/useCreateQuiz';
-import QuestionListView from '#sidepanel/pages/dashboard/QuestionListView';
-import { quizLoaderNames } from '#sidepanel/pages/settings/descriptions';
+import DropdownMenu from '#pages/components/DropdownMenu';
+import useCreateQuiz from '#pages/main/dashboard/hooks/useCreateQuiz';
+import QuestionListView from '#pages/main/dashboard/QuestionListView';
+import { quizLoaderNames } from '#pages/settings/descriptions';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { Button, CircularProgress, Divider, Typography } from '@mui/joy';

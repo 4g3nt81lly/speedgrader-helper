@@ -1,13 +1,13 @@
+import DropdownMenu from '#pages/components/DropdownMenu';
+import HotkeysButton from '#pages/components/HotkeysButton';
+import { RubricEditorSelector } from '#pages/components/RubricAccordion';
+import { useMainAppSettings, useMainQuizzes } from '#pages/main/stores/main.store';
+import { clearQuizzes } from '#pages/main/stores/quizzes.actions';
+import { selectQuiz } from '#pages/main/stores/selection.actions';
+import { setAppSettings, setHotkeys } from '#pages/main/stores/settings.actions';
 import { defaultAppSettings } from '#shared/settings';
 import QuizFeedbackLocalStore from '#shared/stores/QuizFeedbackLocalStore';
 import { useDebounce } from '#shared/utils/browser/hooks';
-import DropdownMenu from '#sidepanel/components/DropdownMenu';
-import HotkeysButton from '#sidepanel/components/HotkeysButton';
-import { RubricEditorSelector } from '#sidepanel/components/RubricAccordion';
-import { useMainAppSettings, useMainQuizzes } from '#sidepanel/pages/main/stores/main.store';
-import { clearQuizzes } from '#sidepanel/pages/main/stores/quizzes.actions';
-import { selectQuiz } from '#sidepanel/pages/main/stores/selection.actions';
-import { setAppSettings, setHotkeys } from '#sidepanel/pages/main/stores/settings.actions';
 import { Button, Input, Switch, Typography } from '@mui/joy';
 import { type ChangeEvent, type ReactNode } from 'react';
 import {
@@ -56,7 +56,7 @@ export default function SettingsPage() {
 	}
 
 	return (
-		<div className="mt-5 flex h-full flex-col overflow-y-scroll px-5">
+		<div className="mx-5 mt-5 flex h-full scrollbar-none flex-col overflow-y-scroll">
 			<div className="sticky top-0 z-100 bg-white pb-3">
 				<Typography level="h3">Settings</Typography>
 			</div>

@@ -1,5 +1,5 @@
 import type { IQuestion } from '#models/Question';
-import QuestionCard, { type QuestionCardOptions } from '#sidepanel/components/QuestionCard';
+import QuestionCard, { type QuestionCardOptions } from '#pages/components/QuestionCard';
 import { useTheme } from '@mui/joy';
 import { LayoutGroup, motion } from 'motion/react';
 

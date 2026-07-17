@@ -1,10 +1,10 @@
 import type { IQuestion } from '#models/Question';
 import Quiz, { type IQuiz } from '#models/Quiz';
+import { updateQuiz } from '#pages/main/stores/quizzes.actions';
+import { selectQuiz } from '#pages/main/stores/selection.actions';
 import Constants from '#shared/constants';
 import { sendMessageToTab } from '#shared/message';
 import { ContentCommand } from '#shared/types/message';
-import { updateQuiz } from '#sidepanel/pages/main/stores/quizzes.actions';
-import { selectQuiz } from '#sidepanel/pages/main/stores/selection.actions';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import DownloadIcon from '@mui/icons-material/Download';
 import UploadIcon from '@mui/icons-material/Upload';

@@ -1,7 +1,6 @@
 import { SGQuizLoader } from '#content/modules/SGQuizLoader';
 import type { IQuiz } from '#models/Quiz';
-import { SidePanelEvent } from '..';
-import global from './global';
+import global, { SidePanelEvent } from './global';
 
 export function syncSidePanelStates() {
 	global.sidePanelChannel.postMessage({ type: SidePanelEvent.syncState });

@@ -1,10 +1,10 @@
 import type { IQuestion } from '#models/Question';
 import Rubric from '#models/Rubric';
+import { useMainAppSettings } from '#pages/main/stores/main.store';
 import Constants from '#shared/constants';
 import type { RubricEditorType } from '#shared/settings';
 import type { SetNonNullable } from '#shared/types/utils';
 import { inOutTransitionMotionProps } from '#shared/utils/browser/animation';
-import { useMainAppSettings } from '#sidepanel/pages/main/stores/main.store';
 import DeleteIcon from '@mui/icons-material/Delete';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 import TuneIcon from '@mui/icons-material/Tune';

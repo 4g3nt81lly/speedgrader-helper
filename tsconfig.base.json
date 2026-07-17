@@ -6,10 +6,10 @@
 		"paths": {
 			"#models/*": ["./src/models/*"],
 			"#schemas/*": ["./src/schemas/*"],
+			"#pages/*": ["./src/pages/*"],
 			"#background/*": ["./src/services/background/*"],
 			"#content/*": ["./src/services/content/*"],
-			"#shared/*": ["./src/shared/*"],
-			"#sidepanel/*": ["./src/ui/*"]
+			"#shared/*": ["./src/shared/*"]
 		},
 		"noEmit": true,
 		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",

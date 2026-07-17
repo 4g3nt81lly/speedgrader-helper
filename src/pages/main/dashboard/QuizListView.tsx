@@ -1,8 +1,8 @@
 import { type IQuiz } from '#models/Quiz';
+import { useMainQuizzes } from '#pages/main/stores/main.store';
+import { removeQuizzes, updateQuiz } from '#pages/main/stores/quizzes.actions';
+import { selectQuiz } from '#pages/main/stores/selection.actions';
 import Constants from '#shared/constants';
-import { useMainQuizzes } from '#sidepanel/pages/main/stores/main.store';
-import { removeQuizzes, updateQuiz } from '#sidepanel/pages/main/stores/quizzes.actions';
-import { selectQuiz } from '#sidepanel/pages/main/stores/selection.actions';
 import AddIcon from '@mui/icons-material/Add';
 import AirIcon from '@mui/icons-material/Air';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';

@@ -18,24 +18,13 @@ export default defineConfig(({ mode }) => ({
 	resolve: resolveOptions,
 	build: {
 		rolldownOptions: {
-			input: resolve(__dirname, 'src/ui/pages/main/index.html'),
+			input: {
+				main: resolve(__dirname, 'src/pages/main/index.html'),
+				settings: resolve(__dirname, 'src/pages/settings/index.html'),
+			},
 			output: {
-				entryFileNames: 'sidepanel.js',
-				chunkFileNames: 'ui/chunks/sidepanel-[hash].js',
-				assetFileNames: 'ui/assets/sidepanel-[name]-[hash][extname]',
-				codeSplitting: isProduction(mode)
-					? {
-							groups: [
-								{
-									name: 'lib/chunk',
-									test: /node_modules/,
-									minSize: 100000, // 100KB
-									maxSize: 500000, // 500KB
-									priority: 10,
-								},
-							],
-						}
-					: true,
+				chunkFileNames: 'chunks/[name]-[hash].js',
+				assetFileNames: 'assets/[name]-[hash][extname]',
 			},
 		},
 		outDir: `../${isProduction(mode) ? 'dist' : 'build'}`,

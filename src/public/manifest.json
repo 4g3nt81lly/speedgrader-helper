@@ -22,7 +22,7 @@
 		"default_title": "Click to open panel"
 	},
 	"side_panel": {
-		"default_path": "ui/pages/main/index.html"
+		"default_path": "pages/main/index.html"
 	},
 	"content_scripts": [
 		{
@@ -43,5 +43,6 @@
 			"run_at": "document_idle",
 			"world": "ISOLATED"
 		}
-	]
+	],
+	"options_page": "pages/settings/index.html"
 }

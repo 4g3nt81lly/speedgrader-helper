@@ -6,10 +6,10 @@ export const resolveOptions = {
 	alias: {
 		'#models': resolve(__dirname, 'src/models'),
 		'#schemas': resolve(__dirname, 'src/schemas'),
+		'#pages': resolve(__dirname, 'src/pages'),
 		'#background': resolve(__dirname, 'src/services/background'),
 		'#content': resolve(__dirname, 'src/services/content'),
 		'#shared': resolve(__dirname, 'src/shared'),
-		'#sidepanel': resolve(__dirname, 'src/ui'),
 	},
 };
 

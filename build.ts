@@ -16,7 +16,7 @@ loadEnv({ path: resolve(`.env.${buildMode}`) });
 
 const configEntries = [
 	{ name: 'background', color: 'green' },
-	{ name: 'sidepanel', color: 'cyan' },
+	{ name: 'pages', color: 'cyan' },
 	{ name: 'content', color: 'blue' },
 	{ name: 'insider', color: 'yellow' },
 ];

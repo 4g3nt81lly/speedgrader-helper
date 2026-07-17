@@ -1,13 +1,13 @@
 import type { IQuiz } from '#models/Quiz';
+import { useMainAppSettings } from '#pages/main/stores/main.store';
+import { addQuiz } from '#pages/main/stores/quizzes.actions';
+import { selectQuiz } from '#pages/main/stores/selection.actions';
 import Constants from '#shared/constants';
 import { sendMessageToBackground } from '#shared/message';
 import QuizLocalStore from '#shared/stores/QuizLocalStore';
 import type { QuizLoaderPayloadMap, QuizLoaderType } from '#shared/types/loader';
 import { BackgroundCommand, type CommandMessagePayload } from '#shared/types/message';
 import type { Nullable } from '#shared/types/utils';
-import { useMainAppSettings } from '#sidepanel/pages/main/stores/main.store';
-import { addQuiz } from '#sidepanel/pages/main/stores/quizzes.actions';
-import { selectQuiz } from '#sidepanel/pages/main/stores/selection.actions';
 import { useState } from 'react';
 
 const defaultQuizLoaderOptions: Record<
