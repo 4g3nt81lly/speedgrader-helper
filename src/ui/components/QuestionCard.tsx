@@ -27,7 +27,7 @@ export default function QuestionCard(props: QuestionCardProps) {
 
 	function toggleQuestionFocus() {
 		if (readonly) return;
-		updateQuestion!({ ...question, isFocused: !question.isFocused });
+		updateQuestion({ ...question, isFocused: !question.isFocused });
 	}
 
 	return (

@@ -4,16 +4,11 @@ import SettingsPage from '#sidepanel/pages/settings/SettingsPage';
 import { StyledEngineProvider, Tab, tabClasses, TabList, TabPanel, Tabs } from '@mui/joy';
 import { useLayoutEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import { Provider as ReduxProvider, useDispatch } from 'react-redux';
 import { io } from 'socket.io-client';
 import global from './stores/global';
-import store, { useMainSelector, type MainPageDispatch } from './stores/main.store';
+import { useMainSelection } from './stores/main.store';
 import { loadQuizzesFromLocalStore } from './stores/quizzes.actions';
-import {
-	loadSelectionStateFromLocalStorage,
-	saveSelectionStateToLocalStorage,
-} from './stores/selection.actions';
-import { selectMainTab } from './stores/selection.slice';
+import { loadSelectionStateFromLocalStorage, selectMainTab } from './stores/selection.actions';
 import { loadAppSettingsFromLocalStorage } from './stores/settings.actions';
 
 export const enum SidePanelEvent {
@@ -21,27 +16,25 @@ export const enum SidePanelEvent {
 }
 
 function App() {
-	const dispatch = useDispatch<MainPageDispatch>();
-	const { mainTab } = useMainSelector('selection');
+	const mainTab = useMainSelection().mainTab;
 
 	function handleTabChange(tab: MainTab) {
-		dispatch(selectMainTab(tab));
-		dispatch(saveSelectionStateToLocalStorage());
+		selectMainTab(tab);
 	}
 
 	useLayoutEffect(() => {
 		(async () => {
-			dispatch(loadAppSettingsFromLocalStorage());
-			await dispatch(loadQuizzesFromLocalStore());
-			dispatch(loadSelectionStateFromLocalStorage());
+			loadAppSettingsFromLocalStorage();
+			loadSelectionStateFromLocalStorage();
+			loadQuizzesFromLocalStore();
 		})();
 		// Register broadcast channel for syncing across side panel contexts
 		const handleSyncSidePanel = ({ data }: MessageEvent<any>) => {
 			if (data.type !== SidePanelEvent.syncState) return;
 			// Sync quizzes with another instance of side panel, reload from local storage
 			(async () => {
-				await dispatch(loadAppSettingsFromLocalStorage());
-				await dispatch(loadQuizzesFromLocalStore());
+				await loadAppSettingsFromLocalStorage();
+				await loadQuizzesFromLocalStore();
 			})();
 		};
 		global.sidePanelChannel.addEventListener('message', handleSyncSidePanel);
@@ -98,9 +91,7 @@ function App() {
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-	<ReduxProvider store={store}>
-		<StyledEngineProvider enableCssLayer>
-			<App />
-		</StyledEngineProvider>
-	</ReduxProvider>
+	<StyledEngineProvider enableCssLayer>
+		<App />
+	</StyledEngineProvider>
 );

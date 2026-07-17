@@ -15,14 +15,14 @@ export type AppSettings = {
 	canvasBaseURL: string;
 	canvasAccessToken: Nullable<string>;
 
-	hotkeys: AppHotKeySettings;
+	hotkeys: AppHotkeySettings;
 };
 
 export type FeedbackSubmissionStrategy = 'all' | 'focused' | 'updated';
 
 export type RubricEditorType = 'list' | 'text';
 
-export type AppHotKeySettings = {
+export type AppHotkeySettings = {
 	quizSubmitFeedback: string;
 	quizNextSubmission: string;
 	quizPrevSubmission: string;

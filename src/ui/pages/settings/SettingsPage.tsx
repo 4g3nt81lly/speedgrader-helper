@@ -1,16 +1,15 @@
-import { AppHotKeySettings, AppSettings, defaultAppSettings } from '#shared/settings';
+import { defaultAppSettings } from '#shared/settings';
 import QuizFeedbackLocalStore from '#shared/stores/QuizFeedbackLocalStore';
 import { useDebounce } from '#shared/utils/browser/hooks';
 import DropdownMenu from '#sidepanel/components/DropdownMenu';
 import HotkeysButton from '#sidepanel/components/HotkeysButton';
 import { RubricEditorSelector } from '#sidepanel/components/RubricAccordion';
-import { MainPageDispatch, useMainSelector } from '#sidepanel/pages/main/stores/main.store';
-import { removeAllQuizzes } from '#sidepanel/pages/main/stores/quizzes.slice';
-import { selectQuiz } from '#sidepanel/pages/main/stores/selection.slice';
-import { updateAppSettings } from '#sidepanel/pages/main/stores/settings.slice';
+import { useMainAppSettings, useMainQuizzes } from '#sidepanel/pages/main/stores/main.store';
+import { clearQuizzes } from '#sidepanel/pages/main/stores/quizzes.actions';
+import { selectQuiz } from '#sidepanel/pages/main/stores/selection.actions';
+import { setAppSettings, setHotkeys } from '#sidepanel/pages/main/stores/settings.actions';
 import { Button, Input, Switch, Typography } from '@mui/joy';
 import { type ChangeEvent, type ReactNode } from 'react';
-import { useDispatch } from 'react-redux';
 import {
 	feedbackSubmissionStrategyDescriptions,
 	feedbackSubmissionStrategyNames,
@@ -19,32 +18,23 @@ import {
 } from './descriptions';
 
 export default function SettingsPage() {
-	const dispatch = useDispatch<MainPageDispatch>();
-	const quizzes = useMainSelector('quizzes');
-	const settings = useMainSelector('settings');
-
-	function setSetting<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
-		dispatch(updateAppSettings({ [key]: value }));
-	}
+	const quizzes = useMainQuizzes();
+	const settings = useMainAppSettings();
 
 	const handleCanvasBaseURLChange = useDebounce((event: ChangeEvent<HTMLInputElement>) => {
 		const newBaseURL = event.target.value || defaultAppSettings.canvasBaseURL;
-		dispatch(updateAppSettings({ canvasBaseURL: newBaseURL }));
+		setAppSettings({ canvasBaseURL: newBaseURL });
 	});
 
 	const handleCanvasAccessTokenChange = useDebounce((event: ChangeEvent<HTMLInputElement>) => {
 		const newAccessToken = event.target.value || null;
-		dispatch(updateAppSettings({ canvasAccessToken: newAccessToken }));
+		setAppSettings({ canvasAccessToken: newAccessToken });
 	});
-
-	function setHotkeys<K extends keyof AppHotKeySettings>(key: K, value: AppHotKeySettings[K]) {
-		setSetting('hotkeys', { ...settings.hotkeys, [key]: value });
-	}
 
 	function handleClearQuizzes() {
 		if (!confirm('Remove all quizzes? This cannot be undone.')) return;
-		dispatch(selectQuiz(null));
-		dispatch(removeAllQuizzes());
+		selectQuiz(null);
+		clearQuizzes();
 	}
 
 	function handleClearFeedback() {
@@ -56,7 +46,7 @@ export default function SettingsPage() {
 
 	function handleResetSettings() {
 		if (!confirm('Reset all settings to default?')) return;
-		dispatch(updateAppSettings(defaultAppSettings));
+		setAppSettings(defaultAppSettings);
 	}
 
 	async function handleFactoryReset() {
@@ -79,7 +69,9 @@ export default function SettingsPage() {
 					>
 						<Switch
 							checked={settings.scrollToLastGradedQuestion}
-							onChange={(event) => setSetting('scrollToLastGradedQuestion', event.target.checked)}
+							onChange={(event) =>
+								setAppSettings({ scrollToLastGradedQuestion: event.target.checked })
+							}
 						/>
 					</SettingItem>
 					<SettingItem
@@ -92,7 +84,7 @@ export default function SettingsPage() {
 						<DropdownMenu
 							items={feedbackSubmissionStrategyNames}
 							selectedItem={settings.feedbackSubmissionStrategy}
-							onSelect={setSetting.bind(null, 'feedbackSubmissionStrategy')}
+							onSelect={(item) => setAppSettings({ feedbackSubmissionStrategy: item })}
 						/>
 					</SettingItem>
 				</SettingsSection>
@@ -104,7 +96,7 @@ export default function SettingsPage() {
 					>
 						<RubricEditorSelector
 							editorType={settings.defaultRubricEditor}
-							setEditorType={setSetting.bind(null, 'defaultRubricEditor')}
+							setEditorType={(editorType) => setAppSettings({ defaultRubricEditor: editorType })}
 						/>
 					</SettingItem>
 					<SettingItem
@@ -117,7 +109,9 @@ export default function SettingsPage() {
 						<Switch
 							checked={settings.defaultGradingMode === 'positive'}
 							onChange={(event) =>
-								setSetting('defaultGradingMode', event.target.checked ? 'positive' : 'negative')
+								setAppSettings({
+									defaultGradingMode: event.target.checked ? 'positive' : 'negative',
+								})
 							}
 						/>
 					</SettingItem>
@@ -131,7 +125,7 @@ export default function SettingsPage() {
 						<HotkeysButton
 							hotkeys={settings.hotkeys.quizSubmitFeedback}
 							defaultHotkeys={defaultAppSettings.hotkeys.quizSubmitFeedback}
-							setHotkeys={setHotkeys.bind(null, 'quizSubmitFeedback')}
+							setHotkeys={(hotkeys) => setHotkeys({ quizSubmitFeedback: hotkeys })}
 						/>
 					</SettingItem>
 					<SettingItem
@@ -141,7 +135,7 @@ export default function SettingsPage() {
 						<HotkeysButton
 							hotkeys={settings.hotkeys.quizNextSubmission}
 							defaultHotkeys={defaultAppSettings.hotkeys.quizNextSubmission}
-							setHotkeys={setHotkeys.bind(null, 'quizNextSubmission')}
+							setHotkeys={(hotkeys) => setHotkeys({ quizNextSubmission: hotkeys })}
 						/>
 					</SettingItem>
 					<SettingItem
@@ -151,7 +145,7 @@ export default function SettingsPage() {
 						<HotkeysButton
 							hotkeys={settings.hotkeys.quizPrevSubmission}
 							defaultHotkeys={defaultAppSettings.hotkeys.quizPrevSubmission}
-							setHotkeys={setHotkeys.bind(null, 'quizPrevSubmission')}
+							setHotkeys={(hotkeys) => setHotkeys({ quizPrevSubmission: hotkeys })}
 						/>
 					</SettingItem>
 				</SettingsSection>
@@ -164,7 +158,7 @@ export default function SettingsPage() {
 						<DropdownMenu
 							items={quizInjectorNames}
 							selectedItem={settings.defaultQuizInjector}
-							onSelect={setSetting.bind(null, 'defaultQuizInjector')}
+							onSelect={(injector) => setAppSettings({ defaultQuizInjector: injector })}
 						/>
 					</SettingItem>
 					<SettingItem
@@ -174,7 +168,7 @@ export default function SettingsPage() {
 						<DropdownMenu
 							items={quizLoaderNames}
 							selectedItem={settings.defaultQuizLoader}
-							onSelect={setSetting.bind(null, 'defaultQuizLoader')}
+							onSelect={(loader) => setAppSettings({ defaultQuizLoader: loader })}
 						/>
 					</SettingItem>
 				</SettingsSection>

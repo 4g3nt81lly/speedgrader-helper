@@ -1,32 +1,48 @@
+import type { IQuiz } from '#models/Quiz';
 import { getLocalStore } from '#shared/stores/utils';
-import type { ILocalStore } from '#shared/types/store';
-import { createAsyncThunk } from '@reduxjs/toolkit';
-import type { MainPageThunkAPI } from './main.store';
+import type { ILocalStore, MainTab } from '#shared/types/store';
+import type { Nullable } from '#shared/types/utils';
+import { useMainPageStore } from './main.store';
 
-export const loadSelectionStateFromLocalStorage = createAsyncThunk<
-	ILocalStore['selection'],
-	void,
-	MainPageThunkAPI
->('selection/load-from-local-store', async () => {
-	const selection = await getLocalStore.withType<ILocalStore>()('selection');
-	if (!selection) {
-		// TODO: Determine if this is necessary and/or find a more elegant way
-		// Attempt to restore the missing field with default value
-		const defaultSelection: ILocalStore['selection'] = {
-			mainTab: 'dashboard',
-			quiz: null,
-		};
-		chrome.storage.local.set<ILocalStore>({ selection: defaultSelection });
-		return defaultSelection;
+export function selectMainTab(tab: MainTab) {
+	useMainPageStore.setState((state) => ({
+		...state,
+		selection: { ...state.selection, mainTab: tab },
+	}));
+	saveSelectionStateToLocalStorage();
+}
+
+export function selectQuiz(quizId: Nullable<IQuiz['id']>) {
+	useMainPageStore.setState((state) => ({
+		...state,
+		selection: { ...state.selection, quiz: quizId },
+	}));
+	saveSelectionStateToLocalStorage();
+}
+
+export async function loadSelectionStateFromLocalStorage() {
+	try {
+		const selection = await getLocalStore.withType<ILocalStore>()('selection');
+		if (!selection) {
+			await chrome.storage.local.set<ILocalStore>({
+				selection: useMainPageStore.getInitialState().selection,
+			});
+			return;
+		}
+		useMainPageStore.setState({ selection });
+	} catch (error) {
+		console.error('Failed to load selection state from local storage:', error);
+		alert('Failed to load selection state from local storage');
 	}
-	return selection;
-});
+}
 
-export const saveSelectionStateToLocalStorage = createAsyncThunk<
-	void,
-	void,
-	MainPageThunkAPI
->('selection/save-to-local-store', async (_, { getState }) => {
-	const { selection } = getState();
-	return chrome.storage.local.set<ILocalStore>({ selection });
-});
+async function saveSelectionStateToLocalStorage() {
+	try {
+		await chrome.storage.local.set<ILocalStore>({
+			selection: useMainPageStore.getState().selection,
+		});
+	} catch (error) {
+		console.error('Failed to save selection state to local storage:', error);
+		alert('Failed to save selection state to local storage');
+	}
+}

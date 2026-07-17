@@ -44,7 +44,6 @@
 		"@mui/icons-material": "^9.0.1",
 		"@mui/joy": "^5.0.0-beta.52",
 		"@mui/material": "^9.0.1",
-		"@reduxjs/toolkit": "^2.12.0",
 		"@tailwindcss/vite": "^4.3.0",
 		"cheerio": "^1.2.0",
 		"decimal.js": "^10.6.0",
@@ -52,8 +51,8 @@
 		"react": "^19.2.6",
 		"react-dom": "^19.2.6",
 		"react-hotkeys-hook": "^5.3.3",
-		"react-redux": "^9.3.0",
 		"uuid": "^14.0.0",
-		"zod": "^4.4.3"
+		"zod": "^4.4.3",
+		"zustand": "^5.0.14"
 	}
 }

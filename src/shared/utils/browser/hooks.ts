@@ -1,15 +1,7 @@
 import Constants from '#shared/constants';
 import type { Nullable } from '#shared/types/utils';
 import { useRef } from 'react';
-import { useSelector } from 'react-redux';
-
-export const useReduxSelector = {
-	withType<State>() {
-		return <Key extends keyof State>(key: Key) => {
-			return useSelector<State, State[Key]>((state) => state[key]);
-		};
-	},
-};
+import type { StoreApi, UseBoundStore } from 'zustand';
 
 export function useDebounce<Callback extends (...args: any) => void>(
 	callback: Callback,
@@ -25,3 +17,16 @@ export function useDebounce<Callback extends (...args: any) => void>(
 		}, delayMS);
 	};
 }
+
+type WithSelectors<S> = S extends { getState: () => infer T }
+	? S & { use: { [K in keyof T]: () => T[K] } }
+	: never;
+
+export const createSelectors = <S extends UseBoundStore<StoreApi<object>>>(_store: S) => {
+	const store = _store as WithSelectors<typeof _store>;
+	store.use = {};
+	for (const k of Object.keys(store.getState())) {
+		(store.use as any)[k] = () => store((s) => s[k as keyof typeof s]);
+	}
+	return store;
+};

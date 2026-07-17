@@ -4,7 +4,7 @@ import Constants from '#shared/constants';
 import type { RubricEditorType } from '#shared/settings';
 import type { SetNonNullable } from '#shared/types/utils';
 import { inOutTransitionMotionProps } from '#shared/utils/browser/animation';
-import { useMainSelector } from '#sidepanel/pages/main/stores/main.store';
+import { useMainAppSettings } from '#sidepanel/pages/main/stores/main.store';
 import DeleteIcon from '@mui/icons-material/Delete';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 import TuneIcon from '@mui/icons-material/Tune';
@@ -22,10 +22,10 @@ type RubricAccordionProps = {
 
 export default function RubricAccordion(props: RubricAccordionProps) {
 	const { question, updateQuestion } = props;
-	const appSettings = useMainSelector('settings');
+	const appSettings = useMainAppSettings();
 
 	function updateRubric(newRubric: IQuestion['rubric']) {
-		updateQuestion!({ ...question, rubric: newRubric });
+		updateQuestion({ ...question, rubric: newRubric });
 	}
 
 	function handleAddRubric(_event: MouseEvent<HTMLButtonElement>) {

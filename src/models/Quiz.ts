@@ -22,10 +22,10 @@ export interface IQuiz {
 
 export default class Quiz {
 	public static create(
-		quiz: SetOptional<Omit<IQuiz, 'id'>, 'questions' | 'isEnabled' | 'focusMode'>
+		quiz: SetOptional<IQuiz, 'id' | 'questions' | 'isEnabled' | 'focusMode'>
 	): IQuiz {
 		return {
-			id: uuidv4(),
+			id: quiz.id ?? uuidv4(),
 			canvasId: quiz.canvasId,
 			courseId: quiz.courseId,
 			url: quiz.url,
@@ -40,36 +40,22 @@ export default class Quiz {
 	public static updateQuestion(
 		quiz: IQuiz,
 		questionId: IQuestion['id'],
-		transform: (question: IQuestion) => IQuestion
+		newQuestion: Omit<IQuestion, 'id'>
 	): IQuiz {
 		const index = quiz.questions.findIndex((question) => question.id === questionId);
 		if (index < 0) {
 			return quiz;
 		}
 		const questions = [...quiz.questions];
-		questions[index] = transform(questions[index]!);
+		questions[index] = { id: questionId, ...newQuestion };
 		return { ...quiz, questions };
 	}
 
 	public static updateQuestions(
 		quiz: IQuiz,
-		transform: (question: IQuestion) => IQuestion
+		transform: (question: Readonly<IQuestion>) => IQuestion
 	): IQuiz {
-		const questions = quiz.questions.map(transform);
-		return { ...quiz, questions };
-	}
-
-	public static updateRubric(
-		quiz: IQuiz,
-		questionId: IQuestion['id'],
-		transform: (rubric: IQuestion['rubric']) => IQuestion['rubric']
-	): IQuiz {
-		return this.updateQuestion(quiz, questionId, (question) => {
-			return {
-				...question,
-				rubric: transform(question.rubric),
-			};
-		});
+		return { ...quiz, questions: quiz.questions.map(transform) };
 	}
 
 	public static fromExported(quiz: IQuiz, exported: ExportedRubricJson): IQuiz {

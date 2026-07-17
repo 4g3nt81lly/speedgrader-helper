@@ -6,7 +6,7 @@ import Patterns from '#shared/patterns';
 import type { QuizLoaderPayload, QuizLoaderPayloadMap } from '#shared/types/loader';
 import type { Nullable } from '#shared/types/utils';
 import { useDebounce } from '#shared/utils/browser/hooks';
-import { useMainSelector } from '#sidepanel/pages/main/stores/main.store';
+import { useMainAppSettings } from '#sidepanel/pages/main/stores/main.store';
 import ReplayIcon from '@mui/icons-material/Replay';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
@@ -28,7 +28,7 @@ type CanvasAPIOptionsProps = {
 export default function CanvasAPILoaderConfig(props: CanvasAPIOptionsProps) {
 	const { setOptions } = props;
 
-	const appSettings = useMainSelector('settings');
+	const appSettings = useMainAppSettings();
 
 	const [coursesState, setCoursesState] = useState<CoursesState>({
 		options: null,

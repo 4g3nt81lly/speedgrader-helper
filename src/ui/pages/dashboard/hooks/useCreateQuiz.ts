@@ -5,13 +5,10 @@ import QuizLocalStore from '#shared/stores/QuizLocalStore';
 import type { QuizLoaderPayloadMap, QuizLoaderType } from '#shared/types/loader';
 import { BackgroundCommand, type CommandMessagePayload } from '#shared/types/message';
 import type { Nullable } from '#shared/types/utils';
-import {
-	useMainSelector,
-	type MainPageDispatch,
-} from '#sidepanel/pages/main/stores/main.store';
-import { addQuiz } from '#sidepanel/pages/main/stores/quizzes.slice';
+import { useMainAppSettings } from '#sidepanel/pages/main/stores/main.store';
+import { addQuiz } from '#sidepanel/pages/main/stores/quizzes.actions';
+import { selectQuiz } from '#sidepanel/pages/main/stores/selection.actions';
 import { useState } from 'react';
-import { useDispatch } from 'react-redux';
 
 const defaultQuizLoaderOptions: Record<
 	QuizLoaderType,
@@ -43,8 +40,7 @@ type CreateQuizState =
 	  };
 
 export default function useCreateQuiz(dismiss: () => void) {
-	const dispatch = useDispatch<MainPageDispatch>();
-	const appSettings = useMainSelector('settings');
+	const appSettings = useMainAppSettings();
 
 	const [quizLoader, setQuizLoader] = useState(appSettings.defaultQuizLoader);
 	const [quizLoaderOptions, setQuizLoaderOptions] = useState(
@@ -109,10 +105,12 @@ export default function useCreateQuiz(dismiss: () => void) {
 			!confirm(
 				'Warning: A quiz with this URL already exists, this will replace it and consequently remove all rubrics and cached feedbacks. This cannot be undone!'
 			)
-		)
+		) {
 			return;
+		}
 		dismiss();
-		dispatch(addQuiz(state.newQuiz));
+		addQuiz(state.newQuiz);
+		selectQuiz(state.newQuiz.id);
 	}
 
 	function reset() {

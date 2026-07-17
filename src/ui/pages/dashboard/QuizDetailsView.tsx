@@ -3,57 +3,38 @@ import Quiz, { type IQuiz } from '#models/Quiz';
 import Constants from '#shared/constants';
 import { sendMessageToTab } from '#shared/message';
 import { ContentCommand } from '#shared/types/message';
-import { MainPageDispatch, useMainSelector } from '#sidepanel/pages/main/stores/main.store';
-import { setQuiz } from '#sidepanel/pages/main/stores/quizzes.slice';
-import { saveSelectionStateToLocalStorage } from '#sidepanel/pages/main/stores/selection.actions';
-import { selectQuiz } from '#sidepanel/pages/main/stores/selection.slice';
+import { updateQuiz } from '#sidepanel/pages/main/stores/quizzes.actions';
+import { selectQuiz } from '#sidepanel/pages/main/stores/selection.actions';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import DownloadIcon from '@mui/icons-material/Download';
 import UploadIcon from '@mui/icons-material/Upload';
-import { Button, Checkbox, CircularProgress, IconButton, Tooltip, Typography } from '@mui/joy';
-import { useEffect, useState, useTransition } from 'react';
-import { useDispatch } from 'react-redux';
+import { Button, Checkbox, IconButton, Tooltip, Typography } from '@mui/joy';
 import QuestionListView from './QuestionListView';
 import useQuizIO from './hooks/useQuizIO';
 
-type QuizDetailsViewProps = {};
+type QuizDetailsViewProps = {
+	quiz: IQuiz;
+};
 
-export default function QuizDetailsView(props: QuizDetailsViewProps) {
-	const dispatch = useDispatch<MainPageDispatch>();
-	const quizzes = useMainSelector('quizzes');
-
-	const { quiz: selectedQuizId } = useMainSelector('selection');
-
-	const [showQuestions, setShowQuestions] = useState(false);
-	const [_isPending, startTransition] = useTransition();
-
-	const quiz = quizzes[selectedQuizId!]!;
-
-	function navigateBack() {
-		dispatch(selectQuiz(null));
-		dispatch(saveSelectionStateToLocalStorage());
-	}
-
+export default function QuizDetailsView({ quiz }: QuizDetailsViewProps) {
 	function updateQuestion(newQuestion: IQuestion) {
-		const newQuiz = Quiz.updateQuestion(quiz, newQuestion.id, (oldQuestion) => {
-			if (quiz.isEnabled && quiz.focusMode && oldQuestion.isFocused !== newQuestion.isFocused) {
-				sendMessageToTab({
-					command: ContentCommand.updateFocusState,
-					focusMode: 'select',
-					target: { [newQuestion.id]: newQuestion.isFocused },
-				});
-			}
-			return newQuestion;
-		});
-		dispatch(setQuiz({ quiz: newQuiz }));
-		if (quiz.isEnabled) {
-			sendMessageToTab({ command: ContentCommand.reloadRubric, question: newQuestion });
+		updateQuiz(Quiz.updateQuestion(quiz, newQuestion.id, newQuestion));
+
+		if (!quiz.isEnabled) return;
+		sendMessageToTab({ command: ContentCommand.reloadRubric, question: newQuestion });
+		if (
+			quiz.focusMode &&
+			quiz.questions.some(
+				(question) => question.id === newQuestion.id && question.isFocused !== newQuestion.isFocused
+			)
+		) {
+			sendMessageToTab({
+				command: ContentCommand.updateFocusState,
+				focusMode: 'select',
+				target: { [newQuestion.id]: newQuestion.isFocused },
+			});
 		}
 	}
-
-	useEffect(() => {
-		startTransition(() => setShowQuestions(true));
-	}, []);
 
 	return (
 		<div className="flex h-full flex-col overflow-y-scroll">
@@ -63,7 +44,7 @@ export default function QuizDetailsView(props: QuizDetailsViewProps) {
 					startDecorator={<ChevronLeftIcon fontSize="small" />}
 					size="sm"
 					className="mt-1 ml-2 pl-1.5"
-					onClick={navigateBack}
+					onClick={() => selectQuiz(null)}
 				>
 					Back
 				</Button>
@@ -73,16 +54,10 @@ export default function QuizDetailsView(props: QuizDetailsViewProps) {
 				</Typography>
 			</div>
 
-			{showQuestions ? (
-				<QuestionListView
-					questions={quiz.questions}
-					cardOptions={{ focusMode: quiz.focusMode, updateQuestion }}
-				/>
-			) : (
-				<div className="mb-10 flex flex-1 flex-col items-center justify-center">
-					<CircularProgress />
-				</div>
-			)}
+			<QuestionListView
+				questions={quiz.questions}
+				cardOptions={{ focusMode: quiz.focusMode, updateQuestion }}
+			/>
 
 			<Footer quiz={quiz} />
 		</div>
@@ -100,8 +75,6 @@ const enum FocusState {
 }
 
 function Footer({ quiz }: ActionBarProps) {
-	const dispatch = useDispatch<MainPageDispatch>();
-
 	const quizIO = useQuizIO();
 
 	const focusedCount = quiz.questions.reduce((count, question) => {
@@ -119,15 +92,13 @@ function Footer({ quiz }: ActionBarProps) {
 	async function handleImportQuiz() {
 		const newQuiz = await quizIO.importQuiz(quiz);
 		if (!newQuiz) return;
-		dispatch(setQuiz({ quiz: newQuiz, reload: true }));
+		updateQuiz(newQuiz, true);
 	}
 
 	function toggleFocusAllQuestions() {
 		const newFocusMode = focusState <= FocusState.some;
-		dispatch(
-			setQuiz({
-				quiz: Quiz.updateQuestions(quiz, (question) => ({ ...question, isFocused: newFocusMode })),
-			})
+		updateQuiz(
+			Quiz.updateQuestions(quiz, (question) => ({ ...question, isFocused: newFocusMode }))
 		);
 		if (quiz.isEnabled && quiz.focusMode) {
 			sendMessageToTab({
@@ -140,7 +111,7 @@ function Footer({ quiz }: ActionBarProps) {
 
 	function toggleFocusMode() {
 		const newFocusMode = !quiz.focusMode;
-		dispatch(setQuiz({ quiz: { ...quiz, focusMode: newFocusMode } }));
+		updateQuiz({ id: quiz.id, focusMode: newFocusMode });
 
 		if (!quiz.isEnabled) return;
 		if (newFocusMode) {

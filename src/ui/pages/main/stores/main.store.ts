@@ -1,35 +1,32 @@
 import type { IQuiz } from '#models/Quiz';
-import type { AppSettings } from '#shared/settings';
+import { defaultAppSettings, type AppSettings } from '#shared/settings';
 import type { MainTab } from '#shared/types/store';
 import type { Nullable } from '#shared/types/utils';
-import { useReduxSelector } from '#shared/utils/browser/hooks';
-import { configureStore } from '@reduxjs/toolkit';
-import quizzes from './quizzes.slice';
-import selection from './selection.slice';
-import settings from './settings.slice';
+import { createSelectors } from '#shared/utils/browser/hooks';
+import { create } from 'zustand';
 
-export type MainPageStates = {
-	quizzes: Record<string, IQuiz>;
+type MainPageState = {
+	quizzes: Record<IQuiz['id'], IQuiz>;
 	selection: {
 		mainTab: MainTab;
-		quiz: Nullable<string>;
+		quiz: Nullable<IQuiz['id']>;
 	};
 	settings: AppSettings;
 };
 
-const store = configureStore({
-	reducer: {
-		quizzes,
-		selection,
-		settings,
+export const useMainPageStore = create<MainPageState>()(() => ({
+	quizzes: {},
+	selection: {
+		mainTab: 'dashboard',
+		quiz: null,
 	},
-});
+	settings: defaultAppSettings,
+}));
 
-export default store;
-
-export const useMainSelector = useReduxSelector.withType<MainPageStates>();
-
-export type MainPageDispatch = typeof store.dispatch;
-export type MainPageThunkAPI = {
-	state: MainPageStates;
-};
+export const {
+	use: {
+		quizzes: useMainQuizzes,
+		selection: useMainSelection,
+		settings: useMainAppSettings,
+	},
+} = createSelectors(useMainPageStore);

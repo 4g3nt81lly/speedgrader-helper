@@ -1,4 +1,4 @@
-import { useMainSelector } from '#sidepanel/pages/main/stores/main.store';
+import { useMainQuizzes, useMainSelection } from '#sidepanel/pages/main/stores/main.store';
 import AddIcon from '@mui/icons-material/Add';
 import { Button, TabPanel, Tabs, Typography } from '@mui/joy';
 import { useState } from 'react';
@@ -13,15 +13,18 @@ const enum DashboardTab {
 }
 
 export default function DashboardPage() {
-	const { quiz: selectedQuizId } = useMainSelector('selection');
+	const quizzes = useMainQuizzes();
+	const selectedQuizId = useMainSelection().quiz;
 
 	const [isCreatingNewQuiz, setIsCreatingNewQuiz] = useState(false);
 
+	const selectedQuiz = selectedQuizId ? (quizzes[selectedQuizId] ?? null) : null;
+
 	const currentView = isCreatingNewQuiz
 		? DashboardTab.QuizCreation
-		: selectedQuizId !== null
-			? DashboardTab.QuizDetails
-			: DashboardTab.QuizList;
+		: selectedQuiz === null
+			? DashboardTab.QuizList
+			: DashboardTab.QuizDetails;
 
 	return (
 		<Tabs className="h-full overflow-hidden bg-transparent" value={currentView}>
@@ -47,7 +50,7 @@ export default function DashboardPage() {
 			</TabPanel>
 
 			<TabPanel value={DashboardTab.QuizDetails} className="overflow-hidden p-0">
-				<QuizDetailsView />
+				{selectedQuiz && <QuizDetailsView quiz={selectedQuiz} />}
 			</TabPanel>
 
 			<TabPanel value={DashboardTab.QuizCreation} className="overflow-hidden p-0">

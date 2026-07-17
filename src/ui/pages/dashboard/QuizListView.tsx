@@ -1,9 +1,8 @@
 import { type IQuiz } from '#models/Quiz';
 import Constants from '#shared/constants';
-import { useMainSelector, type MainPageDispatch } from '#sidepanel/pages/main/stores/main.store';
-import { removeQuizzes, setQuiz } from '#sidepanel/pages/main/stores/quizzes.slice';
-import { saveSelectionStateToLocalStorage } from '#sidepanel/pages/main/stores/selection.actions';
-import { selectQuiz } from '#sidepanel/pages/main/stores/selection.slice';
+import { useMainQuizzes } from '#sidepanel/pages/main/stores/main.store';
+import { removeQuizzes, updateQuiz } from '#sidepanel/pages/main/stores/quizzes.actions';
+import { selectQuiz } from '#sidepanel/pages/main/stores/selection.actions';
 import AddIcon from '@mui/icons-material/Add';
 import AirIcon from '@mui/icons-material/Air';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
@@ -22,23 +21,16 @@ import {
 	Typography,
 } from '@mui/joy';
 import type { MouseEvent } from 'react';
-import { useDispatch } from 'react-redux';
 import useQuizIO from './hooks/useQuizIO';
 
 type QuizListViewProps = {};
 
 export default function QuizListView(props: QuizListViewProps) {
-	const dispatch = useDispatch<MainPageDispatch>();
-	const quizzesMap = useMainSelector('quizzes');
+	const quizzesMap = useMainQuizzes();
 
 	const quizIO = useQuizIO();
 
 	const quizzes = Object.values(quizzesMap);
-
-	function handleSelectQuiz(quizId: IQuiz['id']) {
-		dispatch(selectQuiz(quizId));
-		dispatch(saveSelectionStateToLocalStorage());
-	}
 
 	function handleOpenInNewTab(event: MouseEvent<HTMLAnchorElement>, quiz: IQuiz) {
 		event.stopPropagation();
@@ -48,14 +40,14 @@ export default function QuizListView(props: QuizListViewProps) {
 	function handleToggleQuizEnabled(event: MouseEvent<HTMLDivElement>, quiz: IQuiz) {
 		event.stopPropagation();
 		if (confirm(`${quiz.isEnabled ? 'Disable' : 'Enable'} helper for "${quiz.title}"?`)) {
-			dispatch(setQuiz({ quiz: { ...quiz, isEnabled: !quiz.isEnabled }, reload: true }));
+			updateQuiz({ id: quiz.id, isEnabled: !quiz.isEnabled }, true);
 		}
 	}
 
 	function handleRemoveQuiz(event: MouseEvent<HTMLDivElement>, quiz: IQuiz) {
 		event.stopPropagation();
 		if (confirm(getRemoveQuizPrompt(quiz))) {
-			dispatch(removeQuizzes(quiz.id));
+			removeQuizzes(quiz.id);
 		}
 	}
 
@@ -74,7 +66,7 @@ export default function QuizListView(props: QuizListViewProps) {
 				>
 					<ListItemButton
 						className="flex flex-col items-start gap-0 rounded-xl bg-transparent pt-2 pb-3"
-						onClick={() => handleSelectQuiz(quiz.id)}
+						onClick={() => selectQuiz(quiz.id)}
 					>
 						<div className="flex w-full items-center justify-between gap-2">
 							<Typography level="title-md" fontWeight="bold" className="line-clamp-1 text-ellipsis">

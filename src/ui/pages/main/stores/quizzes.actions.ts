@@ -1,22 +1,108 @@
+import Quiz, { type IQuiz } from '#models/Quiz';
+import { sendMessageToBackground } from '#shared/message';
 import QuizLocalStore from '#shared/stores/QuizLocalStore';
-import { createAsyncThunk } from '@reduxjs/toolkit';
-import type { MainPageThunkAPI } from './main.store';
-import { loadQuizzes } from './quizzes.slice';
-import { selectQuiz } from './selection.slice';
+import { BackgroundCommand } from '#shared/types/message';
+import { reloadSpeedGraderPages, syncSidePanelStates } from './helpers';
+import { useMainPageStore } from './main.store';
+import { selectQuiz } from './selection.actions';
 
-export const loadQuizzesFromLocalStore = createAsyncThunk<void, void, MainPageThunkAPI>(
-	'quizzes/load-from-local-store',
-	async (_, { getState, dispatch }) => {
-		try {
-			var quizzes = await QuizLocalStore.getQuizzes();
-		} catch (error) {
-			console.error('Failed to load quizzes from local storage:', error);
-			return alert('Failed to load quizzes from local storage');
-		}
-		const selectedQuizId = getState().selection.quiz;
-		if (!quizzes.find((quiz) => quiz.id === selectedQuizId)) {
-			dispatch(selectQuiz(null));
-		}
-		dispatch(loadQuizzes(quizzes));
+export function addQuiz(quiz: Parameters<typeof Quiz.create>[0]) {
+	const quizzes = { ...useMainPageStore.getState().quizzes };
+	const newQuiz = Quiz.create(quiz);
+	const oldQuiz = Object.values(quizzes).find((quiz) => quiz.url === newQuiz.url);
+	if (oldQuiz) {
+		delete quizzes[oldQuiz.id];
 	}
-);
+	quizzes[newQuiz.id] = newQuiz;
+	useMainPageStore.setState({ quizzes });
+
+	addQuizToStore(newQuiz);
+}
+
+export function updateQuiz(
+	quiz: SetRequired<Partial<IQuiz>, 'id'>,
+	reload: boolean = false
+) {
+	const quizzes = { ...useMainPageStore.getState().quizzes };
+	const oldQuiz = quizzes[quiz.id];
+	if (!oldQuiz) return;
+
+	const newQuiz = { ...oldQuiz, ...quiz };
+	quizzes[quiz.id] = newQuiz;
+	useMainPageStore.setState({ quizzes });
+
+	updateQuizInStore(newQuiz, reload);
+}
+
+export function removeQuizzes(quizIds: IQuiz['id'] | IQuiz['id'][]) {
+	const quizzes = { ...useMainPageStore.getState().quizzes };
+
+	const targetQuizIds = Array.isArray(quizIds) ? quizIds : [quizIds];
+	const targetQuizzes: IQuiz[] = [];
+	for (const targetQuizId of targetQuizIds) {
+		if (!quizzes[targetQuizId]) {
+			continue;
+		}
+		targetQuizzes.push(quizzes[targetQuizId]);
+		delete quizzes[targetQuizId];
+	}
+	useMainPageStore.setState({ quizzes });
+
+	removeQuizzesFromStore(targetQuizzes);
+}
+
+export function clearQuizzes() {
+	const state = useMainPageStore.getState();
+	const quizzes = state.quizzes;
+	const targetQuizzes = Object.values(quizzes);
+
+	useMainPageStore.setState({
+		quizzes: {},
+		selection: { ...state.selection, quiz: null },
+	});
+
+	removeQuizzesFromStore(targetQuizzes);
+}
+
+export async function loadQuizzesFromLocalStore() {
+	try {
+		var quizzes = await QuizLocalStore.getQuizzes();
+	} catch (error) {
+		console.error('Failed to load quizzes from local storage:', error);
+		return alert('Failed to load quizzes from local storage');
+	}
+	const newQuizzes = Object.fromEntries(quizzes.map((quiz) => [quiz.id, quiz]));
+
+	const selectedQuizId = useMainPageStore.getState().selection.quiz;
+	if (selectedQuizId !== null && !newQuizzes[selectedQuizId]) {
+		selectQuiz(null);
+	}
+
+	useMainPageStore.setState({ quizzes: newQuizzes });
+}
+
+async function addQuizToStore(quiz: IQuiz) {
+	await sendMessageToBackground({
+		command: BackgroundCommand.addQuizToStore,
+		quiz,
+	});
+	reloadSpeedGraderPages(quiz.url);
+	syncSidePanelStates();
+}
+
+async function updateQuizInStore(quiz: IQuiz, reload: boolean = false) {
+	await sendMessageToBackground({ command: BackgroundCommand.updateQuizInStore, quiz });
+	if (reload) {
+		reloadSpeedGraderPages(quiz.url);
+	}
+	syncSidePanelStates();
+}
+
+async function removeQuizzesFromStore(quizzes: Pick<IQuiz, 'id' | 'url'>[]) {
+	await sendMessageToBackground({
+		command: BackgroundCommand.removeQuizzesFromStore,
+		quizIds: quizzes.map((quiz) => quiz.id),
+	});
+	reloadSpeedGraderPages(quizzes.map((quiz) => quiz.url));
+	syncSidePanelStates();
+}
