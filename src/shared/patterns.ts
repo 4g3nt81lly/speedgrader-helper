@@ -14,6 +14,7 @@ const Patterns = {
 
 	SG_URL_ORIGIN: /^https:\/\/canvas\.[a-z]+\.c(?:a|om)$/,
 	SG_URL_PATHNAME: /^\/courses\/(?<courseId>\d+)\/gradebook\/speed_grader$/,
+	SG_QUESTION_ID: /^question_\d+$/,
 
 	CANVAS_COURSE_ID: CANVAS_ID,
 	CANVAS_QUIZ_ID: CANVAS_ID,

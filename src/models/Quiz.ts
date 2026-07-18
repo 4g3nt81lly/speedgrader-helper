@@ -1,12 +1,11 @@
-import type { ExportedRubricJson } from '#schemas/ExportedQuizJson.schema';
+import type { ExportedQuizJson } from '#schemas/ExportedQuizJson.schema';
 import type { Nullable, SetOptional } from '#shared/types/utils';
 import { isDecimalWithinRange } from '#shared/utils/decimal';
 import Decimal from 'decimal.js';
 import { v4 as uuidv4 } from 'uuid';
 import type { IQuestion } from './Question';
 import Question from './Question';
-import type { IRubric } from './Rubric';
-import type { IRubricItem } from './RubricItem';
+import { RubricItem, type IRubricItem } from './RubricItem';
 
 export interface IQuiz {
 	id: string;
@@ -58,63 +57,60 @@ export default class Quiz {
 		return { ...quiz, questions: quiz.questions.map(transform) };
 	}
 
-	public static fromExported(quiz: IQuiz, exported: ExportedRubricJson): IQuiz {
-		const rubricMap: Record<IQuestion['id'], IRubric> = Object.fromEntries(
-			exported.rubrics.map((rubric) => [rubric.question.id, rubric.rubric])
+	public static fromExported(exported: ExportedQuizJson, quiz?: IQuiz): IQuiz {
+		const rubricMap: Record<IQuestion['id'], IQuestion['rubric']> = Object.fromEntries(
+			exported.questions.map((question) => [question.id, question.rubric])
 		);
-		const newQuestions = quiz.questions.map((question) => {
+		const baseQuiz = quiz ?? exported;
+		const newQuestions = baseQuiz.questions.map((question) => {
 			const newRubric = rubricMap[question.id];
 			if (!newRubric || newRubric.items.length === 0) {
-				return question;
+				return Question.create(question);
 			}
-			const itemIds = new Set<IRubricItem['id']>();
+			const rubricItemIds = new Set<IRubricItem['id']>();
 			let invalidState: Nullable<{ item: IRubricItem; message: string }> = null;
+
+			const newRubricItems: IRubricItem[] = [];
 			for (const newItem of newRubric.items) {
-				if (itemIds.has(newItem.id)) {
+				if (!newItem.description) {
+					// Skip rubric items with empty description
+					continue;
+				}
+				if (rubricItemIds.has(newItem.id)) {
 					invalidState = {
 						item: newItem,
-						message: `Duplicate rubric item ID "${newItem.id}"`,
+						message: `Duplicate rubric item ID "${newItem.id}".`,
 					};
 					break;
 				}
 				if (!isDecimalWithinRange(Decimal.abs(newItem.points), 0, question.points)) {
 					invalidState = {
 						item: newItem,
-						message: `Rubric item "${newItem.id}" has unexpected points "${newItem.points}"`,
+						message: `Rubric item "${newItem.id}" has unexpected points "${newItem.points}".`,
 					};
 					break;
 				}
-				itemIds.add(newItem.id);
-				// Stardardize points
-				newItem.points = Decimal(newItem.points).toString();
+				rubricItemIds.add(newItem.id);
+				newRubricItems.push(RubricItem.create(newItem));
 			}
 			if (invalidState) {
 				throw new Error(invalidState.message);
 			}
-			return { ...question, rubric: newRubric };
+			return Question.create({
+				...question,
+				rubric: { ...newRubric, items: newRubricItems },
+			});
 		});
-		return { ...quiz, questions: newQuestions };
+		return Quiz.create({ ...baseQuiz, questions: newQuestions });
 	}
 
-	public static toExported(quiz: IQuiz): ExportedRubricJson {
+	public static toExported(quiz: IQuiz): ExportedQuizJson {
 		return {
-			canvasCourseId: quiz.courseId,
-			canvasQuizId: quiz.canvasId,
+			canvasId: quiz.canvasId,
+			courseId: quiz.courseId,
 			url: quiz.url,
-			rubrics: quiz.questions.flatMap((question) => {
-				if (!question.rubric || question.rubric.items.length === 0) return [];
-				return {
-					question: { id: question.id },
-					rubric: {
-						items: question.rubric.items.map((item) => ({
-							id: item.id,
-							description: item.description,
-							points: item.points,
-						})),
-						gradingMode: question.rubric.gradingMode,
-					},
-				};
-			}),
+			title: quiz.title,
+			questions: quiz.questions,
 		};
 	}
 }

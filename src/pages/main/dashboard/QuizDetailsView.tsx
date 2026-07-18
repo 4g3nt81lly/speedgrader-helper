@@ -150,12 +150,12 @@ function Footer({ quiz }: ActionBarProps) {
 			</Tooltip>
 			<div className="flex gap-2">
 				<div className="flex">
-					<Tooltip title="Import rubric" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
+					<Tooltip title="Import quiz" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
 						<IconButton onClick={handleImportQuiz}>
 							<UploadIcon />
 						</IconButton>
 					</Tooltip>
-					<Tooltip title="Export rubric" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
+					<Tooltip title="Export quiz" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
 						<IconButton onClick={() => quizIO.exportQuiz(quiz)}>
 							<DownloadIcon />
 						</IconButton>

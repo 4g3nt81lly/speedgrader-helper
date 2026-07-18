@@ -1,26 +1,20 @@
-import { GradingModeSchema } from '#models/Rubric';
 import Patterns from '#shared/patterns';
 import z from 'zod';
+import { QuestionSchema } from './Question.schema';
 
-export const ExportedRubricJsonSchema = z.object({
-	canvasCourseId: z.stringFormat('canvas_course_id', Patterns.CANVAS_COURSE_ID),
-	canvasQuizId: z.stringFormat('canvas_quiz_id', Patterns.CANVAS_QUIZ_ID),
-	url: z.url(),
-	rubrics: z.array(
-		z.object({
-			question: z.object({ id: z.string() }),
-			rubric: z.object({
-				items: z.array(
-					z.object({
-						id: z.uuidv4(),
-						description: z.string(),
-						points: z.stringFormat('points', Patterns.DECIMAL_STRING),
-					})
-				),
-				gradingMode: GradingModeSchema,
-			}),
-		})
-	),
-});
+export const ExportedQuizJsonSchema = z.object(
+	{
+		canvasId: z.stringFormat('canvas_id', Patterns.CANVAS_QUIZ_ID, {
+			error: (error) => `Invalid Canvas quiz ID "${error.input}".`,
+		}),
+		courseId: z.stringFormat('course_id', Patterns.CANVAS_COURSE_ID, {
+			error: (error) => `Invalid Canvas course ID "${error.input}".`,
+		}),
+		url: z.url('Invalid quiz URL.'),
+		title: z.string('Invalid quiz title type.').nonempty('Quiz title must not be empty.'),
+		questions: z.array(QuestionSchema, 'Invalid quiz questions type.'),
+	},
+	'Invalid quiz object type.'
+);
 
-export type ExportedRubricJson = z.infer<typeof ExportedRubricJsonSchema>;
+export type ExportedQuizJson = z.infer<typeof ExportedQuizJsonSchema>;

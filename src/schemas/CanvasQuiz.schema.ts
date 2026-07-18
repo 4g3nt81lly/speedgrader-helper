@@ -1,4 +1,4 @@
-import { QuestionTypeSchema } from '#models/Question';
+import { QuestionTypeSchema } from './Question.schema';
 import Patterns from '#shared/patterns';
 import z from 'zod';
 

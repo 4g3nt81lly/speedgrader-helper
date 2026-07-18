@@ -1,23 +1,9 @@
+import type { QuestionTypeSchema } from '#schemas/Question.schema';
 import type { Nullable, SetOptional } from '#shared/types/utils';
 import Decimal from 'decimal.js';
-import * as z from 'zod';
+import type z from 'zod';
 import type { IRubric } from './Rubric';
 import Rubric from './Rubric';
-
-export const QuestionTypeSchema = z.enum([
-	'multiple_choice_question',
-	'true_false_question',
-	'short_answer_question',
-	'fill_in_multiple_blanks_question',
-	'multiple_answers_question',
-	'multiple_dropdowns_question',
-	'matching_question',
-	'numerical_question',
-	'calculated_question',
-	'essay_question',
-]);
-
-export type QuestionType = z.infer<typeof QuestionTypeSchema>;
 
 export interface IQuestion {
 	id: string;
@@ -28,6 +14,8 @@ export interface IQuestion {
 	rubric: Nullable<IRubric>;
 	isFocused: boolean;
 }
+
+export type QuestionType = z.infer<typeof QuestionTypeSchema>;
 
 export default class Question {
 	public static create(
