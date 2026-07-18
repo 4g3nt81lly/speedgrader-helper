@@ -3,8 +3,9 @@ import useCreateQuiz from '#pages/main/dashboard/hooks/useCreateQuiz';
 import QuestionListView from '#pages/main/dashboard/QuestionListView';
 import { quizLoaderNames } from '#pages/settings/descriptions';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ReplayIcon from '@mui/icons-material/Replay';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import { Button, CircularProgress, Divider, Typography } from '@mui/joy';
+import { Button, CircularProgress, Divider, IconButton, Tooltip, Typography } from '@mui/joy';
 import Decimal from 'decimal.js';
 import { useMemo } from 'react';
 import CanvasAPILoaderConfig from './CanvasAPILoaderConfig';
@@ -44,6 +45,7 @@ export default function QuizCreationView(props: QuizCreationViewProps) {
 					startDecorator={<ChevronLeftIcon fontSize="small" />}
 					size="sm"
 					className="mt-1 ml-2 pl-1.5"
+					disabled={state.isLoading}
 					onClick={dismiss}
 				>
 					Back
@@ -121,9 +123,17 @@ export default function QuizCreationView(props: QuizCreationViewProps) {
 					</Typography>
 				)}
 				<div className="flex w-full justify-between gap-3">
-					<Button variant="outlined" disabled={!state.newQuiz} onClick={reset}>
-						Discard
-					</Button>
+					<div className="flex gap-2">
+						<Button variant="outlined" disabled={!state.newQuiz} onClick={reset}>
+							Discard
+						</Button>
+						<Tooltip title="Reload">
+							<IconButton disabled={!state.newQuiz} onClick={loadQuiz}>
+								<ReplayIcon />
+							</IconButton>
+						</Tooltip>
+					</div>
+
 					{state.newQuiz ? (
 						<Button variant="solid" onClick={confirmQuiz}>
 							Create
