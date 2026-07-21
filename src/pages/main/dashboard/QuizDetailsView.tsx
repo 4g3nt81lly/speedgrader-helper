@@ -3,7 +3,7 @@ import Quiz, { type IQuiz } from '#models/Quiz';
 import { updateQuiz } from '#pages/main/stores/quizzes.actions';
 import { selectQuiz } from '#pages/main/stores/selection.actions';
 import Constants from '#shared/constants';
-import { sendMessageToTab } from '#shared/message';
+import { broadcastMessageToTabs } from '#shared/message';
 import { ContentCommand } from '#shared/types/message';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -17,22 +17,11 @@ type QuizDetailsViewProps = {
 };
 
 export default function QuizDetailsView({ quiz }: QuizDetailsViewProps) {
-	function updateQuestion(newQuestion: IQuestion) {
-		updateQuiz(Quiz.updateQuestion(quiz, newQuestion.id, newQuestion));
+	async function updateQuestion(newQuestion: IQuestion) {
+		await updateQuiz(Quiz.updateQuestion(quiz, newQuestion.id, newQuestion));
 
-		if (!quiz.isEnabled) return;
-		sendMessageToTab({ command: ContentCommand.reloadRubric, question: newQuestion });
-		if (
-			quiz.focusMode &&
-			quiz.questions.some(
-				(question) => question.id === newQuestion.id && question.isFocused !== newQuestion.isFocused
-			)
-		) {
-			sendMessageToTab({
-				command: ContentCommand.updateFocusState,
-				focusMode: 'select',
-				target: { [newQuestion.id]: newQuestion.isFocused },
-			});
+		if (quiz.isEnabled) {
+			broadcastMessageToTabs({ command: ContentCommand.reloadQuiz });
 		}
 	}
 
@@ -64,7 +53,7 @@ export default function QuizDetailsView({ quiz }: QuizDetailsViewProps) {
 	);
 }
 
-type ActionBarProps = {
+type FooterProps = {
 	quiz: IQuiz;
 };
 
@@ -74,7 +63,7 @@ const enum FocusState {
 	all = 2,
 }
 
-function Footer({ quiz }: ActionBarProps) {
+function Footer({ quiz }: FooterProps) {
 	const quizIO = useQuizIO();
 
 	const focusedCount = quiz.questions.reduce((count, question) => {
@@ -95,39 +84,22 @@ function Footer({ quiz }: ActionBarProps) {
 		updateQuiz(newQuiz, true);
 	}
 
-	function toggleFocusAllQuestions() {
+	async function toggleFocusAllQuestions() {
 		const newFocusMode = focusState <= FocusState.some;
-		updateQuiz(
+		await updateQuiz(
 			Quiz.updateQuestions(quiz, (question) => ({ ...question, isFocused: newFocusMode }))
 		);
-		if (quiz.isEnabled && quiz.focusMode) {
-			sendMessageToTab({
-				command: ContentCommand.updateFocusState,
-				focusMode: 'select',
-				target: newFocusMode ? 'all' : 'none',
-			});
+		if (quiz.isEnabled) {
+			broadcastMessageToTabs({ command: ContentCommand.reloadQuiz });
 		}
 	}
 
-	function toggleFocusMode() {
+	async function toggleFocusMode() {
 		const newFocusMode = !quiz.focusMode;
-		updateQuiz({ id: quiz.id, focusMode: newFocusMode });
+		await updateQuiz({ id: quiz.id, focusMode: newFocusMode });
 
-		if (!quiz.isEnabled) return;
-		if (newFocusMode) {
-			sendMessageToTab({
-				command: ContentCommand.updateFocusState,
-				focusMode: 'on',
-				target: Object.fromEntries(
-					quiz.questions.flatMap((question) => (question.isFocused ? [[question.id, true]] : []))
-				),
-			});
-		} else {
-			sendMessageToTab({
-				command: ContentCommand.updateFocusState,
-				focusMode: 'off',
-				target: null,
-			});
+		if (quiz.isEnabled) {
+			broadcastMessageToTabs({ command: ContentCommand.reloadQuiz });
 		}
 	}
 

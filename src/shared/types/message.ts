@@ -19,10 +19,8 @@ export const enum BackgroundCommand {
 export const enum ContentCommand {
 	loadQuiz = 0x10,
 
-	reloadRubric,
-	updateFocusState,
-
 	reloadAppSettings,
+	reloadQuiz,
 }
 
 export type RuntimeCommand = BackgroundCommand | ContentCommand;
@@ -69,22 +67,6 @@ export type CommandMessagePayload = {
 		loader: SGQuizLoaderType;
 	};
 
-	[ContentCommand.reloadRubric]: {
-		question: IQuestion;
-	};
-	[ContentCommand.updateFocusState]:
-		| {
-				focusMode: 'on';
-				target: Record<IQuestion['id'], true>;
-		  }
-		| {
-				focusMode: 'select';
-				target: 'all' | Record<IQuestion['id'], boolean> | 'none';
-		  }
-		| {
-				focusMode: 'off';
-				target: null;
-		  };
-
 	[ContentCommand.reloadAppSettings]: {};
+	[ContentCommand.reloadQuiz]: {};
 };

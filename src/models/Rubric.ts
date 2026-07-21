@@ -1,7 +1,9 @@
 import type { GradingModeSchema } from '#schemas/Rubric.schema';
 import { defaultAppSettings } from '#shared/settings';
 import type { SetOptional } from '#shared/types/utils';
+import { isDecimalPositive } from '#shared/utils/decimal';
 import z from 'zod';
+import type { IQuestion } from './Question';
 import { RubricItem, type IRubricItem } from './RubricItem';
 import { RubricParser } from './RubricParser';
 
@@ -28,5 +30,23 @@ export default class Rubric {
 
 	public static toText(rubric: IRubric) {
 		return RubricParser.stringify(rubric);
+	}
+
+	public static getInitialPoints(
+		maxPoints: IQuestion['points'],
+		gradingMode: GradingMode
+	) {
+		return gradingMode === 'negative' ? maxPoints : '0';
+	}
+
+	public static getComments(rubricItems: IRubricItem[]) {
+		if (rubricItems.length === 0) {
+			return '';
+		}
+		return rubricItems
+			.map(({ points, description }) => {
+				return `(${isDecimalPositive(points) ? '+' : ''}${points}) ${description}`;
+			})
+			.join('\n');
 	}
 }

@@ -1,8 +1,12 @@
+import {
+	removeSnackbarItems,
+	useSnackbarState,
+	type SnackbarItemType,
+} from '#content/stores/snackbar.store';
 import { inOutTransitionMotionProps } from '#shared/utils/browser/animation';
 import CloseIcon from '@mui/icons-material/Close';
 import { IconButton, Typography } from '@mui/joy';
 import { AnimatePresence, motion } from 'motion/react';
-import { removeSnackbarItems, useSnackbarState, type SnackbarItemType } from '.';
 
 export default function Snackbar() {
 	const state = useSnackbarState();
@@ -23,7 +27,7 @@ export default function Snackbar() {
 							layout
 						>
 							<motion.div className="flex justify-center" layout="position">
-								<Typography level="h2">{item.icon ?? defaultSnackbarIcons[type]}</Typography>
+								<Typography level="h3">{item.icon ?? defaultSnackbarIcons[type]}</Typography>
 							</motion.div>
 							<motion.div className="flex flex-col" layout="position">
 								<Typography level="body-md" fontWeight="bold">

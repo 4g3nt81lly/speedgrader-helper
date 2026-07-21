@@ -16,7 +16,7 @@ export function addQuiz(quiz: Parameters<typeof Quiz.create>[0]) {
 	quizzes[newQuiz.id] = newQuiz;
 	useMainPageStore.setState({ quizzes });
 
-	addQuizToStore(newQuiz);
+	return addQuizToStore(newQuiz);
 }
 
 export function updateQuiz(
@@ -31,7 +31,7 @@ export function updateQuiz(
 	quizzes[quiz.id] = newQuiz;
 	useMainPageStore.setState({ quizzes });
 
-	updateQuizInStore(newQuiz, reload);
+	return updateQuizInStore(newQuiz, reload);
 }
 
 export function removeQuizzes(quizIds: IQuiz['id'] | IQuiz['id'][]) {
@@ -48,7 +48,7 @@ export function removeQuizzes(quizIds: IQuiz['id'] | IQuiz['id'][]) {
 	}
 	useMainPageStore.setState({ quizzes });
 
-	removeQuizzesFromStore(targetQuizzes);
+	return removeQuizzesFromStore(targetQuizzes);
 }
 
 export function clearQuizzes() {
@@ -61,7 +61,7 @@ export function clearQuizzes() {
 		selection: { ...state.selection, quiz: null },
 	});
 
-	removeQuizzesFromStore(targetQuizzes);
+	return removeQuizzesFromStore(targetQuizzes);
 }
 
 export async function loadQuizzesFromLocalStore() {

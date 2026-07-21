@@ -1,18 +1,19 @@
-import { SubmissionEventProxy, ToplevelEventProxy } from '#content/EventProxy';
-import gradingContext from '#content/GradingContext';
+import { InnerEventProxy, ToplevelEventProxy } from '#content/EventProxy';
 import { injectReactShadowDOM } from '#content/inject';
 import Selectors from '#content/selectors';
-import GradingBox from '#content/ui/GradingBox';
+import type { QuestionGradingState } from '#content/stores/QuestionGradingState';
+import { createQuestionGradingState } from '#content/stores/gradingStates.actions';
+import { useContentStore, type GradingContext } from '#content/stores/main.store';
+import { postSnackbarItem, type ISnackbarItem } from '#content/stores/snackbar.store';
+import QuestionGradingBox from '#content/ui/QuestionGradingBox';
 import QuestionNavBar from '#content/ui/QuestionNavBar';
-import type { ISnackbarItem } from '#content/ui/snackbar';
-import { Snackbar, postSnackbarItem } from '#content/ui/snackbar';
-import type { QuestionFeedback } from '#models/Feedback';
-import type { IQuestion } from '#models/Question';
+import Snackbar from '#content/ui/snackbar/Snackbar';
 import Constants from '#shared/constants';
 import QuizFeedbackLocalStore from '#shared/stores/QuizFeedbackLocalStore';
 import QuizLocalStore from '#shared/stores/QuizLocalStore';
 import type { Nullable, SetOptional } from '#shared/types/utils';
 import { getElementByQuerySelector } from '#shared/utils/browser/index';
+import type ReactDOM from 'react-dom/client';
 
 export abstract class QuizInjector {
 	protected canonicalUrl: string;
@@ -29,9 +30,12 @@ export abstract class QuizInjector {
 export class OldSGQuizInjector extends QuizInjector {
 	protected submissionIframe: Nullable<HTMLIFrameElement> = null;
 
+	private toplevelEventProxyIsLoaded: boolean = false;
+	private innerComponents = new Set<ReactDOM.Root>();
+
 	public override async inject() {
 		try {
-			injectReactShadowDOM(document.body, <Snackbar />, { hostId: Selectors.app.SNACKBAR_ROOT_ID });
+			injectReactShadowDOM(document.body, <Snackbar />);
 
 			await this.registerInjectOnLoad();
 		} catch (error) {
@@ -74,7 +78,7 @@ export class OldSGQuizInjector extends QuizInjector {
 					) {
 						continue;
 					}
-					console.log('Submission iframe added, registering injection handler...');
+					console.info('Submission iframe added, registering injection handler...');
 					this.submissionIframe = node;
 					this.submissionIframe.removeEventListener('load', onLoadHandler);
 					this.submissionIframe.addEventListener('load', onLoadHandler);
@@ -86,13 +90,16 @@ export class OldSGQuizInjector extends QuizInjector {
 	}
 
 	private async handleInject() {
-		console.log('Attempting to perform injection...');
+		console.info('Performing injection...');
 		try {
+			this.cleanup();
 			await this.initializeGradingContext();
 
-			OldSGQuizInjector.registerEventProxies();
+			const gradingContext = useContentStore.getState().gradingContext;
+			if (!gradingContext) return;
 
-			await this.injectGradingControls();
+			this.registerEventProxies(gradingContext);
+			await this.injectGradingComponents(gradingContext);
 		} catch (error) {
 			this.postErrorItem({
 				message: `An unexpected error has occurred while injecting: ${error instanceof Error ? error.message : 'Unknown error'}.`,
@@ -100,9 +107,14 @@ export class OldSGQuizInjector extends QuizInjector {
 		}
 	}
 
-	protected async initializeGradingContext() {
-		gradingContext.reset();
+	private cleanup() {
+		// Must unmount all components before resetting global grading context
+		this.innerComponents.forEach((component) => component.unmount());
+		this.innerComponents.clear();
+		useContentStore.setState({ gradingContext: null });
+	}
 
+	protected async initializeGradingContext() {
 		const submissionId = new URL(document.URL).searchParams.get('student_id');
 		if (submissionId === null) {
 			return this.postErrorItem({
@@ -123,43 +135,42 @@ export class OldSGQuizInjector extends QuizInjector {
 			return this.postErrorItem({ message: 'Fatal: SpeedGrader submission form not found.' });
 		}
 
-		gradingContext.quiz = quiz;
-		gradingContext.lastGradedQuestionId = await QuizLocalStore.getQuizLastGradedQuestionId(
-			quiz.id
-		).catch((error) => {
-			postSnackbarItem({
-				message: `Unable to load last-graded question: ${error.message}`,
-				type: 'warning',
-			});
-			return null;
-		});
-		gradingContext.submissionId = submissionId;
-		gradingContext.submissionWindow = submissionWindow;
-		gradingContext.submissionForm = submissionForm;
-	}
+		const lastGradedQuestionId = await QuizLocalStore.getQuizLastGradedQuestionId(quiz.id).catch(
+			(error) => {
+				postSnackbarItem({
+					message: `Unable to load last-graded question: ${error.message}`,
+					type: 'warning',
+				});
+				return null;
+			}
+		);
+		const gradingContext: GradingContext = {
+			quiz,
+			gradingStates: {},
+			lastGradedQuestionId,
+			submissionId,
+			submissionWindow,
+			submissionForm,
+			isFeedbackSubmitting: false,
+			submissionFormFields: new Map(),
+			dirtyQuestions: new Set(),
+		};
+		await this.initializeGradingStates(gradingContext);
 
-	protected static registerEventProxies() {
-		if (!gradingContext.quiz?.isEnabled) return;
-
-		if (!document.getElementById(Selectors.app.EVENT_PROXY_ID)) {
-			injectReactShadowDOM(document.body, <ToplevelEventProxy />, {
-				hostId: Selectors.app.EVENT_PROXY_ID,
+		for (const [questionId, { sgElements }] of Object.entries(gradingContext.gradingStates)) {
+			gradingContext.submissionFormFields.set(questionId, {
+				pointsField: sgElements.pointsHiddenInput.name,
+				commentsField: sgElements.commentsTextarea.name,
 			});
 		}
-		const submissionDocument = gradingContext.submissionWindow.document;
-		if (!submissionDocument.getElementById(Selectors.app.EVENT_PROXY_ID)) {
-			injectReactShadowDOM(submissionDocument.body, <SubmissionEventProxy />, {
-				hostId: Selectors.app.EVENT_PROXY_ID,
-			});
-		}
+		useContentStore.setState({ gradingContext });
 	}
 
-	protected async injectGradingControls() {
-		if (!gradingContext.quiz?.isEnabled) return;
-
+	protected async initializeGradingStates(partialGradingContext: GradingContext) {
+		const { quiz, submissionId, submissionWindow } = partialGradingContext;
 		const submissionFeedback = await QuizFeedbackLocalStore.getStoreQuizSubmissionFeedback(
-			gradingContext.quiz.id,
-			gradingContext.submissionId
+			quiz.id,
+			submissionId
 		).catch((error) => {
 			postSnackbarItem({
 				message: `Unable to load saved feedback: ${error.message}`,
@@ -167,67 +178,87 @@ export class OldSGQuizInjector extends QuizInjector {
 			});
 			return null;
 		});
+		for (const question of quiz.questions) {
+			const questionContainer = submissionWindow.document.getElementById(question.id);
+			if (!questionContainer) continue;
 
-		for (const question of gradingContext.quiz.questions) {
-			this.injectQuestionGradingControls(
+			const textElement = questionContainer.querySelector<HTMLElement>(
+				this.selectors.QUESTION_TEXT
+			);
+			const pointsInput = questionContainer.querySelector<HTMLInputElement>(
+				this.selectors.QUESTION_POINTS_INPUT
+			);
+			const pointsHiddenInput = questionContainer.querySelector<HTMLInputElement>(
+				this.selectors.QUESTION_HIDDEN_POINTS_INPUT
+			);
+			const commentsTextarea = questionContainer.querySelector<HTMLTextAreaElement>(
+				this.selectors.QUESTION_COMMENTS_TEXTAREA
+			);
+			if (!textElement || !pointsInput || !pointsHiddenInput || !commentsTextarea) continue;
+
+			partialGradingContext.gradingStates[question.id] = createQuestionGradingState(
 				question,
-				submissionFeedback?.questions[question.id] ?? null
+				submissionFeedback?.questions[question.id] ?? null,
+				{
+					container: questionContainer,
+					text: textElement,
+					pointsInput,
+					pointsHiddenInput,
+					commentsTextarea,
+				}
 			);
 		}
 	}
 
-	protected injectQuestionGradingControls(
-		question: IQuestion,
-		questionFeedback: Nullable<QuestionFeedback>
-	) {
-		if (!gradingContext.quiz) return;
+	protected registerEventProxies(gradingContext: GradingContext) {
+		if (!gradingContext.quiz?.isEnabled) return;
 
-		const questionContainer = gradingContext.submissionWindow.document.getElementById(question.id);
-		if (!questionContainer) return;
-
-		const textElement = questionContainer?.querySelector(this.selectors.QUESTION_TEXT);
-		const pointsInput = questionContainer?.querySelector<HTMLInputElement>(
-			this.selectors.QUESTION_POINTS_INPUT
+		if (!this.toplevelEventProxyIsLoaded) {
+			injectReactShadowDOM(document.body, <ToplevelEventProxy />);
+			this.toplevelEventProxyIsLoaded = true;
+		}
+		const { reactRoot: innerEventProxyRoot } = injectReactShadowDOM(
+			gradingContext.submissionWindow.document.body,
+			<InnerEventProxy />
 		);
-		const hiddenPointsInput = questionContainer?.querySelector<HTMLInputElement>(
-			this.selectors.QUESTION_HIDDEN_POINTS_INPUT
-		);
-		const commentsTextarea = questionContainer?.querySelector<HTMLTextAreaElement>(
-			this.selectors.QUESTION_COMMENTS_TEXTAREA
-		);
-		if (!textElement || !pointsInput || !hiddenPointsInput || !commentsTextarea) return;
-		gradingContext.submissionFormFields.set(question.id, {
-			pointsField: hiddenPointsInput.name,
-			commentsField: commentsTextarea.name,
-		});
-
-		this.injectQuestionNavBar(question, questionContainer);
-
-		injectReactShadowDOM(
-			textElement,
-			<GradingBox
-				initialQuestion={question}
-				initialFeedback={questionFeedback}
-				questionContainer={questionContainer}
-				pointsInput={pointsInput}
-				commentsTextarea={commentsTextarea}
-			/>
-		);
+		this.innerComponents.add(innerEventProxyRoot);
 	}
 
-	protected injectQuestionNavBar(question: IQuestion, questionContainer: HTMLElement) {
-		const questionHeader = questionContainer.querySelector<HTMLElement>(
+	protected async injectGradingComponents(gradingContext: GradingContext) {
+		if (!gradingContext.quiz?.isEnabled) return;
+
+		for (const gradingState of Object.values(gradingContext.gradingStates)) {
+			this.injectQuestionGradingComponents(gradingState);
+		}
+	}
+
+	protected injectQuestionGradingComponents(state: QuestionGradingState) {
+		this.injectQuestionNavBar(state);
+
+		const { reactRoot: gradingBoxRoot } = injectReactShadowDOM(
+			state.sgElements.text,
+			<QuestionGradingBox questionId={state.question.id} />
+		);
+		this.innerComponents.add(gradingBoxRoot);
+	}
+
+	protected injectQuestionNavBar(state: QuestionGradingState) {
+		const questionHeader = state.sgElements.container.querySelector<HTMLElement>(
 			this.selectors.QUESTION_HEADER
 		);
 		if (!questionHeader) return;
 
 		questionHeader.style.position = 'relative';
 
-		injectReactShadowDOM(questionHeader, <QuestionNavBar question={{ id: question.id }} />);
+		const { reactRoot } = injectReactShadowDOM(
+			questionHeader,
+			<QuestionNavBar questionId={state.question.id} />
+		);
+		this.innerComponents.add(reactRoot);
 	}
 
 	protected postErrorItem(item: SetOptional<Omit<ISnackbarItem, 'type'>, 'id'>) {
-		return postSnackbarItem({ ...item, type: 'error' });
+		return postSnackbarItem({ ...item, type: 'error', closeReason: 'manual' });
 	}
 
 	protected override get selectors() {

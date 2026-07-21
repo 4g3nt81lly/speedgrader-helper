@@ -1,23 +1,26 @@
+import { ContentEvent, dispatchContentEvent } from '#content/event';
+import { useContentStore } from '#content/stores/main.store';
 import { sendMessageToBackground } from '#shared/message';
 import { BackgroundCommand } from '#shared/types/message';
-import { ContentEvent, dispatchContentEvent } from './event';
-import type { GradingContext } from './GradingContext';
+import { submitFeedback } from './submitFeedback';
 
 export default async function navigateSubmission(
-	this: GradingContext,
 	direction: 'next' | 'prev',
 	save: boolean = true
 ) {
-	if (save && this.dirtyQuestions.size > 0) {
-		this.submitFeedback(undefined, direction);
+	const context = useContentStore.getState().gradingContext;
+	if (!context) return;
+
+	if (save && context.dirtyQuestions.size > 0) {
+		submitFeedback(undefined, direction);
 		return;
 	}
 	// Update last-graded question before navigating
-	if (this.lastGradedQuestionId) {
+	if (context.lastGradedQuestionId) {
 		await sendMessageToBackground({
 			command: BackgroundCommand.updateQuizLastGradedQuestion,
-			quizId: this.quiz!.id,
-			questionId: this.lastGradedQuestionId,
+			quizId: context.quiz.id,
+			questionId: context.lastGradedQuestionId,
 		});
 	}
 	dispatchContentEvent(ContentEvent.navigateSubmission, { direction }, window);

@@ -1,7 +1,11 @@
+import navigateSubmission from '#content/actions/navigateSubmission';
+import { ContentEvent, dispatchContentEvent } from '#content/event';
+import { updateGradingContext } from '#content/stores/gradingContext.actions';
+import { useContentStore } from '#content/stores/main.store';
+import { postSnackbarItem } from '#content/stores/snackbar.store';
 import Constants from '#shared/constants';
-import type { GradingContext } from './GradingContext';
-import { ContentEvent, dispatchContentEvent } from './event';
-import { postSnackbarItem } from './ui/snackbar';
+import reloadQuiz, { quizReloadScheduled } from './reloadQuiz';
+import saveFeedback from './saveFeedback';
 
 const essentialFields = [
 	'utf8',
@@ -13,12 +17,11 @@ const essentialFields = [
 	'fudge_points',
 ];
 
-export async function submitFeedback(
-	this: GradingContext,
-	event?: SubmitEvent,
-	navigate?: 'next' | 'prev'
-) {
-	if (this.isFeedbackSubmitting) {
+export async function submitFeedback(event?: SubmitEvent, navigate?: 'next' | 'prev') {
+	const context = useContentStore.getState().gradingContext;
+	if (!context) return null;
+
+	if (context.isFeedbackSubmitting) {
 		postSnackbarItem({
 			title: 'Save',
 			message: 'Submission in progress...',
@@ -26,11 +29,13 @@ export async function submitFeedback(
 		});
 		return null;
 	}
-	if (!this.quiz) return null;
 
-	const targetQuestions = new Set(this.dirtyQuestions);
-	if (this.appSettings.feedbackSubmissionStrategy === 'focused') {
-		for (const question of this.quiz.questions) {
+	const appSettings = useContentStore.getState().appSettings;
+	const { quiz, submissionForm, submissionFormFields, dirtyQuestions } = context;
+
+	const targetQuestions = new Set(dirtyQuestions);
+	if (appSettings.feedbackSubmissionStrategy === 'focused') {
+		for (const question of quiz.questions) {
 			if (question.isFocused) continue;
 			targetQuestions.delete(question.id);
 		}
@@ -39,8 +44,7 @@ export async function submitFeedback(
 		postSnackbarItem({ title: 'Save', message: 'Nothing to save.', type: 'success' });
 		return null;
 	}
-	this.isFeedbackSubmitting = true;
-	dispatchContentEvent(ContentEvent.beginSubmitFeedback, {}, this.submissionWindow);
+	updateGradingContext({ isFeedbackSubmitting: true });
 
 	// Prevent default form submission flow
 	event?.preventDefault();
@@ -50,11 +54,11 @@ export async function submitFeedback(
 	event?.stopPropagation();
 
 	// Manually submit using form data
-	const rawFormData = new FormData(this.submissionForm);
+	const rawFormData = new FormData(submissionForm);
 	let formData = rawFormData;
 	if (
-		this.appSettings.feedbackSubmissionStrategy !== 'all' &&
-		(this.appSettings.feedbackSubmissionStrategy !== 'focused' || this.quiz.focusMode)
+		appSettings.feedbackSubmissionStrategy !== 'all' &&
+		(appSettings.feedbackSubmissionStrategy !== 'focused' || quiz.focusMode)
 	) {
 		formData = new FormData();
 		for (const field of essentialFields) {
@@ -62,7 +66,7 @@ export async function submitFeedback(
 			if (value === null) continue;
 			formData.set(field, value);
 		}
-		for (const [questionId, field] of this.submissionFormFields.entries()) {
+		for (const [questionId, field] of submissionFormFields.entries()) {
 			if (!targetQuestions.has(questionId)) {
 				continue;
 			}
@@ -79,8 +83,8 @@ export async function submitFeedback(
 	}
 	let success = false;
 	try {
-		var response = await fetch(this.submissionForm.action, {
-			method: this.submissionForm.method,
+		var response = await fetch(submissionForm.action, {
+			method: submissionForm.method,
 			body: formData,
 			redirect: 'follow',
 		});
@@ -103,11 +107,15 @@ export async function submitFeedback(
 			timeoutMs: 2 * Constants.SECOND_MS,
 		});
 		if (navigate) {
-			this.navigateSubmission(navigate, false);
+			navigateSubmission(navigate, false);
 		}
+		const newDirtyQuestions = new Set(dirtyQuestions);
 		for (const questionId of targetQuestions) {
-			this.dirtyQuestions.delete(questionId);
+			newDirtyQuestions.delete(questionId);
 		}
+		updateGradingContext({ dirtyQuestions: newDirtyQuestions });
+
+		await saveFeedback(targetQuestions);
 	} else {
 		postSnackbarItem({
 			message: 'Unable to submit feedback. Please refresh the page and try again!',
@@ -115,13 +123,10 @@ export async function submitFeedback(
 			timeoutMs: 3 * Constants.SECOND_MS,
 		});
 	}
-	// Notify whomever might be interested in this event
-	dispatchContentEvent(
-		ContentEvent.endSubmitFeedback,
-		{ success, questionIds: targetQuestions },
-		this.submissionWindow
-	);
 
-	this.isFeedbackSubmitting = false;
+	updateGradingContext({ isFeedbackSubmitting: false });
+	if (quizReloadScheduled) {
+		reloadQuiz();
+	}
 	return success;
 }

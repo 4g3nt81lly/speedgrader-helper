@@ -28,8 +28,6 @@ const Selectors = {
 	newSpeedGrader,
 
 	app: {
-		SNACKBAR_ROOT_ID: 'sgh_snackbar_root',
-		EVENT_PROXY_ID: 'sgh_event_proxy',
 		GRADING_BOX_CLASS: 'sgh_grading_box_host',
 		HIDDEN_QUESTION_CLASS: 'sgh_question_hidden',
 	},

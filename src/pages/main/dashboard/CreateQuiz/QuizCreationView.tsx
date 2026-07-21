@@ -30,7 +30,9 @@ export default function QuizCreationView(props: QuizCreationViewProps) {
 
 	const totalPoints = useMemo(() => {
 		const basePoints = Decimal(0);
-		if (!state.newQuiz) return basePoints;
+		if (!state.newQuiz) {
+			return basePoints;
+		}
 		return state.newQuiz.questions.reduce(
 			(total, question) => total.add(question.points),
 			basePoints

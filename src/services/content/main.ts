@@ -1,69 +1,36 @@
-import Constants from '#shared/constants';
 import { addCommandHandler } from '#shared/message';
 import Patterns from '#shared/patterns';
 import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
-import QuizLocalStore from '#shared/stores/QuizLocalStore';
 import { ContentCommand } from '#shared/types/message';
-import gradingContext from './GradingContext';
+import reloadAppSettings from './actions/reloadAppSettings';
+import reloadQuiz from './actions/reloadQuiz';
 import { quizInjectors, sgQuizLoaders } from './modules';
 import { SGQuizLoader } from './modules/SGQuizLoader';
-import { postSnackbarItem } from './ui/snackbar';
-
-async function reloadQuiz() {
-	if (!gradingContext.quiz) return;
-
-	const quiz = await QuizLocalStore.getQuizById(gradingContext.quiz.id).catch((error) => {
-		console.error('Failed to reload quiz in grading context:', error);
-		return null;
-	});
-	if (!quiz) {
-		return postSnackbarItem({
-			message: 'An error occurred while reloading quiz, please refresh the page.',
-			closeReason: 'manual',
-		});
-	}
-	gradingContext.quiz = quiz;
-
-	postSnackbarItem({ message: 'Rubrics reloaded.', timeoutMs: 2 * Constants.SECOND_MS });
-}
+import { useContentStore } from './stores/main.store';
 
 addCommandHandler({
 	[ContentCommand.loadQuiz](payload) {
 		const { loader: loaderType } = payload;
-		const quizLoader = new sgQuizLoaders[loaderType](gradingContext.appSettings);
+		const quizLoader = new sgQuizLoaders[loaderType](
+			useContentStore.getState().appSettings
+		);
 		return quizLoader.getQuiz();
 	},
 
 	[ContentCommand.reloadAppSettings]() {
-		(async () => {
-			gradingContext.appSettings = await AppSettingsLocalStore.getAll();
-
-			postSnackbarItem({
-				message: 'SpeedGrader Helper settings updated.',
-				timeoutMs: 2 * Constants.SECOND_MS,
-			});
-		})().catch((error) => {
-			console.error('Failed to reload app settings:', error);
-			postSnackbarItem({
-				message:
-					'An error occurred while reloading SpeedGrader Helper settings, please refresh the page.',
-				closeReason: 'manual',
-			});
-		});
+		reloadAppSettings();
 	},
-	[ContentCommand.reloadRubric]() {
-		reloadQuiz();
-	},
-	[ContentCommand.updateFocusState]() {
+	[ContentCommand.reloadQuiz]() {
 		reloadQuiz();
 	},
 });
 
 if (import.meta.env.DEV || document.URL.match(Patterns.SG_URL_ORIGIN)) {
 	(async () => {
-		gradingContext.appSettings = await AppSettingsLocalStore.getAll();
+		useContentStore.setState({ appSettings: await AppSettingsLocalStore.getAll() });
 
-		const injector = quizInjectors[gradingContext.appSettings.defaultQuizInjector];
+		const injector =
+			quizInjectors[useContentStore.getState().appSettings.defaultQuizInjector];
 		const canonicalUrl = SGQuizLoader.getCanonicalURL(document.URL);
 
 		await new injector(canonicalUrl).inject();

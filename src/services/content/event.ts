@@ -2,22 +2,12 @@ export const enum ContentEvent {
 	// Top-level events
 	refreshGrades = 'sgh:refresh_grades',
 	navigateSubmission = 'sgh:navigate_submission',
-
-	// iframe events
-	beginSubmitFeedback = 'sgh:begin_submit_feedback',
-	endSubmitFeedback = 'sgh:end_submit_feedback',
 }
 
 export type ContentEventPayload = {
 	[ContentEvent.refreshGrades]: {};
 	[ContentEvent.navigateSubmission]: {
 		direction: 'prev' | 'next';
-	};
-
-	[ContentEvent.beginSubmitFeedback]: {};
-	[ContentEvent.endSubmitFeedback]: {
-		success: boolean;
-		questionIds: Set<string>;
 	};
 };
 

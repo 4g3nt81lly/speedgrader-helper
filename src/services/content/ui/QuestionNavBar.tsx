@@ -1,24 +1,25 @@
-import gradingContext from '#content/GradingContext';
-import { useFeedbackSubmitState } from '#content/hooks';
+import { setLastGradedQuestion } from '#content/stores/gradingContext.actions';
+import { useGradingContext } from '#content/stores/main.store';
+import navigateSubmission from '#content/actions/navigateSubmission';
 import type { IQuestion } from '#models/Question';
 import { useState, type MouseEvent } from 'react';
 
 type QuestionNavBarProps = {
-	question: Pick<IQuestion, 'id'>;
+	questionId: IQuestion['id'];
 };
 
 export default function QuestionNavBar(props: QuestionNavBarProps) {
-	const { question } = props;
+	const { questionId } = props;
 
+	const isSubmitting = useGradingContext('isFeedbackSubmitting');
 	const [canNavigate, setCanNavigate] = useState(true);
-	const isSubmitting = useFeedbackSubmitState();
 
 	function handleNavigate(event: MouseEvent<HTMLButtonElement>) {
 		if (!canNavigate || isSubmitting) return;
 		setCanNavigate(false);
 
-		gradingContext.lastGradedQuestionId = question.id;
-		gradingContext.navigateSubmission((event.target as HTMLButtonElement).name as 'prev' | 'next');
+		setLastGradedQuestion(questionId);
+		navigateSubmission((event.target as HTMLButtonElement).name as 'prev' | 'next');
 	}
 
 	return (

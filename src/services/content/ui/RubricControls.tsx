@@ -1,14 +1,10 @@
+import type { DiffRubricItem, QuestionGradingBoxState } from '#content/stores/QuestionGradingState';
 import { isDecimalPositive } from '#shared/utils/decimal';
 import SubdirectoryArrowRightIcon from '@mui/icons-material/SubdirectoryArrowRight';
 import type { ChangeEvent } from 'react';
-import {
-	DiffDescriptor,
-	type DiffRubricItem,
-	type IQuestionGradingState,
-} from './QuestionGradingState';
 
 export type RubricControlsProps = {
-	gradingState: IQuestionGradingState;
+	boxState: QuestionGradingBoxState;
 	canGrade: boolean;
 
 	checkRubricItemCanToggle(rubricItem: DiffRubricItem): boolean;
@@ -18,7 +14,7 @@ export type RubricControlsProps = {
 
 export default function RubricControls(props: RubricControlsProps) {
 	const {
-		gradingState,
+		boxState,
 		canGrade,
 		checkRubricItemCanToggle,
 		toggleRubricItemSelection,
@@ -27,14 +23,14 @@ export default function RubricControls(props: RubricControlsProps) {
 
 	return (
 		<div className="flex flex-col gap-3">
-			{gradingState.rubricItems.length > 0 && (
+			{boxState.rubricItems.length > 0 && (
 				<div className="flex flex-col gap-1">
-					{gradingState.rubricItems.map((rubricItem) => {
+					{boxState.rubricItems.map((rubricItem) => {
 						return (
 							<RubricItemControls
 								key={rubricItem.id}
 								rubricItem={rubricItem}
-								isSelected={!!gradingState.selectedRubricItems?.[rubricItem.id]}
+								isSelected={!!boxState.selectedRubricItems?.[rubricItem.id]}
 								canToggle={canGrade && checkRubricItemCanToggle(rubricItem)}
 								toggleSelect={() => toggleRubricItemSelection(rubricItem)}
 							/>
@@ -46,7 +42,7 @@ export default function RubricControls(props: RubricControlsProps) {
 				<span className="whitespace-nowrap">Comments:</span>
 				<textarea
 					className="p-1 font-[inherit] text-inherit"
-					value={gradingState.comments}
+					value={boxState.comments}
 					onChange={handleCommentsChange}
 					disabled={!canGrade}
 				/>
@@ -88,7 +84,7 @@ function RubricItemControls(props: RubricItemControlsProps) {
 	const upperItem = oldItem ?? newItem;
 	const lowerItem = newItem;
 	// Show diff IFF modified or removed
-	const showDiff = status === DiffDescriptor.modified || status === DiffDescriptor.removed;
+	const showDiff = status === 'modified' || status === 'removed';
 
 	return (
 		<div className="flex flex-col">
