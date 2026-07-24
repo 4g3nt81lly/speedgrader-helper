@@ -68,7 +68,6 @@ export type SGQuestionDOMElements = {
 	container: HTMLElement;
 	text: HTMLElement;
 	pointsInput: HTMLInputElement;
-	pointsHiddenInput: HTMLInputElement;
 	commentsTextarea: HTMLTextAreaElement;
 };
 

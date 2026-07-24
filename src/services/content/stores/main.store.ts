@@ -14,18 +14,13 @@ export type ContentStore = {
 export type GradingContext = {
 	quiz: IQuiz;
 	gradingStates: Record<IQuestion['id'], QuestionGradingState>;
+	dirtyQuestions: Set<IQuestion['id']>;
 	lastGradedQuestionId: Nullable<IQuestion['id']>;
 
 	submissionId: string;
 	submissionWindow: Window;
 	submissionForm: HTMLFormElement;
 	isFeedbackSubmitting: boolean;
-
-	submissionFormFields: Map<
-		IQuestion['id'],
-		{ pointsField: string; commentsField: string }
-	>;
-	dirtyQuestions: Set<IQuestion['id']>;
 };
 
 export const useContentStore = create<ContentStore>()(() => ({

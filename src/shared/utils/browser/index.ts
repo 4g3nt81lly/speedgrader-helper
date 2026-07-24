@@ -1,6 +1,12 @@
 import type { Nullable } from '#shared/types/utils';
 import { withTimeout } from '..';
 
+declare global {
+	interface Node {
+		cloneNode(subtree?: boolean): this;
+	}
+}
+
 type QueryElementOptions = {
 	recursive?: boolean;
 	timeout?: number;

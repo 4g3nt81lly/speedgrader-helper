@@ -13,8 +13,6 @@ export type QuizLoaderPayload = {
 
 export type QuizLoaderType = keyof QuizLoaderPayload;
 
-export type SGQuizLoaderType = keyof Pick<QuizLoaderPayload, 'oldSG' | 'newSG'>;
-
 export type QuizLoaderPayloadMap = {
 	[Loader in QuizLoaderType]: {
 		loader: Loader;
@@ -67,3 +65,5 @@ export default abstract class QuizLoader<Type extends QuizLoaderType = QuizLoade
 		return Quiz.create({ canvasId, courseId, url, title, questions });
 	}
 }
+
+export type SGQuizLoaderType = keyof Pick<QuizLoaderPayload, 'oldSG' | 'newSG'>;

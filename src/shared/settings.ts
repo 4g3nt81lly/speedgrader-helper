@@ -1,6 +1,7 @@
 import type { GradingMode } from '#models/Rubric';
 import type { QuizInjectorType } from './types/injector';
 import type { QuizLoaderType } from './types/loader';
+import type { FeedbackSubmissionStrategy } from './types/strategy';
 import type { Nullable } from './types/utils';
 
 export type AppSettings = {
@@ -17,8 +18,6 @@ export type AppSettings = {
 
 	hotkeys: AppHotkeySettings;
 };
-
-export type FeedbackSubmissionStrategy = 'all' | 'focused' | 'updated';
 
 export type RubricEditorType = 'list' | 'text';
 

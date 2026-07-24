@@ -1,5 +1,6 @@
 import navigateSubmission from '#content/actions/navigateSubmission';
 import { ContentEvent, dispatchContentEvent } from '#content/event';
+import { feedbackSubmissionStrategies } from '#content/modules/FeedbackSubmissionStrategy';
 import { updateGradingContext } from '#content/stores/gradingContext.actions';
 import { useContentStore } from '#content/stores/main.store';
 import { postSnackbarItem } from '#content/stores/snackbar.store';
@@ -7,44 +8,9 @@ import Constants from '#shared/constants';
 import reloadQuiz, { quizReloadScheduled } from './reloadQuiz';
 import saveFeedback from './saveFeedback';
 
-const essentialFields = [
-	'utf8',
-	'_method',
-	'authenticity_token',
-	'override_scores',
-	'headless',
-	'submission_version_number',
-	'fudge_points',
-];
-
 export async function submitFeedback(event?: SubmitEvent, navigate?: 'next' | 'prev') {
-	const context = useContentStore.getState().gradingContext;
-	if (!context) return null;
-
-	if (context.isFeedbackSubmitting) {
-		postSnackbarItem({
-			title: 'Save',
-			message: 'Submission in progress...',
-			type: 'warning',
-		});
-		return null;
-	}
-
-	const appSettings = useContentStore.getState().appSettings;
-	const { quiz, submissionForm, submissionFormFields, dirtyQuestions } = context;
-
-	const targetQuestions = new Set(dirtyQuestions);
-	if (appSettings.feedbackSubmissionStrategy === 'focused') {
-		for (const question of quiz.questions) {
-			if (question.isFocused) continue;
-			targetQuestions.delete(question.id);
-		}
-	}
-	if (targetQuestions.size === 0) {
-		postSnackbarItem({ title: 'Save', message: 'Nothing to save.', type: 'success' });
-		return null;
-	}
-	updateGradingContext({ isFeedbackSubmitting: true });
+	const { gradingContext, appSettings } = useContentStore.getState();
+	if (!gradingContext) return null;
 
 	// Prevent default form submission flow
 	event?.preventDefault();
@@ -53,34 +19,31 @@ export async function submitFeedback(event?: SubmitEvent, navigate?: 'next' | 'p
 	// Prevent event handlers registered elsewhere from running
 	event?.stopPropagation();
 
-	// Manually submit using form data
-	const rawFormData = new FormData(submissionForm);
-	let formData = rawFormData;
-	if (
-		appSettings.feedbackSubmissionStrategy !== 'all' &&
-		(appSettings.feedbackSubmissionStrategy !== 'focused' || quiz.focusMode)
-	) {
-		formData = new FormData();
-		for (const field of essentialFields) {
-			const value = rawFormData.get(field);
-			if (value === null) continue;
-			formData.set(field, value);
-		}
-		for (const [questionId, field] of submissionFormFields.entries()) {
-			if (!targetQuestions.has(questionId)) {
-				continue;
-			}
-			const { pointsField, commentsField } = field;
-			const points = rawFormData.get(pointsField);
-			const comments = rawFormData.get(commentsField);
-			if (points !== null) {
-				formData.set(pointsField, points);
-			}
-			if (comments !== null) {
-				formData.set(commentsField, comments);
-			}
-		}
+	if (gradingContext.isFeedbackSubmitting) {
+		postSnackbarItem({
+			title: 'Save',
+			message: 'Submission in progress...',
+			type: 'warning',
+		});
+		return null;
 	}
+
+	const strategy = new feedbackSubmissionStrategies[
+		appSettings.feedbackSubmissionStrategy
+	]();
+	const [formData, targetQuestions] = strategy.getFormData(gradingContext);
+
+	if (targetQuestions.size === 0) {
+		postSnackbarItem({ title: 'Save', message: 'Nothing to save.', type: 'success' });
+		return null;
+	}
+	console.info(
+		`Submitting feedback for ${[...targetQuestions].join(', ')}:`,
+		Object.fromEntries(formData.entries())
+	);
+	updateGradingContext({ isFeedbackSubmitting: true });
+
+	const { submissionForm, dirtyQuestions } = gradingContext;
 	let success = false;
 	try {
 		var response = await fetch(submissionForm.action, {

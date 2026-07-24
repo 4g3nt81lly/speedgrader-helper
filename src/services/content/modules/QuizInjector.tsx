@@ -147,22 +147,15 @@ export class OldSGQuizInjector extends QuizInjector {
 		const gradingContext: GradingContext = {
 			quiz,
 			gradingStates: {},
+			dirtyQuestions: new Set(),
 			lastGradedQuestionId,
 			submissionId,
 			submissionWindow,
 			submissionForm,
 			isFeedbackSubmitting: false,
-			submissionFormFields: new Map(),
-			dirtyQuestions: new Set(),
 		};
 		await this.initializeGradingStates(gradingContext);
 
-		for (const [questionId, { sgElements }] of Object.entries(gradingContext.gradingStates)) {
-			gradingContext.submissionFormFields.set(questionId, {
-				pointsField: sgElements.pointsHiddenInput.name,
-				commentsField: sgElements.commentsTextarea.name,
-			});
-		}
 		useContentStore.setState({ gradingContext });
 	}
 
@@ -188,13 +181,10 @@ export class OldSGQuizInjector extends QuizInjector {
 			const pointsInput = questionContainer.querySelector<HTMLInputElement>(
 				this.selectors.QUESTION_POINTS_INPUT
 			);
-			const pointsHiddenInput = questionContainer.querySelector<HTMLInputElement>(
-				this.selectors.QUESTION_HIDDEN_POINTS_INPUT
-			);
 			const commentsTextarea = questionContainer.querySelector<HTMLTextAreaElement>(
 				this.selectors.QUESTION_COMMENTS_TEXTAREA
 			);
-			if (!textElement || !pointsInput || !pointsHiddenInput || !commentsTextarea) continue;
+			if (!textElement || !pointsInput || !commentsTextarea) continue;
 
 			partialGradingContext.gradingStates[question.id] = createQuestionGradingState(
 				question,
@@ -203,7 +193,6 @@ export class OldSGQuizInjector extends QuizInjector {
 					container: questionContainer,
 					text: textElement,
 					pointsInput,
-					pointsHiddenInput,
 					commentsTextarea,
 				}
 			);
