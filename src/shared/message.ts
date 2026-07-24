@@ -1,4 +1,5 @@
 import Constants from './constants';
+import { TimeoutError } from './errors';
 import type {
 	CommandMessage,
 	CommandMessagePayload,
@@ -8,7 +9,6 @@ import type {
 } from './types/message';
 import type { Optional } from './types/utils';
 import { getActiveTab, withTimeout } from './utils';
-import { TimeoutError } from './errors';
 
 type CommandHandlers = {
 	[Command in keyof CommandMessagePayload]: (

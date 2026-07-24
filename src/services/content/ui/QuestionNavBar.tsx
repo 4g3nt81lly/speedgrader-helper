@@ -1,6 +1,6 @@
+import navigateSubmission from '#content/actions/navigateSubmission';
 import { setLastGradedQuestion } from '#content/stores/gradingContext.actions';
 import { useGradingContext } from '#content/stores/main.store';
-import navigateSubmission from '#content/actions/navigateSubmission';
 import type { IQuestion } from '#models/Question';
 import { useState, type MouseEvent } from 'react';
 

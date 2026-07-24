@@ -1,6 +1,6 @@
-import { QuestionTypeSchema } from './Question.schema';
 import Patterns from '#shared/patterns';
 import z from 'zod';
+import { QuestionTypeSchema } from './Question.schema';
 
 export const CanvasQuizPermissionsSchema = z.object({
 	read: z.boolean(),

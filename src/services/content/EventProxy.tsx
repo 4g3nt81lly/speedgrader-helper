@@ -1,8 +1,8 @@
 import { useLayoutEffect } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
-import { useAppSettings, useGradingContext } from './stores/main.store';
 import navigateSubmission from './actions/navigateSubmission';
 import { submitFeedback } from './actions/submitFeedback';
+import { useAppSettings, useGradingContext } from './stores/main.store';
 
 export function ToplevelEventProxy() {
 	const appSettings = useAppSettings();
