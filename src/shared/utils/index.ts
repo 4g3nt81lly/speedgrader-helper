@@ -1,6 +1,5 @@
+import { TimeoutError } from '#shared/errors';
 import type { Nullable } from '#shared/types/utils';
-
-export class TimeoutError extends Error {}
 
 interface TimeoutWrapper {
 	<T, D = never>(result: Promise<T> | (() => Promise<T>), timeout: number): Promise<T>;

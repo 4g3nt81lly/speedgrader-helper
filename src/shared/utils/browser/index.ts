@@ -7,6 +7,10 @@ declare global {
 	}
 }
 
+export function reloadPage() {
+	window.location.reload();
+}
+
 type QueryElementOptions = {
 	recursive?: boolean;
 	timeout?: number;

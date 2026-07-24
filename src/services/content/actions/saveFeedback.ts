@@ -13,7 +13,7 @@ import { sendMessageToBackground } from '#shared/message';
 import { BackgroundCommand } from '#shared/types/message';
 import type { Nullable } from '#shared/types/utils';
 
-export default async function saveFeedback(questionIds: Iterable<string>) {
+export default async function saveFeedback(questionIds: Set<string>) {
 	const gradingContext = useContentStore.getState().gradingContext;
 	if (!gradingContext) return;
 	const { quiz, submissionId } = gradingContext;
@@ -50,8 +50,9 @@ export default async function saveFeedback(questionIds: Iterable<string>) {
 			},
 		];
 	});
-
 	const newStateResults = await Promise.allSettled(newStatePromises);
+
+	let hasFailedAttempt = false;
 	const newStateEntries = newStateResults.flatMap((result) => {
 		if (result.status === 'rejected') {
 			const error = result.reason;
@@ -59,16 +60,24 @@ export default async function saveFeedback(questionIds: Iterable<string>) {
 				'Failed to save question feedback:',
 				error instanceof Error ? error.message : 'Unknown error'
 			);
-			postSnackbarItem({
-				title: 'Error: Save',
-				message: 'Unable to save submitted feedback.',
-				type: 'warning',
-				closeReason: 'manual',
-			});
+			hasFailedAttempt = true;
 			return [];
 		}
 		return [result.value];
 	});
+	if (hasFailedAttempt) {
+		const unsavedQuestionIds = new Set(questionIds);
+		for (const [questionId] of newStateEntries) {
+			unsavedQuestionIds.delete(questionId);
+		}
+		postSnackbarItem({
+			title: 'Error: Save feedback',
+			message: `Unable to save submitted feedback for questions: ${[...unsavedQuestionIds].join(', ')}.`,
+			type: 'warning',
+			retry: { handler: () => saveFeedback(unsavedQuestionIds) },
+		});
+	}
+
 	updateGradingContext({
 		gradingStates: { ...states, ...Object.fromEntries(newStateEntries) },
 	});

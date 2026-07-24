@@ -7,7 +7,8 @@ import type {
 	RuntimeCommand,
 } from './types/message';
 import type { Optional } from './types/utils';
-import { getActiveTab, TimeoutError, withTimeout } from './utils';
+import { getActiveTab, withTimeout } from './utils';
+import { TimeoutError } from './errors';
 
 type CommandHandlers = {
 	[Command in keyof CommandMessagePayload]: (

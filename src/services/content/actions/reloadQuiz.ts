@@ -2,10 +2,8 @@ import { updateGradingContext } from '#content/stores/gradingContext.actions';
 import { createQuestionGradingBoxState } from '#content/stores/gradingStates.actions';
 import { useContentStore } from '#content/stores/main.store';
 import { postSnackbarItem } from '#content/stores/snackbar.store';
-import Constants from '#shared/constants';
 import QuizLocalStore from '#shared/stores/QuizLocalStore';
-
-export let quizReloadScheduled = false;
+import { reloadPage } from '#shared/utils/browser';
 
 export default async function reloadQuiz() {
 	const gradingContext = useContentStore.getState().gradingContext;
@@ -13,8 +11,11 @@ export default async function reloadQuiz() {
 
 	const { quiz, isFeedbackSubmitting } = gradingContext;
 	if (isFeedbackSubmitting) {
-		quizReloadScheduled = true;
-		return;
+		return postSnackbarItem({
+			message:
+				'Feedback submission in progress, quiz not reloaded. Please retry after submission is complete!',
+			retry: { handler: reloadQuiz },
+		});
 	}
 
 	const newQuiz = await QuizLocalStore.getQuizById(quiz.id).catch((error) => {
@@ -23,8 +24,8 @@ export default async function reloadQuiz() {
 	});
 	if (!newQuiz) {
 		return postSnackbarItem({
-			message: 'An error occurred while reloading quiz, please refresh the page.',
-			closeReason: 'manual',
+			message: 'An error occurred while reloading rubrics, please refresh the page.',
+			retry: { handler: reloadPage, tooltip: 'Reload page' },
 		});
 	}
 
@@ -55,5 +56,5 @@ export default async function reloadQuiz() {
 		dirtyQuestions: new Set(),
 	});
 
-	postSnackbarItem({ message: 'Rubrics reloaded.', timeoutMs: 2 * Constants.SECOND_MS });
+	postSnackbarItem({ message: 'Rubrics reloaded.', timeoutSeconds: 2 });
 }

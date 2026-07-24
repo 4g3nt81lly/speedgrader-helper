@@ -4,8 +4,6 @@ import { feedbackSubmissionStrategies } from '#content/modules/FeedbackSubmissio
 import { updateGradingContext } from '#content/stores/gradingContext.actions';
 import { useContentStore } from '#content/stores/main.store';
 import { postSnackbarItem } from '#content/stores/snackbar.store';
-import Constants from '#shared/constants';
-import reloadQuiz, { quizReloadScheduled } from './reloadQuiz';
 import saveFeedback from './saveFeedback';
 
 export async function submitFeedback(event?: SubmitEvent, navigate?: 'next' | 'prev') {
@@ -24,6 +22,7 @@ export async function submitFeedback(event?: SubmitEvent, navigate?: 'next' | 'p
 			title: 'Save',
 			message: 'Submission in progress...',
 			type: 'warning',
+			timeoutSeconds: 2,
 		});
 		return null;
 	}
@@ -34,7 +33,12 @@ export async function submitFeedback(event?: SubmitEvent, navigate?: 'next' | 'p
 	const [formData, targetQuestions] = strategy.getFormData(gradingContext);
 
 	if (targetQuestions.size === 0) {
-		postSnackbarItem({ title: 'Save', message: 'Nothing to save.', type: 'success' });
+		postSnackbarItem({
+			title: 'Save',
+			message: 'Nothing to save.',
+			type: 'success',
+			timeoutSeconds: 2,
+		});
 		return null;
 	}
 	console.info(
@@ -54,12 +58,6 @@ export async function submitFeedback(event?: SubmitEvent, navigate?: 'next' | 'p
 		success = response.ok;
 	} catch (error) {
 		console.error('Failed to submit form data:', error);
-		postSnackbarItem({
-			title: 'Save Error',
-			message: 'Unable to submit feedback. Please refresh the page and try again!',
-			type: 'error',
-			closeReason: 'manual',
-		});
 	}
 	if (success) {
 		// Refresh grades and update stats in SpeedGrader header
@@ -67,7 +65,7 @@ export async function submitFeedback(event?: SubmitEvent, navigate?: 'next' | 'p
 		postSnackbarItem({
 			message: 'Successfully submitted feedback!',
 			type: 'success',
-			timeoutMs: 2 * Constants.SECOND_MS,
+			timeoutSeconds: 2,
 		});
 		if (navigate) {
 			navigateSubmission(navigate, false);
@@ -81,15 +79,12 @@ export async function submitFeedback(event?: SubmitEvent, navigate?: 'next' | 'p
 		await saveFeedback(targetQuestions);
 	} else {
 		postSnackbarItem({
-			message: 'Unable to submit feedback. Please refresh the page and try again!',
+			message: 'Unable to submit feedback. Please retry or refresh the page.',
 			type: 'error',
-			timeoutMs: 3 * Constants.SECOND_MS,
+			retry: { handler: () => submitFeedback(event, navigate) },
 		});
 	}
 
 	updateGradingContext({ isFeedbackSubmitting: false });
-	if (quizReloadScheduled) {
-		reloadQuiz();
-	}
 	return success;
 }
