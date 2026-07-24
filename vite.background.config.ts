@@ -1,7 +1,7 @@
 import fg from 'fast-glob';
 import { resolve } from 'path';
 import { defineConfig, type PluginOption } from 'vite';
-import { hotReloadExtension, isProduction, resolveOptions } from './vite.shared';
+import { hotReloadExtension, isProduction, sharedResolveOptions } from './vite.shared';
 
 export default defineConfig(({ mode }) => ({
 	plugins: [
@@ -12,7 +12,10 @@ export default defineConfig(({ mode }) => ({
 			socket.emit('hr', 'reload');
 		}),
 	],
-	resolve: resolveOptions,
+	resolve: {
+		...sharedResolveOptions,
+		'#background': resolve(__dirname, 'src/services/background'),
+	},
 	publicDir: 'src/public',
 	build: {
 		rolldownOptions: {

@@ -2,7 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 import { defineConfig, type PluginOption } from 'vite';
-import { hotReloadExtension, isProduction, resolveOptions } from './vite.shared';
+import { hotReloadExtension, isProduction, sharedResolveOptions } from './vite.shared';
 
 export default defineConfig(({ mode }) => ({
 	plugins: [
@@ -15,7 +15,10 @@ export default defineConfig(({ mode }) => ({
 		}),
 	],
 	root: 'src',
-	resolve: resolveOptions,
+	resolve: {
+		...sharedResolveOptions,
+		'#pages': resolve(__dirname, 'src/pages'),
+	},
 	build: {
 		rolldownOptions: {
 			input: {

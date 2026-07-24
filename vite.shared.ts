@@ -2,13 +2,10 @@ import { resolve } from 'path';
 import { io, type Socket } from 'socket.io-client';
 import { type ConfigPluginContext, type PluginOption } from 'vite';
 
-export const resolveOptions = {
+export const sharedResolveOptions = {
 	alias: {
 		'#models': resolve(__dirname, 'src/models'),
 		'#schemas': resolve(__dirname, 'src/schemas'),
-		'#pages': resolve(__dirname, 'src/pages'),
-		'#background': resolve(__dirname, 'src/services/background'),
-		'#content': resolve(__dirname, 'src/services/content'),
 		'#shared': resolve(__dirname, 'src/shared'),
 	},
 };

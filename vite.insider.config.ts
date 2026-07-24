@@ -1,6 +1,6 @@
 import { resolve } from 'path';
 import { defineConfig } from 'vite';
-import { hotReloadExtension, isProduction, resolveOptions } from './vite.shared';
+import { hotReloadExtension, isProduction, sharedResolveOptions } from './vite.shared';
 
 export default defineConfig(({ mode }) => ({
 	plugins: [
@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
 			socket.emit('hr', 'reloadActiveTabs');
 		}),
 	],
-	resolve: resolveOptions,
+	resolve: sharedResolveOptions,
 	build: {
 		rolldownOptions: {
 			input: resolve(__dirname, 'src/services/content/insider.ts'),

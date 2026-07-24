@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 import { defineConfig } from 'vite';
 import tailwindShadowDOM from 'vite-plugin-tailwind-shadowdom';
-import { hotReloadExtension, isProduction, resolveOptions } from './vite.shared';
+import { hotReloadExtension, isProduction, sharedResolveOptions } from './vite.shared';
 
 export default defineConfig(({ mode }) => ({
 	plugins: [
@@ -16,7 +16,10 @@ export default defineConfig(({ mode }) => ({
 			socket.emit('hr', 'reloadActiveTabs');
 		}),
 	],
-	resolve: resolveOptions,
+	resolve: {
+		...sharedResolveOptions,
+		'#content': resolve(__dirname, 'src/services/content'),
+	},
 	build: {
 		rolldownOptions: {
 			input: resolve(__dirname, 'src/services/content/main.ts'),
