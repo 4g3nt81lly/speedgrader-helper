@@ -2,6 +2,7 @@ import { useLayoutEffect } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import navigateSubmission from './actions/navigateSubmission';
 import { submitFeedback } from './actions/submitFeedback';
+import { restoreSGFeedback } from './actions/updateSGInputs';
 import Selectors from './selectors';
 import { useAppSettings, useContentStore, useGradingContext } from './stores/main.store';
 
@@ -42,6 +43,9 @@ export function ToplevelEventProxy() {
 			event.preventDefault();
 			event.stopPropagation();
 			event.stopImmediatePropagation();
+		} else {
+			// Suppress SpeedGrader auto-caching unsaved feedback before navigating away
+			restoreSGFeedback();
 		}
 	}
 
@@ -111,13 +115,11 @@ export function InnerEventProxy() {
 
 	useLayoutEffect(() => {
 		document.addEventListener('keyup', overrideSubmitOnKeyUp, { capture: true });
-
-		const submitHandler = submitFeedback.bind(null);
-		document.addEventListener('submit', submitHandler, { capture: true });
+		document.addEventListener('submit', submitFeedback, { capture: true });
 
 		return () => {
 			document.removeEventListener('keyup', overrideSubmitOnKeyUp, { capture: true });
-			document.removeEventListener('submit', submitHandler, { capture: true });
+			document.removeEventListener('submit', submitFeedback, { capture: true });
 		};
 	}, []);
 

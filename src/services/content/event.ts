@@ -1,17 +1,10 @@
-import type { QuizInjectorType } from '#shared/types/injector';
-
 export const enum ContentEvent {
 	// Top-level events
 	refreshGrades = 'sgh:refresh_grades',
-	navigateSubmission = 'sgh:navigate_submission',
 }
 
 export type ContentEventPayload = {
 	[ContentEvent.refreshGrades]: {};
-	[ContentEvent.navigateSubmission]: {
-		direction: 'prev' | 'next';
-		injector: QuizInjectorType;
-	};
 };
 
 export function dispatchContentEvent<E extends ContentEvent = ContentEvent>(

@@ -1,6 +1,5 @@
 import { addContentEventListener, ContentEvent } from '#content/event';
 import Patterns from '#shared/patterns';
-import Selectors from './selectors';
 
 interface SpeedGraderWindow extends Window {
 	INST?: {
@@ -18,21 +17,6 @@ if (
 			inst.refreshGrades();
 		} else {
 			console.error('Failed to refresh grades: window.INST not found');
-		}
-	});
-
-	addContentEventListener(ContentEvent.navigateSubmission, ({ direction, injector }) => {
-		const navigationButton = <HTMLButtonElement>(
-			window.document.querySelector(
-				direction === 'prev'
-					? Selectors[injector].PREV_STUDENT_BUTTON
-					: Selectors[injector].NEXT_STUDENT_BUTTON
-			)
-		);
-		if (navigationButton) {
-			navigationButton.click();
-		} else {
-			console.error('Submission navigation button not found');
 		}
 	});
 }

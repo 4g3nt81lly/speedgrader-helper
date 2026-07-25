@@ -9,6 +9,7 @@ export type QuestionGradingBoxProps = {
 };
 
 export default function QuestionGradingBox(props: QuestionGradingBoxProps) {
+	const { questionId } = props;
 	const {
 		question,
 		boxState,
@@ -31,7 +32,7 @@ export default function QuestionGradingBox(props: QuestionGradingBoxProps) {
 		handleRegrade,
 		handleReset,
 		handleSubmit,
-	} = useGradingBoxState(props);
+	} = useGradingBoxState(questionId);
 
 	return (
 		isVisible &&
