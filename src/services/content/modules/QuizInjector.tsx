@@ -75,18 +75,24 @@ export class OldSGQuizInjector extends QuizInjector {
 		// Add mutation observer to continuously registering onload handler
 		const mutationObserver = new MutationObserver((mutations) => {
 			for (const mutation of mutations) {
-				if (mutation.addedNodes.length === 0) continue;
-				for (const node of mutation.addedNodes) {
+				for (const removedNode of mutation.removedNodes) {
+					if (removedNode !== this.submissionIframe) continue;
+					console.info('Submission iframe removed, cleaning up...');
+					this.submissionIframe = null;
+					this.cleanup();
+					break;
+				}
+				for (const addedNode of mutation.addedNodes) {
 					if (
-						!(node instanceof HTMLIFrameElement) ||
-						!node.matches(this.selectors.SUBMISSION_IFRAME)
+						!(addedNode instanceof HTMLIFrameElement) ||
+						!addedNode.matches(this.selectors.SUBMISSION_IFRAME)
 					) {
 						continue;
 					}
-					console.info('Submission iframe added, registering injection handler...');
-					this.submissionIframe = node;
-					this.submissionIframe.removeEventListener('load', onLoadHandler);
-					this.submissionIframe.addEventListener('load', onLoadHandler);
+					console.info('Submission iframe added, registering load handler...');
+					this.submissionIframe = addedNode;
+					addedNode.removeEventListener('load', onLoadHandler);
+					addedNode.addEventListener('load', onLoadHandler);
 					return;
 				}
 			}
