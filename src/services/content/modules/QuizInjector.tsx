@@ -134,6 +134,8 @@ export class OldSGQuizInjector extends QuizInjector {
 	}
 
 	protected async initializeGradingContext() {
+		if (!this.submissionIframe) return;
+
 		const submissionId = new URL(document.URL).searchParams.get('student_id');
 		if (submissionId === null) {
 			throw new Error(`Failed to extract submission ID from "${document.URL}".`);
@@ -141,7 +143,7 @@ export class OldSGQuizInjector extends QuizInjector {
 		const quiz = await QuizLocalStore.getQuizByUrl(this.canonicalUrl);
 		if (!quiz) return;
 
-		const submissionWindow = this.submissionIframe!.contentWindow;
+		const submissionWindow = this.submissionIframe.contentWindow;
 		if (!submissionWindow) {
 			throw new Error('SpeedGrader submission window not found.');
 		}
@@ -227,6 +229,8 @@ export class OldSGQuizInjector extends QuizInjector {
 	protected registerEventProxies(gradingContext: GradingContext) {
 		if (!gradingContext.quiz?.isEnabled) return;
 
+		// FIXME: Top-level event proxy will not be mounted if the initial page opened with an empty submission
+		// Currently, a non-null grading context requires non-empty submission (iframe, form, etc.), which is a bit awkward
 		if (!this.toplevelEventProxyIsLoaded) {
 			const { reactRoot: toplevelEventProxyRoot } = injectReactShadowDOM(
 				document.body,
@@ -235,6 +239,7 @@ export class OldSGQuizInjector extends QuizInjector {
 			this.toplevelEventProxyIsLoaded = true;
 			this.toplevelComponents.add(toplevelEventProxyRoot);
 		}
+
 		const { reactRoot: innerEventProxyRoot } = injectReactShadowDOM(
 			gradingContext.submissionWindow.document.body,
 			<InnerEventProxy />

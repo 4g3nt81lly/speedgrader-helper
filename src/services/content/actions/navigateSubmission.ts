@@ -11,35 +11,35 @@ export default async function navigateSubmission(
 	save: boolean = true
 ) {
 	const { appSettings, gradingContext } = useContentStore.getState();
-	if (!gradingContext) return;
 
-	if (save && gradingContext.dirtyQuestions.size > 0) {
+	if (save && gradingContext && gradingContext.dirtyQuestions.size > 0) {
 		submitFeedback(undefined, direction);
 		return;
 	}
 	// Update last-graded question before navigating
-	if (gradingContext.lastGradedQuestionId) {
+	if (typeof gradingContext?.lastGradedQuestionId === 'string') {
 		await sendMessageToBackground({
 			command: BackgroundCommand.updateQuizLastGradedQuestion,
 			quizId: gradingContext.quiz.id,
 			questionId: gradingContext.lastGradedQuestionId,
 		});
 	}
-	// Suppress SpeedGrader's weird default behaviour (which caches unsaved feedback)
-	// by restoring inputs to last submitted
-	restoreSGFeedback();
 
 	const navigationButton = document.querySelector<HTMLButtonElement>(
 		direction === 'prev'
 			? Selectors[appSettings.defaultQuizInjector].PREV_STUDENT_BUTTON
 			: Selectors[appSettings.defaultQuizInjector].NEXT_STUDENT_BUTTON
 	);
-	if (navigationButton) {
-		navigationButton.click();
-	} else {
-		postSnackbarItem({
+	if (!navigationButton) {
+		return postSnackbarItem({
 			message: 'Unable to navigate. Please refresh the page and try again!',
 			type: 'error',
 		});
 	}
+
+	// Suppress SpeedGrader's weird default behaviour (which caches unsaved feedback)
+	// by restoring inputs to last submitted
+	restoreSGFeedback();
+
+	navigationButton.click();
 }
