@@ -15,11 +15,11 @@ import type { Nullable } from '#shared/types/utils';
 
 export default async function saveFeedback(questionIds: Set<string>) {
 	const gradingContext = useContentStore.getState().gradingContext;
-	if (!gradingContext) return;
+	if (!gradingContext) return true;
 	const { quiz, submissionId } = gradingContext;
 
 	const states = gradingContext.gradingStates;
-	if (!states) return;
+	if (!states) return true;
 
 	const newStatePromises = [...questionIds].map<
 		Promise<[IQuestion['id'], QuestionGradingState]>
@@ -81,6 +81,7 @@ export default async function saveFeedback(questionIds: Set<string>) {
 	updateGradingContext({
 		gradingStates: { ...states, ...Object.fromEntries(newStateEntries) },
 	});
+	return !hasFailedAttempt;
 }
 
 function getSGState(state: QuestionGradingState): SGFeedbackState {

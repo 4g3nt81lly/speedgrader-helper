@@ -67,16 +67,16 @@ export async function submitFeedback(event?: SubmitEvent, navigate?: 'next' | 'p
 			type: 'success',
 			timeoutSeconds: 2,
 		});
-		if (navigate) {
-			navigateSubmission(navigate, false);
-		}
 		const newDirtyQuestions = new Set(dirtyQuestions);
 		for (const questionId of targetQuestions) {
 			newDirtyQuestions.delete(questionId);
 		}
 		updateGradingContext({ dirtyQuestions: newDirtyQuestions });
 
-		await saveFeedback(targetQuestions);
+		const saveSuccess = await saveFeedback(targetQuestions);
+		if (navigate && saveSuccess) {
+			navigateSubmission(navigate, false);
+		}
 	} else {
 		postSnackbarItem({
 			message: 'Unable to submit feedback. Please retry or refresh the page.',
