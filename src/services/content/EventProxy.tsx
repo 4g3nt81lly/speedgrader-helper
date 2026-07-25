@@ -2,7 +2,8 @@ import { useLayoutEffect } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import navigateSubmission from './actions/navigateSubmission';
 import { submitFeedback } from './actions/submitFeedback';
-import { useAppSettings, useGradingContext } from './stores/main.store';
+import Selectors from './selectors';
+import { useAppSettings, useContentStore, useGradingContext } from './stores/main.store';
 
 export function ToplevelEventProxy() {
 	const appSettings = useAppSettings();
@@ -21,6 +22,47 @@ export function ToplevelEventProxy() {
 		preventDefault: true,
 		eventListenerOptions: { capture: true },
 	});
+
+	function confirmNavigation(event: Event) {
+		if (!event.isTrusted) {
+			// Not triggered by user action, ignore
+			return;
+		}
+		const gradingContext = useContentStore.getState().gradingContext;
+		if (!gradingContext) return;
+		const { dirtyQuestions, isFeedbackSubmitting } = gradingContext;
+
+		if (
+			isFeedbackSubmitting ||
+			(dirtyQuestions.size > 0 &&
+				!confirm(
+					'Current submission has unsaved feedback, navigating away from this submission will discard them, proceed?'
+				))
+		) {
+			event.preventDefault();
+			event.stopPropagation();
+			event.stopImmediatePropagation();
+		}
+	}
+
+	useLayoutEffect(() => {
+		const quizInjector = appSettings.defaultQuizInjector;
+		const selectors = Selectors[quizInjector];
+
+		const nextStudentButton = document.querySelector<HTMLElement>(selectors.NEXT_STUDENT_BUTTON);
+		const prevStudentButton = document.querySelector<HTMLElement>(selectors.PREV_STUDENT_BUTTON);
+		const studentsMenu = document.querySelector<HTMLElement>(selectors.STUDENTS_MENU);
+
+		nextStudentButton?.addEventListener('click', confirmNavigation, { capture: true });
+		prevStudentButton?.addEventListener('click', confirmNavigation, { capture: true });
+		studentsMenu?.addEventListener('mouseup', confirmNavigation, { capture: true });
+
+		return () => {
+			nextStudentButton?.removeEventListener('click', confirmNavigation, { capture: true });
+			prevStudentButton?.removeEventListener('click', confirmNavigation, { capture: true });
+			studentsMenu?.addEventListener('mouseup', confirmNavigation, { capture: true });
+		};
+	}, [appSettings.defaultQuizInjector]);
 
 	return <></>;
 }
