@@ -278,12 +278,12 @@ export class OldSGQuizInjector extends QuizInjector {
 	}
 
 	protected override get selectors() {
-		return Selectors.oldSpeedGrader;
+		return Selectors.oldSG;
 	}
 }
 
 export class NewSGQuizInjector extends OldSGQuizInjector {
 	protected override get selectors() {
-		return Selectors.newSpeedGrader;
+		return Selectors.newSG;
 	}
 }

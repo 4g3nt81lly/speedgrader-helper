@@ -1,3 +1,5 @@
+import type { QuizInjectorType } from '#shared/types/injector';
+
 export const enum ContentEvent {
 	// Top-level events
 	refreshGrades = 'sgh:refresh_grades',
@@ -8,6 +10,7 @@ export type ContentEventPayload = {
 	[ContentEvent.refreshGrades]: {};
 	[ContentEvent.navigateSubmission]: {
 		direction: 'prev' | 'next';
+		injector: QuizInjectorType;
 	};
 };
 

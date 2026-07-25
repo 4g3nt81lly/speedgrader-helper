@@ -8,20 +8,24 @@ export default async function navigateSubmission(
 	direction: 'next' | 'prev',
 	save: boolean = true
 ) {
-	const context = useContentStore.getState().gradingContext;
-	if (!context) return;
+	const { appSettings, gradingContext } = useContentStore.getState();
+	if (!gradingContext) return;
 
-	if (save && context.dirtyQuestions.size > 0) {
+	if (save && gradingContext.dirtyQuestions.size > 0) {
 		submitFeedback(undefined, direction);
 		return;
 	}
 	// Update last-graded question before navigating
-	if (context.lastGradedQuestionId) {
+	if (gradingContext.lastGradedQuestionId) {
 		await sendMessageToBackground({
 			command: BackgroundCommand.updateQuizLastGradedQuestion,
-			quizId: context.quiz.id,
-			questionId: context.lastGradedQuestionId,
+			quizId: gradingContext.quiz.id,
+			questionId: gradingContext.lastGradedQuestionId,
 		});
 	}
-	dispatchContentEvent(ContentEvent.navigateSubmission, { direction }, window);
+	dispatchContentEvent(
+		ContentEvent.navigateSubmission,
+		{ direction, injector: appSettings.defaultQuizInjector },
+		window
+	);
 }

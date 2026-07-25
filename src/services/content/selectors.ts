@@ -4,6 +4,7 @@ const oldSpeedGrader = {
 	GRADER_HEADER: 'nav#gradebook_header_container',
 	PREV_STUDENT_BUTTON: '#prev-student-button',
 	NEXT_STUDENT_BUTTON: '#next-student-button',
+	STUDENTS_MENU: '#students_selectmenu-menu',
 	SUBMISSION_FORM: 'form#update_history_form',
 	QUESTION_LIST: '#questions',
 	QUESTION_CONTAINER: '.question_holder[aria-label="Question"] .display_question',
@@ -24,8 +25,8 @@ const newSpeedGrader = {
 };
 
 const Selectors = {
-	oldSpeedGrader,
-	newSpeedGrader,
+	oldSG: oldSpeedGrader,
+	newSG: newSpeedGrader,
 
 	app: {
 		GRADING_BOX_CLASS: 'sgh_grading_box_host',

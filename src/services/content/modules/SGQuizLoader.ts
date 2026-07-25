@@ -140,12 +140,12 @@ export class OldSGQuizLoader extends SGQuizLoader<'oldSG'> {
 	}
 
 	public get selectors() {
-		return Selectors.oldSpeedGrader;
+		return Selectors.oldSG;
 	}
 }
 
 export class NewSGQuizLoader extends OldSGQuizLoader {
 	public override get selectors() {
-		return Selectors.newSpeedGrader;
+		return Selectors.newSG;
 	}
 }

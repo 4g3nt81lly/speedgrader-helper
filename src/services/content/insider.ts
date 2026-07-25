@@ -21,12 +21,12 @@ if (
 		}
 	});
 
-	addContentEventListener(ContentEvent.navigateSubmission, ({ direction }) => {
+	addContentEventListener(ContentEvent.navigateSubmission, ({ direction, injector }) => {
 		const navigationButton = <HTMLButtonElement>(
 			window.document.querySelector(
 				direction === 'prev'
-					? Selectors.oldSpeedGrader.PREV_STUDENT_BUTTON
-					: Selectors.oldSpeedGrader.NEXT_STUDENT_BUTTON
+					? Selectors[injector].PREV_STUDENT_BUTTON
+					: Selectors[injector].NEXT_STUDENT_BUTTON
 			)
 		);
 		if (navigationButton) {
