@@ -1,0 +1,92 @@
+---
+sidebar_position: 4
+---
+
+import LoopedVideo from '@site/src/components/LoopedVideo';
+
+# Rubrics
+
+Rubrics consist of ordered rubric items.
+
+- Each rubric item is defined by a description and the number of points to award/deduct.
+- The magnitude of the points awarded/deducted by a rubric item must not be greater than the maximum points available for that particular question.
+- Rubric descriptions and points need not be unique, i.e., you can have multiple rubric items with the exact same description and the number of points, though this is generally discouraged.
+- Each question can have arbitrarily many rubric items.
+- Two grading modes are possible: positive and negative. Positive grading defaults to 0 points and negative grading defaults to maximum points available.
+
+<LoopedVideo src="/demo/rubrics-live-update.mp4" delaySeconds={1} />
+
+:::tip[Note]
+
+To make things more convenient, if at least one SpeedGrader tab is open for the quiz, then any rubric changes will be reflected immediately in SpeedGrader.
+However, this is not an endorsement for constantly modifying the rubric in the middle of a grading session.
+
+:::
+
+## Designing rubrics
+
+### General Guidelines
+
+- Be descriptive and transparent. Deductions should always be justified. Explanations are encouraged.
+- Be consistent...
+  - ...across submissions: Constantly committing _major_ changes to rubrics is generally discouraged, especially after having graded numerous submissions.
+  - ...among graders: Different graders for the same question should ideally share identical rubrics.
+
+### UI-based builder
+
+The easiest way to get started on building rubrics is via the intuitive UI builder.
+
+- Only one rubric item can be edited at a time.
+- Drag to reorder rubric items.
+- Points validation
+- Rubric item presets
+
+### Text-based builder
+
+<div style={{ display: 'flex', alignItems: 'flex-start', flexDirection: 'row-reverse' }}>
+
+If you prefer a text-based editing experience, you can build rubrics with the text-based editor using the DSL defined (informally) as follows.
+
+<img src="/demo/editor-type.png" width="100" />
+
+</div>
+
+:::warning[Attention]
+
+Please read the following section carefully if you intend to use the text-based rubric builder.
+
+:::
+
+The DSL uses declarative syntaxes but is conceptually imperative. At the high level, the syntax consists of rubric item definitions separated by line-breaks (LFs).
+SpeedGrader Helper will treat these definitions as directives and infer how the editing should take place.
+Each rubric item definition follows the syntax:
+
+```
+<index>. (<points>) <description>
+```
+
+> Example: `1. (+2) Correct answer`
+
+Conceptually, this tells SpeedGrader Helper to "update the `<index>`'th rubric item with description `<description>` and points `<points>`; if such item does not already exist, create one."
+
+Intuitively, removing a rubric item definition removes the corresponding rubric item.
+
+The `<index>.` token is _optional_. If omitted, it tells the application to "insert a new rubric item with `<description>` and `<points>`."
+
+:::tip[Note]
+
+Based on this logic, removing the index of a rubric item definition effectively...
+
+1. removes the corresponding rubric item, and
+2. inserts a new rubric item (with the same description and points) at the same position.
+
+:::
+
+When you are done editing, click on `Compile` to apply the edits.
+
+A few things to note:
+
+- Each rubric item definition should start on a new line.
+- Use "`\`" at the end of a line for multi-line description.
+- If multiple rubric item definitions specify the same index, only the _first one_ will be effective.
+- Be careful! Validation will be performed upon clicking `Compile` and any malformed/invalid rubric items (e.g., invalid syntax, invalid points awarded/deducted) will be ignored and discarded without any warning!

@@ -1,0 +1,68 @@
+---
+sidebar_position: 2
+---
+
+import LoopedVideo from '@site/src/components/LoopedVideo';
+
+# Quizzes
+
+Before designing rubrics, you must create a "blueprint" of the Canvas quiz you wish to grade. Thereafter such "blueprints" will be simply referred to as "quiz", which is not to be confused with "Canvas quiz".
+
+:::info[Note]
+
+Each quiz is uniquely identified by a URL in the canonical format:
+
+```
+[protocol]://[canvas-domain]/courses/[course-id]/gradebook/speed_grader?assignment_id=[assignment-id]
+```
+
+- `[protocol]` is either `http` or `https`;
+- `[canvas-domain]` is the domain that hosts an instance of Canvas;
+- `[course-id]` is the numeric Canvas course ID local to the Canvas domain;
+- `[assignment-id]` is the numeric assignment ID for the Canvas quiz.
+
+Example: `https://canvas.instructure.com/courses/1/gradebook/speed_grader?assignment_id=1`
+
+:::
+
+SpeedGrader Helper will attempt to augment any SpeedGrader page whose URL matches that of one of the quizzes.
+
+## Creating quizzes
+
+To create a quiz in SpeedGrader Helper,
+
+1. Open the extension page in the side-panel or in a new tab.
+2. Make sure you are under the `Dashboard` tab. Click on the `+ New` button in the top-right corner to go to the quiz creation view.
+
+There are multiple ways to create a quiz.
+
+### From SpeedGrader
+
+To load a Canvas quiz from SpeedGrader directly...
+
+3. Select `Old SG` as the quiz loader.
+4. Navigate to the SpeedGrader page for the quiz you wish to grade. Make sure it is the old version of SpeedGrader.
+5. Click on `Load`. A preview of the quiz will be displayed.
+6. Click on `Create`.
+
+<LoopedVideo src="/demo/load-from-speedgrader.mp4" delaySeconds={1} />
+
+:::warning[Warning]
+
+Although "New SG" is also available as a candidate quiz loader, it is **experimental** and is **not recommended** for common uses.
+
+:::
+
+### From Canvas API
+
+Canvas API provides a stable and robust way to load Canvas quizzes.
+
+To load a Canvas quiz from Canvas API, make sure Canvas integration is set up properly (see [Setup - Canvas Integration](/#canvas-integration)). Then,
+
+3. Select `Canvas API` as the quiz loader.
+4. Select a Canvas course from the dropdown menu. You should see a list of courses that are accessible by the access token.
+5. Select a Canvas quiz from the selected course. You should see a list of quizzes in the selected course that are accessible by the access token.
+6. Click on `Load`. A preview of the quiz will be displayed.
+7. Click on `Create`.
+
+<LoopedVideo src="/demo/load-from-canvas-api.mp4" delaySeconds={1} />

@@ -1,15 +1,20 @@
 {
-	"name": "speed-grader-helper",
+	"name": "speedgrader-helper",
 	"version": "0.1-alpha",
-	"description": "A Chrome extension that makes Canvas SpeedGrader infinitely better",
+	"description": "A Chrome extension that makes Canvas SpeedGrader infinitely better.",
 	"type": "module",
 	"scripts": {
 		"dev": "BUILD_MODE=development tsx build.ts",
+		"typecheck": "tsc -b",
 		"build": "tsc -b && tsx build.ts",
 		"clean": "rm -rf dist",
 		"clean:dev": "rm -rf build",
-		"typecheck": "tsc -b",
-		"format": "prettier --write --list-different \"**/*.{js,jsx,ts,tsx,css,json,md}\""
+		"prettier:check": "prettier \"$(cat .prettierglob)\" --ignore-path=.prettierignore --check",
+		"prettier:format": "prettier \"$(cat .prettierglob)\" --ignore-path=.prettierignore --write --list-different",
+		"docs:dev": "pnpm -F docs start",
+		"docs:build": "pnpm -F docs build",
+		"docs:serve": "pnpm -F docs serve",
+		"docs:clean": "pnpm -F docs run clean"
 	},
 	"devDependencies": {
 		"@dotenvx/dotenvx": "^1.75.1",

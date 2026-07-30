@@ -1,0 +1,119 @@
+---
+sidebar_position: 5
+---
+
+import LoopedVideo from '@site/src/components/LoopedVideo';
+
+# Grading
+
+The rubrics you added for a quiz will be injected into the SpeedGrader page matching the canonical URL of the quiz. Additionally, SpeedGrader Helper also provides other functional overrides that aim at enhancing your grading experience.
+
+## Navigation
+
+For each question, you will see navigation controls in the question header.
+You can use `Prev` and `Next` to navigate to the previous and the next submission, respectively.
+When applicable, grading feedback will be submitted and saved according to the current [feedback submission strategy](#feedback-submission-strategies).
+Finally, SpeedGrader will automatically jump to the same question in the previous/next submission, if present. This behaviour can be disabled in the settings.
+
+Other ways to navigate:
+
+- Using SpeedGrader's default navigation buttons and student dropdown menu.
+- Using hotkeys.
+
+## The rubric box
+
+When the question has at least one rubric item, a rubric box will be shown just below the student answer and SpeedGrader's default points input and "Additional Comments" textarea will be set to read-only mode.
+Under this configuration, you must use the rubric box to award points and leave comments.
+
+There are a few cases
+
+![Grading box](/demo/grading-box.png)
+
+If for some reason the rubrics do not apply for a particular submission, you can set points and comments manually.
+However, note that this should be done sparingly.
+
+Other available actions:
+
+- `Regrade`: Clear the current feedback and regrade from scratch.
+- `Reset`: Rollback to the most-recently submitted feedback.
+- `Submit`: Submit and save the current feedback.
+
+There are a few cases in which the rubric box for a question will be initially set to read-only mode.
+
+1. If a question is already graded.
+2. If submitted points and/or comments have diverged since last saved. This could mean that someone else has modified the feedback since the question was last graded by you.
+3. If the rubric has been updated since last saved.
+
+In such cases, you should regrade the question.
+
+## Submitting and saving feedback
+
+Feedback submission refers to the action of submitting grading feedback (points and comments) to the server running the Canvas instance.
+
+There are several drawbacks to SpeedGrader's default behaviour related to feedback submission.
+
+| **Description**                                                                                                                                                                                                                                          | **Severity** |
+| :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------: |
+| Always submits all question feedback, including the ones not updated by the grader. This means multiple graders cannot be grading the same student submission at the same time, otherwise they'd risk overwriting each other's feedback unintentionally. |    🔴🔴🔴    |
+| Feedback submission is manual (no auto-save). Feedback are easily lost if not careful.                                                                                                                                                                   |      🟡      |
+| No indicator when feedback submission succeeds or fails.                                                                                                                                                                                                 |     🟡🟡     |
+| Feedback submission triggers a page reload, which is unnecessary overhead and creates friction during grading.                                                                                                                                           |      🟡      |
+| No input validation for the points awarded to individual questions.                                                                                                                                                                                      |      🔴      |
+
+:::note[A note on SpeedGrader's weird behaviour]{id="weird-behaviour-note" .anchor}
+
+If the user forgot to save their grading feedback for a particular student submission (or worse, multiple student submissions) before navigating away, SpeedGrader discards the comments and caches the awarded points in memory for as long as that page is active.
+When they navigate back to those student submissions without refreshing SpeedGrader, they can still see the awarded points and no comments.
+But as soon as they refresh or close the browser tab, their feedback will be lost.
+
+This has serious UX implications.
+
+- A user may simply not realize that they have not been saving their grading feedback. When they navigate back to those student submissions, they will see the awarded (but unsaved) points, thinking that those student submissions have already been graded.
+- Even if the user becomes aware that they may have forgotten to save their grading feedback for at least one submission, it can be very difficult to backtrack and pinpoint which ones they missed.
+
+:::
+
+SpeedGrader Helper provides the following functional overrides in an effort to address each of the drawbacks outlined above.
+
+1. SpeedGrader Helper intercepts the default feedback submission flow and implements different feedback submission strategies (see below).
+2. Feedback submission happens automatically on navigation.
+3. SpeedGrader Helper displays messages on successful or failed feedback submission.
+4. Student submission page will not reload after submitting feedback.
+5. SpeedGrader Helper ensures points awarded to individual questions is valid and no greater than the points available.
+
+There are several _identical_ ways to submit grading feedback.
+
+- Using the `Submit` button in the rubric box.
+- Using hotkeys.
+- Navigating through student submissions by any means listed [here](#navigation).
+- Using SpeedGrader's `Update Scores` button at the bottom of the submission page.
+- Pressing the <kbd>Return</kbd> / <kbd>Enter</kbd> key while any of SpeedGrader's points inputs is in focus.
+
+Finally, "Saving feedback" refers to the action of taking the most-recent snapshot of the grading feedback and saving it locally on your device.
+SpeedGrader Helper uses this mechanism to render rubric boxes for review or regrade purposes.
+
+:::note[Note]
+
+Only successfully-submitted feedback are saved.
+
+:::
+
+### Feedback submission strategies
+
+Feedback submission strategies are designed to avoid unintentionally overwriting grades submitted by other graders.
+This way, multiple graders can grade the same student submission at the same time.
+
+- `All`: Submit feedback for all questions. This is SpeedGrader's default behaviour.
+- `Focused`: Submit feedback for questions in focus only. If the quiz is not in focus mode, this is identical to `Updated`.
+- `Updated`: Submit feedback for questions whose points and comments have been updated.
+
+This can be configured in the settings.
+
+## Focus mode
+
+Focus mode enables you to focus on a selected subset of questions during grading.
+This is especially helpful when the quiz has dozens of questions but you are grading only a few questions at a time.
+
+<LoopedVideo src="/demo/focus-mode.mp4" delaySeconds={1} />
+
+If a quiz is in focus mode and the current [feedback submission strategy](#feedback-submission-strategies) is set to "Focused", feedback will be submitted and saved for questions in focus only.

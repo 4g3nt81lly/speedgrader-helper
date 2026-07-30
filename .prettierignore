@@ -1,4 +1,8 @@
 node_modules
+build
 dist
-package.json
-package-lock.json
+pnpm-lock.yaml
+
+# docs package
+.docusaurus
+.cache-loader
