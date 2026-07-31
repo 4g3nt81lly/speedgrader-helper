@@ -6,8 +6,12 @@ import { reloadSpeedGraderPages, syncSidePanelStates } from './helpers';
 import { useMainPageStore } from './main.store';
 import { selectQuiz } from './selection.actions';
 
+function getQuizzes() {
+	return useMainPageStore.getState().quizzes;
+}
+
 export function addQuiz(quiz: Parameters<typeof Quiz.create>[0]) {
-	const quizzes = { ...useMainPageStore.getState().quizzes };
+	const quizzes = { ...getQuizzes() };
 	const newQuiz = Quiz.create(quiz);
 	const oldQuiz = Object.values(quizzes).find((quiz) => quiz.url === newQuiz.url);
 	if (oldQuiz) {
@@ -23,7 +27,7 @@ export function updateQuiz(
 	quiz: SetRequired<Partial<IQuiz>, 'id'>,
 	reload: boolean = false
 ) {
-	const quizzes = { ...useMainPageStore.getState().quizzes };
+	const quizzes = { ...getQuizzes() };
 	const oldQuiz = quizzes[quiz.id];
 	if (!oldQuiz) return;
 
@@ -35,7 +39,7 @@ export function updateQuiz(
 }
 
 export function removeQuizzes(quizIds: IQuiz['id'] | IQuiz['id'][]) {
-	const quizzes = { ...useMainPageStore.getState().quizzes };
+	const quizzes = { ...getQuizzes() };
 
 	const targetQuizIds = Array.isArray(quizIds) ? quizIds : [quizIds];
 	const targetQuizzes: IQuiz[] = [];
@@ -52,13 +56,12 @@ export function removeQuizzes(quizIds: IQuiz['id'] | IQuiz['id'][]) {
 }
 
 export function clearQuizzes() {
-	const state = useMainPageStore.getState();
-	const quizzes = state.quizzes;
+	const { quizzes, selection } = useMainPageStore.getState();
 	const targetQuizzes = Object.values(quizzes);
 
 	useMainPageStore.setState({
 		quizzes: {},
-		selection: { ...state.selection, quiz: null },
+		selection: { ...selection, quiz: null },
 	});
 
 	return removeQuizzesFromStore(targetQuizzes);
@@ -82,10 +85,7 @@ export async function loadQuizzesFromLocalStore() {
 }
 
 async function addQuizToStore(quiz: IQuiz) {
-	await sendMessageToBackground({
-		command: BackgroundCommand.addQuizToStore,
-		quiz,
-	});
+	await sendMessageToBackground({ command: BackgroundCommand.addQuizToStore, quiz });
 	reloadSpeedGraderPages(quiz.url);
 	syncSidePanelStates();
 }

@@ -4,7 +4,6 @@ import { postSnackbarItem } from '#content/stores/snackbar.store';
 import { sendMessageToBackground } from '#shared/message';
 import { BackgroundCommand } from '#shared/types/message';
 import { submitFeedback } from './submitFeedback';
-import { restoreSGFeedback } from './updateSGInputs';
 
 export default async function navigateSubmission(
 	direction: 'next' | 'prev',
@@ -36,10 +35,5 @@ export default async function navigateSubmission(
 			type: 'error',
 		});
 	}
-
-	// Suppress SpeedGrader's weird default behaviour (which caches unsaved feedback)
-	// by restoring inputs to last submitted
-	restoreSGFeedback();
-
 	navigationButton.click();
 }

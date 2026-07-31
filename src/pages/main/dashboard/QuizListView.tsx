@@ -20,7 +20,7 @@ import {
 	Tooltip,
 	Typography,
 } from '@mui/joy';
-import type { MouseEvent } from 'react';
+import { useMemo, type MouseEvent } from 'react';
 import useQuizIO from './hooks/useQuizIO';
 
 type QuizListViewProps = {};
@@ -30,7 +30,7 @@ export default function QuizListView(props: QuizListViewProps) {
 
 	const quizIO = useQuizIO();
 
-	const quizzes = Object.values(quizzesMap);
+	const quizzes = useMemo(() => Object.values(quizzesMap), [quizzesMap]);
 
 	function handleOpenInNewTab(event: MouseEvent<HTMLAnchorElement>, quiz: IQuiz) {
 		event.stopPropagation();
@@ -56,16 +56,28 @@ export default function QuizListView(props: QuizListViewProps) {
 		quizIO.exportQuiz(quiz);
 	}
 
-	return quizzes.length > 0 ? (
-		<List className="p-0">
+	if (quizzes.length === 0) {
+		return (
+			<div className="mb-5 flex h-full flex-col items-center justify-center gap-3">
+				<AirIcon className="text-6xl" />
+				<Typography level="body-lg">Nothing here yet!</Typography>
+				<Typography>
+					Click on <AddIcon fontSize="small" className="align-text-bottom" /> to add a new quiz!
+				</Typography>
+			</div>
+		);
+	}
+
+	return (
+		<List className="overflow-y-scroll p-0">
 			{quizzes.map((quiz) => (
 				<ListItem
 					key={quiz.id}
-					className="p-0"
+					className="px-5"
 					sx={{ ':hover': { bgcolor: 'background.surface' } }}
 				>
 					<ListItemButton
-						className="flex flex-col items-start gap-0 rounded-xl bg-transparent pt-2 pb-3"
+						className="flex flex-col items-start gap-0 rounded-xl bg-transparent pt-1 pb-3"
 						onClick={() => selectQuiz(quiz.id)}
 					>
 						<div className="flex w-full items-center justify-between gap-2">
@@ -113,15 +125,8 @@ export default function QuizListView(props: QuizListViewProps) {
 					</ListItemButton>
 				</ListItem>
 			))}
+			<li className="h-12" />
 		</List>
-	) : (
-		<div className="mb-10 flex flex-1 flex-col items-center justify-center gap-3">
-			<AirIcon className="text-6xl" />
-			<Typography level="body-lg">Nothing here yet!</Typography>
-			<Typography>
-				Click on <AddIcon fontSize="small" className="align-text-bottom" /> to add a new quiz!
-			</Typography>
-		</div>
 	);
 }
 

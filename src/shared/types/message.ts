@@ -30,8 +30,7 @@ export type CommandMessage<
 > = { command: C } & CommandMessagePayload[C];
 
 export type MessageResponse<T = any> =
-	| { error: { message: string }; data?: T }
-	| { data: T; error?: undefined };
+	{ error: { message: string }; data?: T } | { data: T; error?: undefined };
 
 export type CommandMessagePayload = {
 	/* Background script command */

@@ -36,7 +36,9 @@ export const defaultAppSettings: AppSettings = {
 	defaultQuizInjector: 'oldSG',
 	defaultQuizLoader: 'oldSG',
 
-	canvasBaseURL: import.meta.env.VITE_CANVAS_BASE_URL!,
+	canvasBaseURL: import.meta.env.DEV
+		? 'http://canvas.docker/'
+		: 'https://canvas.instructure.com/',
 	canvasAccessToken: import.meta.env.VITE_CANVAS_ACCESS_TOKEN ?? null,
 
 	hotkeys: {

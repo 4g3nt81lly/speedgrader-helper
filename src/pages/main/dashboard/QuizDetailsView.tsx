@@ -26,8 +26,8 @@ export default function QuizDetailsView({ quiz }: QuizDetailsViewProps) {
 	}
 
 	return (
-		<div className="flex h-full flex-col overflow-y-scroll">
-			<div className="sticky top-0 z-100 bg-white">
+		<div className="flex h-full flex-col justify-between">
+			<div>
 				<Button
 					variant="plain"
 					startDecorator={<ChevronLeftIcon fontSize="small" />}
@@ -38,15 +38,17 @@ export default function QuizDetailsView({ quiz }: QuizDetailsViewProps) {
 					Back
 				</Button>
 
-				<Typography level="h3" className="mx-5 mt-2 line-clamp-1 pb-3 text-ellipsis">
+				<Typography level="h3" className="mx-5 mt-1 line-clamp-1 pb-3 text-ellipsis">
 					{quiz.title}
 				</Typography>
 			</div>
 
-			<QuestionListView
-				questions={quiz.questions}
-				cardOptions={{ focusMode: quiz.focusMode, updateQuestion }}
-			/>
+			<div className="grow overflow-y-scroll">
+				<QuestionListView
+					questions={quiz.questions}
+					cardOptions={{ focusMode: quiz.focusMode, updateQuestion }}
+				/>
+			</div>
 
 			<Footer quiz={quiz} />
 		</div>
@@ -104,7 +106,7 @@ function Footer({ quiz }: FooterProps) {
 	}
 
 	return (
-		<div className="absolute inset-x-0 bottom-0 z-100 flex items-center justify-between bg-white px-3 pt-3 pb-5">
+		<div className="flex items-center justify-between px-3 pt-3 pb-5">
 			<Tooltip
 				title={
 					quiz.focusMode ? `Select ${focusState <= FocusState.some ? 'all' : 'none'} to focus` : ''
@@ -133,14 +135,14 @@ function Footer({ quiz }: FooterProps) {
 						</IconButton>
 					</Tooltip>
 				</div>
-				<Tooltip
+				{/* <Tooltip
 					title={`Click to turn ${quiz.focusMode ? 'off' : 'on'} focus mode`}
 					placement="top"
-				>
-					<Button variant={quiz.focusMode ? 'solid' : 'outlined'} onClick={toggleFocusMode}>
-						Focus: {quiz.focusMode ? 'On' : 'Off'}
-					</Button>
-				</Tooltip>
+				> */}
+				<Button variant={quiz.focusMode ? 'solid' : 'outlined'} onClick={toggleFocusMode}>
+					Focus: {quiz.focusMode ? 'On' : 'Off'}
+				</Button>
+				{/* </Tooltip> */}
 			</div>
 		</div>
 	);

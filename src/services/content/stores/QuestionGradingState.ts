@@ -44,8 +44,7 @@ type RawGradingState = { comments: string } & (
 );
 
 type PeripheralGradingState = (
-	| { readOnly: false; isDirty: boolean }
-	| { readOnly: true; isDirty: false }
+	{ readOnly: false; isDirty: boolean } | { readOnly: true; isDirty: false }
 ) & {
 	/** An object describing the diffs between current state and SpeedGrader state */
 	stateDiff: {

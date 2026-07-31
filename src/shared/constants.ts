@@ -13,7 +13,7 @@ const Constants = {
 
 	/* UI */
 
-	TOOLTIP_ENTER_DELAY: 750,
+	TOOLTIP_ENTER_DELAY: 1000,
 
 	/* Miscellaneous */
 

@@ -8,7 +8,8 @@ import QuizLocalStore from '#shared/stores/QuizLocalStore';
 import type { QuizLoaderPayloadMap, QuizLoaderType } from '#shared/types/loader';
 import { BackgroundCommand, type CommandMessagePayload } from '#shared/types/message';
 import type { Nullable } from '#shared/types/utils';
-import { useState } from 'react';
+import Decimal from 'decimal.js';
+import { useMemo, useState } from 'react';
 
 const defaultQuizLoaderOptions: Record<
 	QuizLoaderType,
@@ -53,6 +54,17 @@ export default function useCreateQuiz(dismiss: () => void) {
 		isOverwrite: false,
 		errorMessage: null,
 	});
+
+	const totalPoints = useMemo(() => {
+		const basePoints = Decimal(0);
+		if (!state.newQuiz) {
+			return basePoints;
+		}
+		return state.newQuiz.questions.reduce(
+			(total, question) => total.add(question.points),
+			basePoints
+		);
+	}, [state.newQuiz]);
 
 	function handleSetQuizLoader(quizLoader: QuizLoaderType) {
 		if (state.newQuiz) return;
@@ -119,6 +131,7 @@ export default function useCreateQuiz(dismiss: () => void) {
 
 	return {
 		state,
+		totalPoints,
 		quizLoader,
 		quizLoaderOptions,
 

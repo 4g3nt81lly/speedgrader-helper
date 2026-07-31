@@ -14,7 +14,7 @@ export default function QuestionListView(props: QuestionListViewProps) {
 	const theme = useTheme();
 
 	return (
-		<div className="mb-18 flex w-full flex-col p-0">
+		<div className="flex w-full flex-col p-0">
 			<LayoutGroup>
 				{questions.map((question) => (
 					<motion.div

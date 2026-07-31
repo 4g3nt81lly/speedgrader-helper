@@ -42,21 +42,20 @@ export default function DashboardPage() {
 
 	return (
 		<Tabs className="h-full overflow-hidden bg-transparent" value={currentView}>
-			<TabPanel value={DashboardTab.QuizList} keepMounted className="p-0">
-				<div className="flex h-full flex-col px-5">
-					<div className="mt-5 mb-2 flex justify-between">
+			<TabPanel value={DashboardTab.QuizList} keepMounted className="overflow-hidden p-0">
+				<div className="flex h-full flex-col">
+					<div className="mx-5 mt-5 mb-2 flex justify-between">
 						<Typography level="h3">Dashboard</Typography>
 
-						<div className="flex gap-1">
+						<div className="flex gap-3">
 							<Tooltip title="Import a quiz" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
-								<IconButton onClick={handleImportQuiz}>
+								<IconButton size="sm" onClick={handleImportQuiz}>
 									<UploadIcon />
 								</IconButton>
 							</Tooltip>
 							<Button
 								size="sm"
 								startDecorator={<AddIcon fontSize="small" />}
-								className="ml-2"
 								onClick={() => setIsCreatingNewQuiz(true)}
 							>
 								New

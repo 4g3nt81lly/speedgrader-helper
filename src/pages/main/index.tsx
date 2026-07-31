@@ -1,5 +1,6 @@
 import SettingsPage from '#pages/settings/SettingsPage';
 import type { MainTab } from '#shared/types/store';
+import { reloadPage } from '#shared/utils/browser';
 import { StyledEngineProvider, Tab, tabClasses, TabList, TabPanel, Tabs } from '@mui/joy';
 import { useLayoutEffect } from 'react';
 import ReactDOM from 'react-dom/client';
@@ -39,7 +40,7 @@ function App() {
 			transports: ['websocket'],
 			auth: { role: 'app' },
 		});
-		socket.on('hr', (name) => name === 'reloadSidePanel' && window.location.reload());
+		socket.on('hr', (name) => name === 'reloadSidePanel' && reloadPage());
 
 		return () => {
 			global.sidePanelChannel.removeEventListener('message', handleSyncSidePanel);
@@ -55,7 +56,7 @@ function App() {
 		>
 			<TabList
 				disableUnderline
-				className="mx-auto items-center rounded-xl p-1.5"
+				className="mx-auto items-center rounded-2xl p-1.5"
 				sx={{
 					bgcolor: 'background.level1',
 					[`.${tabClasses.root}`]: {

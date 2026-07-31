@@ -18,7 +18,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
-import ReorderIcon from '@mui/icons-material/Reorder';
 import {
 	Button,
 	ButtonGroup,
@@ -38,7 +37,7 @@ import {
 	useTheme,
 } from '@mui/joy';
 import Decimal from 'decimal.js';
-import { AnimatePresence, motion, Reorder, useDragControls } from 'motion/react';
+import { AnimatePresence, motion, Reorder } from 'motion/react';
 import { type ChangeEvent, type SubmitEvent, useEffect, useRef, useState } from 'react';
 
 type RubricListEditorProps = {
@@ -56,6 +55,8 @@ export default function RubricListEditor(props: RubricListEditorProps) {
 	const orderedRubricItemsRef = useRef(orderedRubricItems);
 
 	const isReordering = orderedRubricItems !== null;
+	const canReorder = rubric.items.length > 0 && draftItemId === null;
+
 	const rubricItems = orderedRubricItems ?? rubric.items;
 
 	function addRubricItem() {
@@ -109,38 +110,38 @@ export default function RubricListEditor(props: RubricListEditorProps) {
 		orderedRubricItemsRef.current = orderedRubricItems;
 	}
 
-	function toggleReordering() {
-		const reorderedItems = isReordering ? null : rubric.items;
-		setTemporaryOrderedRubricItems(reorderedItems);
+	function beginReordering() {
+		if (orderedRubricItems) return;
+		setTemporaryOrderedRubricItems(rubric.items);
 	}
 
-	function updateOrderedRubricItems() {
-		if (!isReordering) return;
-		updateRubric({ ...rubric, items: orderedRubricItemsRef.current! });
+	function endReordering(commit: boolean) {
+		if (!orderedRubricItems) return;
+		if (commit) {
+			updateRubric({ ...rubric, items: orderedRubricItems });
+		}
+		setTemporaryOrderedRubricItems(null);
 	}
 
 	useEffect(() => {
 		if (!isReordering) return;
 		// In case rubric was modified elsewhere
 		setTemporaryOrderedRubricItems(rubric.items);
+		if (!rubric.items.some((item) => item.id === draftItemId)) {
+			setDraftItemId(null);
+		}
 	}, [rubric]);
 
 	return (
 		<motion.div className="mb-2 flex flex-col" layout="size">
-			<Reorder.Group
-				as="div"
-				className="relative"
-				values={rubricItems}
-				onReorder={setTemporaryOrderedRubricItems}
-			>
+			<Reorder.Group as="div" values={rubricItems} onReorder={setTemporaryOrderedRubricItems}>
 				<AnimatePresence mode="popLayout">
 					{rubricItems.map((rubricItem) => (
 						<RubricListItem
 							key={rubricItem.id}
 							rubricItem={rubricItem}
 							maxPoints={maxPoints}
-							reorderable={isReordering}
-							confirmReorder={updateOrderedRubricItems}
+							isReordering={isReordering}
 							draftItemId={draftItemId}
 							beginEdit={() => setDraftItemId(rubricItem.id)}
 							endEdit={handleEndEditing}
@@ -160,18 +161,25 @@ export default function RubricListEditor(props: RubricListEditorProps) {
 						</Tooltip>
 						<Dropdown>
 							<Tooltip title="Rubric presets" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
-								<MenuButton variant="soft" size="sm" className="rounded-r-md border-0 p-0">
+								<MenuButton
+									variant="soft"
+									size="sm"
+									className="rounded-r-md border-0 p-0"
+									disabled={isReordering}
+								>
 									<ArrowDropDownIcon fontSize="small" />
 								</MenuButton>
 							</Tooltip>
 							<Menu>
 								<MenuItem
 									onClick={addFullCreditRubricItem}
-									disabled={rubric.gradingMode === 'negative'}
+									disabled={isReordering || rubric.gradingMode === 'negative'}
 								>
 									Full credit
 								</MenuItem>
-								<MenuItem onClick={addNoCreditRubricItem}>No credit</MenuItem>
+								<MenuItem onClick={addNoCreditRubricItem} disabled={isReordering}>
+									No credit
+								</MenuItem>
 							</Menu>
 						</Dropdown>
 					</ButtonGroup>
@@ -190,17 +198,26 @@ export default function RubricListEditor(props: RubricListEditorProps) {
 					</Tooltip>
 				</div>
 
-				<Tooltip
-					title={isReordering ? 'Done reorder' : 'Reorder'}
-					enterDelay={Constants.TOOLTIP_ENTER_DELAY}
-				>
-					<IconButton
-						disabled={!isReordering && rubric.items.length === 0}
-						onClick={toggleReordering}
-					>
-						{isReordering ? <DoneIcon /> : <MenuOpenIcon />}
-					</IconButton>
-				</Tooltip>
+				{isReordering ? (
+					<div className="flex">
+						<Tooltip title="Discard order" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
+							<IconButton onClick={endReordering.bind(null, false)}>
+								<CloseIcon />
+							</IconButton>
+						</Tooltip>
+						<Tooltip title="Confirm order" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
+							<IconButton onClick={endReordering.bind(null, true)}>
+								<DoneIcon />
+							</IconButton>
+						</Tooltip>
+					</div>
+				) : (
+					<Tooltip title="Reorder">
+						<IconButton disabled={!canReorder} onClick={beginReordering}>
+							<MenuOpenIcon />
+						</IconButton>
+					</Tooltip>
+				)}
 			</motion.div>
 		</motion.div>
 	);
@@ -209,11 +226,9 @@ export default function RubricListEditor(props: RubricListEditorProps) {
 type RubricListItemProps = {
 	rubricItem: IRubricItem;
 	maxPoints: string;
-
-	reorderable: boolean;
-	confirmReorder(): void;
-
+	isReordering: boolean;
 	draftItemId: Nullable<IRubricItem['id']>;
+
 	beginEdit(): void;
 	endEdit(newRubricItem: Nullable<IRubricItem>): void;
 	remove(id: IRubricItem['id']): void;
@@ -223,8 +238,7 @@ function RubricListItem(props: RubricListItemProps) {
 	const {
 		rubricItem,
 		maxPoints,
-		reorderable,
-		confirmReorder,
+		isReordering,
 		draftItemId,
 		beginEdit: beginEditing,
 		endEdit: endEditing,
@@ -233,7 +247,6 @@ function RubricListItem(props: RubricListItemProps) {
 	const isEditing = draftItemId === rubricItem.id;
 
 	const theme = useTheme();
-	const dragControls = useDragControls();
 
 	const [draftItem, setDraftItem] = useState(rubricItem);
 	const [descriptionError, setDescriptionError] = useState<Nullable<string>>(null);
@@ -299,15 +312,17 @@ function RubricListItem(props: RubricListItemProps) {
 		remove(rubricItem.id);
 	}
 
+	useEffect(() => {
+		setDraftItem(rubricItem);
+		setDescriptionError(null);
+	}, [rubricItem]);
+
 	return (
 		<Reorder.Item
-			key={rubricItem.id}
 			as="div"
-			className="my-3"
+			className="relative my-3"
 			value={rubricItem}
-			dragListener={false}
-			dragControls={dragControls}
-			onDragEnd={confirmReorder}
+			dragListener={isReordering}
 			{...inOutTransitionMotionProps({ opacity: [0, 1] })}
 		>
 			<motion.div
@@ -320,25 +335,12 @@ function RubricListItem(props: RubricListItemProps) {
 				layout
 			>
 				<motion.div className="flex justify-between" layout="position">
-					<div className="flex">
-						<AnimatePresence mode="popLayout">
-							{reorderable && (
-								<motion.div
-									className="ml-1 flex cursor-ns-resize items-center"
-									onPointerDown={(event) => dragControls.start(event, { snapToCursor: true })}
-									{...inOutTransitionMotionProps({ opacity: [0, 1] })}
-								>
-									<ReorderIcon />
-								</motion.div>
-							)}
-						</AnimatePresence>
-						<Typography
-							level="body-sm"
-							className="my-2 ml-2 line-clamp-5 text-start leading-4.5 whitespace-pre-wrap"
-						>
-							{rubricItem.description}
-						</Typography>
-					</div>
+					<Typography
+						level="body-sm"
+						className="my-2 ml-2 line-clamp-5 text-start leading-4.5 whitespace-pre-wrap"
+					>
+						{rubricItem.description}
+					</Typography>
 
 					<div className="flex items-center">
 						<Typography
@@ -359,7 +361,7 @@ function RubricListItem(props: RubricListItemProps) {
 						>
 							<IconButton
 								size="sm"
-								disabled={(draftItemId !== null && !isEditing) || reorderable}
+								disabled={(draftItemId !== null && !isEditing) || isReordering}
 								onClick={handleToggleEdit}
 							>
 								{isEditing ? (
@@ -375,7 +377,11 @@ function RubricListItem(props: RubricListItemProps) {
 							placement="left"
 							enterDelay={Constants.TOOLTIP_ENTER_DELAY}
 						>
-							<IconButton size="sm" disabled={reorderable} onClick={handleRemove}>
+							<IconButton
+								size="sm"
+								disabled={(draftItemId !== null && !isEditing) || isReordering}
+								onClick={handleRemove}
+							>
 								<CloseIcon fontSize="small" />
 							</IconButton>
 						</Tooltip>

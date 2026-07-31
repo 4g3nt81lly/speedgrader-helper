@@ -56,12 +56,12 @@ export default function SettingsPage() {
 	}
 
 	return (
-		<div className="mx-5 mt-5 flex h-full scrollbar-none flex-col overflow-y-scroll">
-			<div className="sticky top-0 z-100 bg-white pb-3">
-				<Typography level="h3">Settings</Typography>
-			</div>
+		<div className="mt-5 flex h-full flex-col gap-3">
+			<Typography level="h3" className="mx-5">
+				Settings
+			</Typography>
 
-			<div className="mb-18">
+			<div className="overflow-y-scroll px-5">
 				<SettingsSection heading="Grading">
 					<SettingItem
 						title="Scroll to last-graded question"
@@ -224,6 +224,8 @@ export default function SettingsPage() {
 						</Button>
 					</SettingItem>
 				</SettingsSection>
+
+				<div className="h-12" />
 			</div>
 		</div>
 	);
@@ -237,7 +239,7 @@ type SettingSectionProps = {
 function SettingsSection({ heading, children }: SettingSectionProps) {
 	return (
 		<div className="mb-3 flex flex-col">
-			<div className="sticky top-10 bg-white pb-2">
+			<div className="sticky top-0 bg-white pb-2">
 				<Typography level="title-md" fontWeight="bold">
 					{heading}
 				</Typography>

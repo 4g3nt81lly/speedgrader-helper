@@ -5,6 +5,7 @@ import { updateGradingContext } from '#content/stores/gradingContext.actions';
 import { useContentStore } from '#content/stores/main.store';
 import { postSnackbarItem } from '#content/stores/snackbar.store';
 import saveFeedback from './saveFeedback';
+import { restoreSGFeedback } from './updateSGInputs';
 
 export async function submitFeedback(event?: SubmitEvent, navigate?: 'next' | 'prev') {
 	const { gradingContext, appSettings } = useContentStore.getState();
@@ -74,6 +75,11 @@ export async function submitFeedback(event?: SubmitEvent, navigate?: 'next' | 'p
 		updateGradingContext({ dirtyQuestions: newDirtyQuestions });
 
 		const saveSuccess = await saveFeedback(targetQuestions);
+
+		// Suppress SpeedGrader's weird default behaviour (which caches unsaved feedback)
+		// by restoring inputs to last submitted
+		restoreSGFeedback();
+
 		if (navigate && saveSuccess) {
 			navigateSubmission(navigate, false);
 		}

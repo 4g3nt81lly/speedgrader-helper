@@ -1,8 +1,7 @@
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useMemo } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import navigateSubmission from './actions/navigateSubmission';
 import { submitFeedback } from './actions/submitFeedback';
-import { restoreSGFeedback } from './actions/updateSGInputs';
 import Selectors from './selectors';
 import { useAppSettings, useContentStore, useGradingContext } from './stores/main.store';
 
@@ -24,49 +23,62 @@ export function ToplevelEventProxy() {
 		eventListenerOptions: { capture: true },
 	});
 
-	function confirmNavigation(event: Event) {
+	const selectors = useMemo(
+		() => Selectors[appSettings.defaultQuizInjector],
+		[appSettings.defaultQuizInjector]
+	);
+	const nextStudentButton = useMemo(
+		() => document.querySelector<HTMLElement>(selectors.NEXT_STUDENT_BUTTON),
+		[selectors]
+	);
+	const prevStudentButton = useMemo(
+		() => document.querySelector<HTMLElement>(selectors.PREV_STUDENT_BUTTON),
+		[selectors]
+	);
+	const studentsMenu = useMemo(
+		() => document.querySelector<HTMLElement>(selectors.STUDENTS_MENU),
+		[selectors]
+	);
+
+	async function overrideNavigation(event: PointerEvent | MouseEvent) {
 		if (!event.isTrusted) {
 			// Not triggered by user action, ignore
 			return;
 		}
 		const gradingContext = useContentStore.getState().gradingContext;
 		if (!gradingContext) return;
-		const { dirtyQuestions, isFeedbackSubmitting } = gradingContext;
+		const { isFeedbackSubmitting } = gradingContext;
 
-		if (
-			isFeedbackSubmitting ||
-			(dirtyQuestions.size > 0 &&
-				!confirm(
-					'Current submission has unsaved feedback, navigating away from this submission will discard them, proceed?'
-				))
-		) {
-			event.preventDefault();
-			event.stopPropagation();
-			event.stopImmediatePropagation();
+		let oldEvent: Event;
+		if (event instanceof PointerEvent) {
+			oldEvent = new PointerEvent(event.type, event);
 		} else {
-			// Suppress SpeedGrader auto-caching unsaved feedback before navigating away
-			restoreSGFeedback();
+			oldEvent = new MouseEvent(event.type, event);
+		}
+		new MouseEvent(event.type, event);
+		event.preventDefault();
+		event.stopPropagation();
+		event.stopImmediatePropagation();
+
+		if (isFeedbackSubmitting) return;
+
+		const success = await submitFeedback();
+		if (success !== false) {
+			event.target?.dispatchEvent(oldEvent);
 		}
 	}
 
 	useLayoutEffect(() => {
-		const quizInjector = appSettings.defaultQuizInjector;
-		const selectors = Selectors[quizInjector];
-
-		const nextStudentButton = document.querySelector<HTMLElement>(selectors.NEXT_STUDENT_BUTTON);
-		const prevStudentButton = document.querySelector<HTMLElement>(selectors.PREV_STUDENT_BUTTON);
-		const studentsMenu = document.querySelector<HTMLElement>(selectors.STUDENTS_MENU);
-
-		nextStudentButton?.addEventListener('click', confirmNavigation, { capture: true });
-		prevStudentButton?.addEventListener('click', confirmNavigation, { capture: true });
-		studentsMenu?.addEventListener('mouseup', confirmNavigation, { capture: true });
+		nextStudentButton?.addEventListener('click', overrideNavigation, { capture: true });
+		prevStudentButton?.addEventListener('click', overrideNavigation, { capture: true });
+		studentsMenu?.addEventListener('mouseup', overrideNavigation, { capture: true });
 
 		return () => {
-			nextStudentButton?.removeEventListener('click', confirmNavigation, { capture: true });
-			prevStudentButton?.removeEventListener('click', confirmNavigation, { capture: true });
-			studentsMenu?.addEventListener('mouseup', confirmNavigation, { capture: true });
+			nextStudentButton?.removeEventListener('click', overrideNavigation, { capture: true });
+			prevStudentButton?.removeEventListener('click', overrideNavigation, { capture: true });
+			studentsMenu?.addEventListener('mouseup', overrideNavigation, { capture: true });
 		};
-	}, [appSettings.defaultQuizInjector]);
+	}, [nextStudentButton, prevStudentButton, studentsMenu]);
 
 	return <></>;
 }

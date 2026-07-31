@@ -162,9 +162,7 @@ export default class QuizLocalStore {
 
 		const remainingIndexes: StoreQuizIndex[] = [];
 		let removedKeys: (
-			| StoreQuizIdKey
-			| StoreQuizUrlKey
-			| StoreQuizLastGradedQuestionIdKey
+			StoreQuizIdKey | StoreQuizUrlKey | StoreQuizLastGradedQuestionIdKey
 		)[] = [];
 		for (const quizIndex of quizIndexes) {
 			if (targetStoreQuizIdKeys.includes(quizIndex.idKey)) {
