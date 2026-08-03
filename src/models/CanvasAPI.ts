@@ -5,11 +5,11 @@ import {
 	type CanvasQuiz,
 	type CanvasQuizQuestion,
 } from '#schemas/CanvasQuiz.schema';
-import Constants from '#shared/constants';
+import SharedConstants from '#shared/constants';
 import z from 'zod';
 
 export default class CanvasAPI {
-	private static timeoutMS = 10 * Constants.TOOLTIP_ENTER_DELAY;
+	private static timeoutMS = 10 * SharedConstants.SECOND_MS;
 
 	private baseURL: string;
 	private accessToken: string;

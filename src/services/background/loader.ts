@@ -1,33 +1,34 @@
 import type { IQuiz } from '#models/Quiz';
-import Constants from '#shared/constants';
 import { sendMessageToTab } from '#shared/message';
-import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
+import AppSettingsSyncStorage from '#shared/storage/AppSettings';
 import type { QuizLoaderPayload, QuizLoaderType } from '#shared/types/loader';
-import { ContentCommand } from '#shared/types/message';
 import CanvasQuizLoader from './CanvasQuizLoader';
 
-export const quizLoadHandler: {
-	[Loader in QuizLoaderType]: (
-		...payload: QuizLoaderPayload[Loader] extends undefined
-			? []
-			: [QuizLoaderPayload[Loader]]
-	) => Promise<IQuiz>;
+const quizLoadHandler: {
+	[Loader in QuizLoaderType]: (payload: QuizLoaderPayload[Loader]) => Promise<IQuiz>;
 } = {
 	async oldSG() {
 		return sendMessageToTab(
-			{ command: ContentCommand.loadQuiz, loader: 'oldSG' },
-			{ timeout: { milliseconds: 5 * Constants.SECOND_MS }, throwOnNoReceiver: true }
+			{ name: 'quiz.load', loader: 'oldSG' },
+			{ timeout: { seconds: 5 }, throwOnNoReceiver: true }
 		);
 	},
 	async newSG() {
 		return sendMessageToTab(
-			{ command: ContentCommand.loadQuiz, loader: 'newSG' },
-			{ timeout: { milliseconds: 5 * Constants.SECOND_MS }, throwOnNoReceiver: true }
+			{ name: 'quiz.load', loader: 'newSG' },
+			{ timeout: { seconds: 5 }, throwOnNoReceiver: true }
 		);
 	},
 	async canvasAPI(payload) {
-		const appSettings = await AppSettingsLocalStore.getAll();
+		const appSettings = await AppSettingsSyncStorage.getAll();
 		const loader = new CanvasQuizLoader(appSettings, payload);
 		return loader.getQuiz();
 	},
 };
+
+export async function loadQuiz<Type extends QuizLoaderType>(
+	type: Type,
+	payload: QuizLoaderPayload[Type]
+) {
+	return quizLoadHandler[type](payload);
+}

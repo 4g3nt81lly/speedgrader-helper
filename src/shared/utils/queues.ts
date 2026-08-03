@@ -63,7 +63,7 @@ export class TaskQueue {
 		this.tasks = new Map();
 	}
 
-	public async run<T>(task: () => Promise<T>, label?: string): Promise<T> {
+	public async run<T>(task: () => T | Promise<T>, label?: string): Promise<T> {
 		// Retrieve previous task's promise, create a resolved one if none
 		const previousTask = this.tail ?? Promise.resolve();
 		let resolveCurrentTask = () => {};

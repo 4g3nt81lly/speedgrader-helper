@@ -5,7 +5,7 @@ import { isDecimalPositive } from '#shared/utils/decimal';
 import z from 'zod';
 import type { IQuestion } from './Question';
 import { RubricItem, type IRubricItem } from './RubricItem';
-import { RubricParser } from './RubricParser';
+import RubricParser from './RubricParser';
 
 export interface IRubric {
 	items: IRubricItem[];
@@ -21,6 +21,43 @@ export default class Rubric {
 		return {
 			items: rubric.items?.map((item) => RubricItem.create(item)) ?? [],
 			gradingMode: rubric.gradingMode ?? defaultAppSettings.defaultGradingMode,
+		};
+	}
+
+	public static addItem(rubric: IRubric, newItem: IRubricItem): IRubric {
+		const newItems: IRubricItem[] = [];
+		for (const item of rubric.items) {
+			if (item.id === newItem.id) {
+				return rubric;
+			}
+			newItems.push(item);
+		}
+		newItems.push(newItem);
+		return { ...rubric, items: newItems };
+	}
+
+	public static updateItem(rubric: IRubric, newItem: IRubricItem): IRubric {
+		const index = rubric.items.findIndex((item) => item.id === newItem.id);
+		if (index < 0) {
+			return rubric;
+		}
+		const newItems = [...rubric.items];
+		newItems[index] = newItem;
+		return { ...rubric, items: newItems };
+	}
+
+	public static updateItems(rubric: IRubric, newItems: IRubricItem[]): IRubric {
+		return { ...rubric, items: newItems };
+	}
+
+	public static removeItem(rubric: IRubric, itemId: IRubricItem['id']): IRubric {
+		return { ...rubric, items: rubric.items.filter((item) => item.id !== itemId) };
+	}
+
+	public static toggleGradingMode(rubric: IRubric): IRubric {
+		return {
+			...rubric,
+			gradingMode: rubric.gradingMode === 'positive' ? 'negative' : 'positive',
 		};
 	}
 

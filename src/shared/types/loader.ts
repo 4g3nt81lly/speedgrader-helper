@@ -3,8 +3,8 @@ import Quiz from '#models/Quiz';
 import type { AppSettings } from '#shared/settings';
 
 export type QuizLoaderPayload = {
-	oldSG: undefined;
-	newSG: undefined;
+	oldSG: {};
+	newSG: {};
 	canvasAPI: {
 		courseId: string;
 		quizId: string;
@@ -16,9 +16,8 @@ export type QuizLoaderType = keyof QuizLoaderPayload;
 export type QuizLoaderPayloadMap = {
 	[Loader in QuizLoaderType]: {
 		loader: Loader;
-	} & (QuizLoaderPayload[Loader] extends undefined
-		? { payload?: undefined }
-		: { payload: QuizLoaderPayload[Loader] });
+		payload: QuizLoaderPayload[Loader];
+	};
 };
 
 export default abstract class QuizLoader<Type extends QuizLoaderType = QuizLoaderType> {

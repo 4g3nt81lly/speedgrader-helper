@@ -1,3 +1,5 @@
+import type { StoreApi, UseBoundStore } from 'zustand';
+
 export type Nullable<T> = T | null;
 export type Optional<T> = T | undefined;
 export type NonOptional<T> = Exclude<T, undefined>;
@@ -16,3 +18,5 @@ export type BindCallback<Callback, This> = Callback extends (
 ) => infer Return
 	? (this: This, ...args: Parameters) => Return
 	: never;
+
+export type ZustandStore<State> = UseBoundStore<StoreApi<State>>;

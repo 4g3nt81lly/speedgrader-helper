@@ -1,40 +1,26 @@
-import SettingsPage from '#pages/settings/SettingsPage';
-import type { MainTab } from '#shared/types/store';
+import global, { PageEvent } from '#pages/global';
 import { reloadPage } from '#shared/utils/browser';
 import { StyledEngineProvider, Tab, tabClasses, TabList, TabPanel, Tabs } from '@mui/joy';
 import { useLayoutEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { io } from 'socket.io-client';
-import DashboardPage from './dashboard/DashboardPage';
-import global, { SidePanelEvent } from './stores/global';
-import { useMainSelection } from './stores/main.store';
-import { loadQuizzesFromLocalStore } from './stores/quizzes.actions';
-import { loadSelectionStateFromLocalStorage, selectMainTab } from './stores/selection.actions';
-import { loadAppSettingsFromLocalStorage } from './stores/settings.actions';
+import actions from './actions';
+import DashboardTab from './DashboardTab';
+import SettingsTab from './SettingsTab';
+import { mainPageState, type MainTab } from './stores';
 
 function App() {
-	const mainTab = useMainSelection().mainTab;
-
-	function handleTabChange(tab: MainTab) {
-		selectMainTab(tab);
-	}
+	const { mainTab } = mainPageState.useStore('selection');
 
 	useLayoutEffect(() => {
-		(async () => {
-			loadAppSettingsFromLocalStorage();
-			loadSelectionStateFromLocalStorage();
-			loadQuizzesFromLocalStore();
-		})();
+		actions.loadQuizzes();
 		// Register broadcast channel for syncing across side panel contexts
 		const handleSyncSidePanel = ({ data }: MessageEvent<any>) => {
-			if (data.type !== SidePanelEvent.syncState) return;
-			// Sync quizzes with another instance of side panel, reload from local storage
-			(async () => {
-				await loadAppSettingsFromLocalStorage();
-				await loadQuizzesFromLocalStore();
-			})();
+			if (data.type !== PageEvent.syncState) return;
+			// Sync quizzes with another instance of side panel, reload from persistent storage
+			Promise.all([actions.settings.load(), actions.loadQuizzes()]);
 		};
-		global.sidePanelChannel.addEventListener('message', handleSyncSidePanel);
+		global.pageChannel.addEventListener('message', handleSyncSidePanel);
 
 		const socket = io(import.meta.env.VITE_DEV_WS_SERVER_URI, {
 			transports: ['websocket'],
@@ -43,7 +29,7 @@ function App() {
 		socket.on('hr', (name) => name === 'reloadSidePanel' && reloadPage());
 
 		return () => {
-			global.sidePanelChannel.removeEventListener('message', handleSyncSidePanel);
+			global.pageChannel.removeEventListener('message', handleSyncSidePanel);
 			socket.disconnect();
 		};
 	}, []);
@@ -51,7 +37,7 @@ function App() {
 	return (
 		<Tabs
 			value={mainTab}
-			onChange={(_, newValue) => handleTabChange(newValue as MainTab)}
+			onChange={(_, newValue) => actions.selection.selectMainTab(newValue as MainTab)}
 			className="my-2 h-full bg-transparent"
 		>
 			<TabList
@@ -78,17 +64,19 @@ function App() {
 				</Tab>
 			</TabList>
 			<TabPanel value="dashboard" keepMounted className="overflow-hidden p-0">
-				<DashboardPage />
+				<DashboardTab />
 			</TabPanel>
 			<TabPanel value="settings" keepMounted className="overflow-hidden p-0">
-				<SettingsPage />
+				<SettingsTab />
 			</TabPanel>
 		</Tabs>
 	);
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-	<StyledEngineProvider enableCssLayer>
-		<App />
-	</StyledEngineProvider>
-);
+Promise.all([actions.settings.load(), actions.selection.load()]).then(() => {
+	ReactDOM.createRoot(document.getElementById('root')!).render(
+		<StyledEngineProvider enableCssLayer>
+			<App />
+		</StyledEngineProvider>
+	);
+});

@@ -1,6 +1,6 @@
-import navigateSubmission from '#content/actions/navigateSubmission';
-import { setLastGradedQuestion } from '#content/stores/gradingContext.actions';
-import { useGradingContext } from '#content/stores/main.store';
+import actions from '#content/actions';
+import type { NavigateSubmissionDirection } from '#content/helpers/navigateSubmission';
+import { useGradingContext } from '#content/stores/GradingContext';
 import type { IQuestion } from '#models/Question';
 import { useState, type MouseEvent } from 'react';
 
@@ -18,8 +18,10 @@ export default function QuestionNavBar(props: QuestionNavBarProps) {
 		if (!canNavigate || isSubmitting) return;
 		setCanNavigate(false);
 
-		setLastGradedQuestion(questionId);
-		navigateSubmission((event.target as HTMLButtonElement).name as 'prev' | 'next');
+		actions.gradingContext.setLastGradedQuestion(questionId);
+		actions.gradingContext.submitFeedbackAndNavigate(
+			(event.target as HTMLButtonElement).name as NavigateSubmissionDirection
+		);
 	}
 
 	return (

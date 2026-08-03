@@ -2,17 +2,17 @@ import { TimeoutError } from '#shared/errors';
 import type { Nullable } from '#shared/types/utils';
 
 interface TimeoutWrapper {
-	<T, D = never>(result: Promise<T> | (() => Promise<T>), timeout: number): Promise<T>;
+	<T, D = never>(result: Promise<T> | (() => Promise<T>), timeoutMS: number): Promise<T>;
 	<T, D>(
 		result: Promise<T> | (() => Promise<T>),
-		timeout: number,
+		timeoutMS: number,
 		defaultValue: D
 	): Promise<T | D>;
 }
 
 export const withTimeout: TimeoutWrapper = function <T, D>(
 	result: Promise<T> | (() => Promise<T>),
-	timeout: number,
+	timeoutMS: number,
 	...defaultValue: [D?]
 ): Promise<T | D> {
 	const promise = typeof result === 'function' ? result() : result;
@@ -26,7 +26,7 @@ export const withTimeout: TimeoutWrapper = function <T, D>(
 				} else {
 					reject(new TimeoutError());
 				}
-			}, timeout);
+			}, timeoutMS);
 		}),
 	]);
 };

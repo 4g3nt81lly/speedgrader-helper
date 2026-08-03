@@ -5,7 +5,7 @@ import type { IRubric } from './Rubric';
 import Rubric from './Rubric';
 import { RubricItem, type IRubricItem } from './RubricItem';
 
-export class RubricParser {
+export default class RubricParser {
 	public static parse(text: string, rubric?: IRubric): IRubric {
 		const newItems: IRubricItem[] = [];
 		const indices = new Set<number>();

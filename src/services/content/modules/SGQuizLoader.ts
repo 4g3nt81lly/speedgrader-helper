@@ -23,12 +23,11 @@ export abstract class SGQuizLoader<
 	}
 
 	public constructor(appSettings: AppSettings) {
-		super(appSettings, undefined);
+		super(appSettings, {});
 	}
 
-	protected static validateURL(urlString: string) {
+	public static validateURL(urlString: string) {
 		const url = new URL(urlString);
-		if (import.meta.env.DEV) return true;
 		return (
 			Patterns.SG_URL_ORIGIN.test(url.origin) &&
 			Patterns.SG_URL_PATHNAME.test(url.pathname)

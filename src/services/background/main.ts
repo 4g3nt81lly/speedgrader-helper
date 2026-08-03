@@ -1,12 +1,12 @@
-import Constants from '#shared/constants';
-import { addCommandHandler } from '#shared/message';
-import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
-import QuizFeedbackLocalStore from '#shared/stores/QuizFeedbackLocalStore';
-import QuizLocalStore from '#shared/stores/QuizLocalStore';
-import { BackgroundCommand } from '#shared/types/message';
+import { addMessageHandlers } from '#shared/message';
+import AppSettingsSyncStorage from '#shared/storage/AppSettings';
+import QuizFeedbackIDBStore from '#shared/storage/QuizFeedback';
+import QuizzesIDBStore from '#shared/storage/Quizzes';
 import TaskQueues from '#shared/utils/queues';
+import Constants from './constants';
 import configDev from './dev';
-import { quizLoadHandler } from './loader';
+import { factoryReset } from './helpers';
+import { loadQuiz } from './loader';
 
 const taskQueues = new TaskQueues();
 
@@ -18,59 +18,77 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error
 	);
 });
 
-addCommandHandler({
-	async [BackgroundCommand.updateAppSettings]({ partialSettings }) {
+addMessageHandlers<'background'>({
+	async 'app.updateSettings'({ partial }) {
 		await taskQueues.run(Constants.APP_SETTINGS_ACTION_QUEUE_NAME, () =>
-			AppSettingsLocalStore.set(partialSettings)
+			AppSettingsSyncStorage.set(partial)
 		);
+		return true;
+	},
+	async 'app.factoryReset'() {
+		await factoryReset();
+		// FIXME: Also clear tasks currently in queue
 		return true;
 	},
 
-	async [BackgroundCommand.loadQuiz]({ loader, payload }) {
-		const quizLoader =
-			loader ?? (await AppSettingsLocalStore.getOrDefault('defaultQuizLoader'));
-		return quizLoadHandler[quizLoader](payload as unknown as any);
+	async 'quizzes.load'({ loader, payload }) {
+		return loadQuiz(loader, payload);
 	},
-
-	async [BackgroundCommand.addQuizToStore]({ quiz: newQuiz }) {
-		await taskQueues.run(Constants.QUIZ_ACTION_QUEUE_NAME, () =>
-			QuizLocalStore.addQuiz(newQuiz)
+	'quizzes.getByID'({ id }) {
+		return taskQueues.run(Constants.QUIZZES_ACTION_QUEUE_NAME, () =>
+			QuizzesIDBStore.getByID(id)
+		);
+	},
+	'quizzes.getByURL'({ url }) {
+		return taskQueues.run(Constants.QUIZZES_ACTION_QUEUE_NAME, () =>
+			QuizzesIDBStore.getByURL(url)
+		);
+	},
+	async 'quizzes.add'({ quiz: newQuiz }) {
+		await taskQueues.run(Constants.QUIZZES_ACTION_QUEUE_NAME, () =>
+			QuizzesIDBStore.add(newQuiz)
 		);
 		return true;
 	},
-	async [BackgroundCommand.updateQuizInStore]({ quiz: newQuiz }) {
-		await taskQueues.run(Constants.QUIZ_ACTION_QUEUE_NAME, () =>
-			QuizLocalStore.setQuiz(newQuiz)
+	async 'quizzes.set'({ quiz }) {
+		await taskQueues.run(Constants.QUIZZES_ACTION_QUEUE_NAME, () =>
+			QuizzesIDBStore.set(quiz)
 		);
 		return true;
 	},
-	async [BackgroundCommand.removeQuizzesFromStore]({ quizId, quizIds }) {
-		const targetQuizIds = quizIds ?? [quizId];
-		await taskQueues.run(Constants.QUIZ_ACTION_QUEUE_NAME, () =>
-			QuizLocalStore.removeQuizzes(targetQuizIds)
+	async 'quizzes.remove'({ quizIds }) {
+		if (quizIds.length > 0) {
+			await taskQueues.run(Constants.QUIZZES_ACTION_QUEUE_NAME, () =>
+				QuizzesIDBStore.remove(quizIds)
+			);
+		}
+		return true;
+	},
+	async 'quizzes.clear'() {
+		await taskQueues.run(Constants.QUIZZES_ACTION_QUEUE_NAME, () =>
+			QuizzesIDBStore.clear()
 		);
 		return true;
 	},
-
-	async [BackgroundCommand.updateQuestionFeedbackInStore]({
-		quizId,
-		submissionId,
-		question,
-	}) {
-		await taskQueues.run(Constants.QUIZ_ACTION_QUEUE_NAME, () =>
-			question.feedback
-				? QuizFeedbackLocalStore.setQuestionFeedback(
-						quizId,
-						submissionId,
-						question.feedback
-					)
-				: QuizFeedbackLocalStore.removeQuestionFeedback(quizId, submissionId, question.id)
+	'quizzes.getFeedback'({ quizId, submissionId }) {
+		return taskQueues.run(Constants.QUIZZES_ACTION_QUEUE_NAME, () =>
+			QuizFeedbackIDBStore.get(quizId, submissionId)
+		);
+	},
+	async 'quizzes.updateFeedback'({ quizId, submissionId, feedback }) {
+		await taskQueues.run(Constants.QUIZZES_ACTION_QUEUE_NAME, () =>
+			QuizFeedbackIDBStore.updateFeedback(quizId, submissionId, feedback)
 		);
 		return true;
 	},
-	async [BackgroundCommand.updateQuizLastGradedQuestion]({ quizId, questionId }) {
-		await taskQueues.run(Constants.QUIZ_ACTION_QUEUE_NAME, () =>
-			QuizLocalStore.setQuizLastGradedQuestion(quizId, questionId)
+	'quizzes.getLastGradedQuestion'({ quizId }) {
+		return taskQueues.run(Constants.QUIZZES_ACTION_QUEUE_NAME, () =>
+			QuizzesIDBStore.getLastGradedQuestion(quizId)
+		);
+	},
+	async 'quizzes.updateLastGradedQuestion'({ quizId, questionId }) {
+		await taskQueues.run(Constants.QUIZZES_ACTION_QUEUE_NAME, () =>
+			QuizzesIDBStore.setLastGradedQuestion(quizId, questionId)
 		);
 		return true;
 	},

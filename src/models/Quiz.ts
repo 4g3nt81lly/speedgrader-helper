@@ -46,7 +46,7 @@ export default class Quiz {
 			return quiz;
 		}
 		const questions = [...quiz.questions];
-		questions[index] = { id: questionId, ...newQuestion };
+		questions[index] = { ...newQuestion, id: questionId };
 		return { ...quiz, questions };
 	}
 

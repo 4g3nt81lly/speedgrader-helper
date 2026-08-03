@@ -12,7 +12,7 @@ const Patterns = {
 		),
 	},
 
-	SG_URL_ORIGIN: /^https:\/\/canvas\.[a-z]+\.c(?:a|om)$/,
+	SG_URL_ORIGIN: /^https?:\/\/canvas\.[a-z]+\.c(?:a|om)$/,
 	SG_URL_PATHNAME: /^\/courses\/(?<courseId>\d+)\/gradebook\/speed_grader$/,
 	SG_QUESTION_ID: /^question_\d+$/,
 
@@ -21,4 +21,9 @@ const Patterns = {
 	CANVAS_QUIZ_QUESTION_ID: CANVAS_ID,
 };
 
-export default Patterns;
+export default import.meta.env.DEV
+	? {
+			...Patterns,
+			SG_URL_ORIGIN: /^https?:\/\/canvas\.docker$/,
+		}
+	: Patterns;

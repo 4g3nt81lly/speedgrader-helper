@@ -1,35 +1,31 @@
-import type { GradingContext } from '#content/stores/main.store';
+import type { GradingContext } from '#content/stores/GradingContext';
 import type { IQuestion } from '#models/Question';
-import type { FeedbackSubmissionStrategy } from '#shared/types/strategy';
 
 export interface IFeedbackSubmissionStrategy {
-	getFormData(gradingContext: GradingContext): readonly [FormData, Set<IQuestion['id']>];
+	getFormData(context: GradingContext): readonly [FormData, Set<IQuestion['id']>];
 }
 
-class AllStrategy implements IFeedbackSubmissionStrategy {
-	getFormData(gradingContext: GradingContext) {
+export class AllStrategy implements IFeedbackSubmissionStrategy {
+	getFormData(context: GradingContext) {
 		return [
-			new FormData(gradingContext.submissionForm),
-			new Set(Object.keys(gradingContext.gradingStates)),
+			new FormData(context.submissionForm),
+			new Set(Object.keys(context.gradingStates)),
 		] as const;
 	}
 }
 
-class FocusedStrategy implements IFeedbackSubmissionStrategy {
-	getFormData(gradingContext: GradingContext) {
-		if (!gradingContext.quiz.focusMode) {
-			return new UpdatedStrategy().getFormData(gradingContext);
+export class FocusedStrategy implements IFeedbackSubmissionStrategy {
+	getFormData(context: GradingContext) {
+		if (!context.quiz.focusMode) {
+			return new UpdatedStrategy().getFormData(context);
 		}
-		const form = gradingContext.submissionForm.cloneNode(true);
+		const form = context.submissionForm.cloneNode(true);
 
 		const targetQuestions = new Set<IQuestion['id']>();
-		for (const [questionId, gradingState] of Object.entries(
-			gradingContext.gradingStates
+		for (const [questionId, { question, boxState }] of Object.entries(
+			context.gradingStates
 		)) {
-			if (
-				gradingState.question.isFocused &&
-				gradingContext.dirtyQuestions.has(questionId)
-			) {
+			if (question.isFocused && !boxState.readOnly && boxState.isDirty) {
 				targetQuestions.add(questionId);
 				continue;
 			}
@@ -39,24 +35,18 @@ class FocusedStrategy implements IFeedbackSubmissionStrategy {
 	}
 }
 
-class UpdatedStrategy implements IFeedbackSubmissionStrategy {
-	getFormData(gradingContext: GradingContext) {
-		const form = gradingContext.submissionForm.cloneNode(true);
+export class UpdatedStrategy implements IFeedbackSubmissionStrategy {
+	getFormData(context: GradingContext) {
+		const form = context.submissionForm.cloneNode(true);
 
-		for (const questionId of Object.keys(gradingContext.gradingStates)) {
-			if (gradingContext.dirtyQuestions.has(questionId)) continue;
-
+		const targetQuestions = new Set<IQuestion['id']>();
+		for (const [questionId, { boxState }] of Object.entries(context.gradingStates)) {
+			if (!boxState.readOnly && boxState.isDirty) {
+				targetQuestions.add(questionId);
+				continue;
+			}
 			form.querySelector(`#${questionId}`)?.remove();
 		}
-		return [new FormData(form), new Set(gradingContext.dirtyQuestions)] as const;
+		return [new FormData(form), targetQuestions] as const;
 	}
 }
-
-export const feedbackSubmissionStrategies: Record<
-	FeedbackSubmissionStrategy,
-	new () => IFeedbackSubmissionStrategy
-> = {
-	all: AllStrategy,
-	focused: FocusedStrategy,
-	updated: UpdatedStrategy,
-};

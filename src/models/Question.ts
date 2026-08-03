@@ -31,6 +31,17 @@ export default class Question {
 			isFocused: question.isFocused ?? false,
 		};
 	}
+
+	public static updateRubric(
+		question: IQuestion,
+		rubric: IQuestion['rubric']
+	): IQuestion {
+		return { ...question, rubric };
+	}
+
+	public static toggleFocus(question: IQuestion): IQuestion {
+		return { ...question, isFocused: !question.isFocused };
+	}
 }
 
 export const questionTypeDisplayName: Record<QuestionType, string> = {

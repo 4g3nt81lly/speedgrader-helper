@@ -3,11 +3,11 @@ import type { IQuestion } from '#models/Question';
 import type { GradingMode } from '#models/Rubric';
 import type { IRubricItem } from '#models/RubricItem';
 import type { Nullable } from '#shared/types/utils';
-import { useGradingContext } from './main.store';
+import { useGradingContext } from './GradingContext';
 
 export type QuestionGradingState = {
 	question: IQuestion;
-	boxState: Nullable<QuestionGradingBoxState>;
+	boxState: QuestionGradingBoxState;
 	sgState: SGFeedbackState;
 	sgElements: SGQuestionDOMElements;
 	/** Most-recent feedback object submitted and saved to local storage */
@@ -15,35 +15,67 @@ export type QuestionGradingState = {
 	isRegrading: boolean;
 };
 
-export const useQuestionGradingState = (questionId: IQuestion['id']) => {
-	const state = useGradingContext((context) => context.gradingStates[questionId]);
-	if (!state) {
-		throw new Error('Fatal error: Missing question grading state.');
-	}
-	return state;
+export const useQuestionGradingState: {
+	(id: IQuestion['id']): QuestionGradingState;
+	<K extends keyof QuestionGradingState>(
+		questionId: IQuestion['id'],
+		key: K
+	): QuestionGradingState[K];
+	<V>(id: IQuestion['id'], selector: (state: QuestionGradingState) => V): V;
+} = <K extends keyof QuestionGradingState, V>(
+	id: IQuestion['id'],
+	selector?: K | ((state: QuestionGradingState) => V)
+) => {
+	return useGradingContext((context) => {
+		const state = context.gradingStates[id];
+		if (!state) {
+			throw new Error('Fatal error: missing question grading state');
+		}
+		if (typeof selector === 'string') {
+			return state[selector];
+		}
+		if (typeof selector === 'function') {
+			return selector(state);
+		}
+		return state;
+	});
 };
 
-export type QuestionGradingBoxState = RawGradingState & {
-	gradingMode: GradingMode;
-	rubricItems: DiffRubricItem[];
-} & PeripheralGradingState;
+export type QuestionGradingBoxState = CoreQuestionGradingBoxState &
+	PeripheralQuestionGradingBoxState;
 
-type RawGradingState = { comments: string } & (
+type CoreQuestionGradingBoxState = (
 	| {
+			// No rubrics, no feedback
+			gradingMode: null;
+			rubricItems: null;
 			selectedRubricItems: null;
-			points: null;
+			points: Nullable<string>;
 	  }
-	| {
-			selectedRubricItems: null;
-			points: string;
-	  }
-	| {
-			selectedRubricItems: Record<IRubricItem['id'], true>;
-			points: string;
-	  }
-);
+	| ({
+			// Has rubrics or feedback
+			gradingMode: GradingMode;
+			rubricItems: DiffRubricItem[];
+	  } & (
+			| {
+					// No feedback, no selection/manual points
+					selectedRubricItems: null;
+					points: null;
+			  }
+			| {
+					// No feedback, manual points
+					selectedRubricItems: null;
+					points: string;
+			  }
+			| {
+					// No feedback, selected rubric items
+					selectedRubricItems: Record<IRubricItem['id'], true>;
+					points: string;
+			  }
+	  ))
+) & { comments: string };
 
-type PeripheralGradingState = (
+type PeripheralQuestionGradingBoxState = (
 	{ readOnly: false; isDirty: boolean } | { readOnly: true; isDirty: false }
 ) & {
 	/** An object describing the diffs between current state and SpeedGrader state */

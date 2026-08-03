@@ -1,3 +1,4 @@
+import SharedConstants from '#shared/constants';
 import type { Nullable } from '#shared/types/utils';
 import { withTimeout } from '..';
 
@@ -13,7 +14,7 @@ export function reloadPage() {
 
 type QueryElementOptions = {
 	recursive?: boolean;
-	timeout?: number;
+	timeoutSeconds?: number;
 };
 
 export async function getElementByQuerySelector<E extends Element>(
@@ -39,8 +40,8 @@ export async function getElementByQuerySelector<E extends Element>(
 			subtree: options.recursive ?? true,
 		});
 	});
-	if (typeof options.timeout === 'number') {
-		return withTimeout(promise, options.timeout, null);
+	if (typeof options.timeoutSeconds === 'number') {
+		return withTimeout(promise, options.timeoutSeconds * SharedConstants.SECOND_MS, null);
 	}
 	return promise;
 }

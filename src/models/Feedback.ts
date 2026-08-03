@@ -1,12 +1,12 @@
 import type { IQuestion } from './Question';
+import type { IQuiz } from './Quiz';
 import type { GradingMode } from './Rubric';
 import type { IRubricItem } from './RubricItem';
 
-export interface ISubmissionFeedback {
+export interface IQuizSubmissionFeedback {
+	quizId: IQuiz['id'];
 	submissionId: string;
-	questions: {
-		[questionId: IQuestion['id']]: QuestionFeedback;
-	};
+	questions: Record<IQuestion['id'], QuestionFeedback>;
 }
 
 export type QuestionFeedback = {

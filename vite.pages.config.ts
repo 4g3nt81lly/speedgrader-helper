@@ -30,6 +30,7 @@ export default defineConfig(({ mode }) => ({
 				assetFileNames: 'assets/[name]-[hash][extname]',
 			},
 		},
+		modulePreload: false,
 		outDir: `../${isProduction(mode) ? 'dist' : 'build'}`,
 		emptyOutDir: false,
 		copyPublicDir: false,

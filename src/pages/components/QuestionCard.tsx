@@ -1,39 +1,33 @@
-import { questionTypeDisplayName, type IQuestion, type QuestionType } from '#models/Question';
-import type { IQuiz } from '#models/Quiz';
-import Constants from '#shared/constants';
+import Question, {
+	questionTypeDisplayName,
+	type IQuestion,
+	type QuestionType,
+} from '#models/Question';
+import Constants from '#pages/constants';
+import RubricAccordion from '#pages/main/components/RubricAccordion';
 import { Checkbox, Chip, Tooltip, Typography } from '@mui/joy';
 import { motion } from 'motion/react';
-import RubricAccordion from './RubricAccordion';
 
 type QuestionCardProps = {
 	question: IQuestion;
-} & QuestionCardOptions;
-
-export type QuestionCardOptions =
-	| {
-			readonly: true;
-			focusMode?: undefined;
-			updateQuestion?: undefined;
-	  }
-	| {
-			readonly?: false;
-			focusMode: IQuiz['focusMode'];
-			updateQuestion(newQuestion: IQuestion): void;
-	  };
+} & (
+	| { readOnly: true; focusMode?: undefined; updateQuestion?: undefined }
+	| { readOnly?: false; focusMode: boolean; updateQuestion(newQuestion: IQuestion): void }
+);
 
 export default function QuestionCard(props: QuestionCardProps) {
-	const { question, readonly, focusMode, updateQuestion } = props;
+	const { question, focusMode, readOnly, updateQuestion } = props;
 	const questionLabel = question.id;
 
-	function toggleQuestionFocus() {
-		if (readonly) return;
-		updateQuestion({ ...question, isFocused: !question.isFocused });
+	function toggleFocus() {
+		if (readOnly) return;
+		updateQuestion(Question.toggleFocus(question));
 	}
 
 	return (
 		<motion.div className="flex flex-1 flex-col gap-1.5" layout="position">
 			<div className="flex justify-between">
-				{readonly ? (
+				{readOnly ? (
 					<div>
 						<div className="mb-1 flex flex-col gap-1">
 							<Typography fontWeight="bold">{questionLabel}</Typography>
@@ -55,7 +49,7 @@ export default function QuestionCard(props: QuestionCardProps) {
 								className="mt-0.5"
 								checked={question.isFocused}
 								disabled={!focusMode}
-								onChange={toggleQuestionFocus}
+								onChange={toggleFocus}
 							/>
 						</Tooltip>
 						<div className="mb-0.5 flex flex-col gap-1.5">
@@ -70,7 +64,7 @@ export default function QuestionCard(props: QuestionCardProps) {
 				<Typography className="whitespace-nowrap">{`- / ${question.points}`}</Typography>
 			</div>
 
-			{!readonly && <RubricAccordion question={question} updateQuestion={updateQuestion!} />}
+			{!readOnly && <RubricAccordion question={question} updateQuestion={updateQuestion} />}
 		</motion.div>
 	);
 }

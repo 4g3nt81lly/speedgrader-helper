@@ -1,45 +1,49 @@
-import { addCommandHandler } from '#shared/message';
-import Patterns from '#shared/patterns';
-import AppSettingsLocalStore from '#shared/stores/AppSettingsLocalStore';
-import { ContentCommand } from '#shared/types/message';
-import reloadAppSettings from './actions/reloadAppSettings';
-import reloadQuiz from './actions/reloadQuiz';
+import { addMessageHandlers } from '#shared/message';
+import { reloadPage } from '#shared/utils/browser';
+import { TaskQueue } from '#shared/utils/queues';
+import actions from './actions';
+import Constants from './constants';
 import { quizInjectors, sgQuizLoaders } from './modules';
 import { SGQuizLoader } from './modules/SGQuizLoader';
-import { useContentStore } from './stores/main.store';
+import { store } from './stores';
 
-addCommandHandler({
-	[ContentCommand.loadQuiz](payload) {
-		const { loader: loaderType } = payload;
-		const quizLoader = new sgQuizLoaders[loaderType](
-			useContentStore.getState().appSettings
-		);
-		return quizLoader.getQuiz();
-	},
+export const queue = new TaskQueue(Constants.MAIN_QUEUE_NAME);
 
-	[ContentCommand.reloadAppSettings]() {
-		reloadAppSettings();
-	},
-	[ContentCommand.reloadQuiz]() {
-		reloadQuiz();
-	},
-});
+if (SGQuizLoader.validateURL(document.URL)) {
+	addMessageHandlers<'content'>({
+		'app.reloadSettings'() {
+			actions.reloadAppSettings();
+		},
+		'app.reloadPage'({ urls }) {
+			const canonicalUrl = SGQuizLoader.getCanonicalURL(document.URL);
+			if (!urls || urls.length === 0 || urls.includes(canonicalUrl)) {
+				reloadPage();
+			}
+		},
 
-if (import.meta.env.DEV || document.URL.match(Patterns.SG_URL_ORIGIN)) {
-	(async () => {
-		useContentStore.setState({ appSettings: await AppSettingsLocalStore.getAll() });
-
-		const injector =
-			quizInjectors[useContentStore.getState().appSettings.defaultQuizInjector];
-		const canonicalUrl = SGQuizLoader.getCanonicalURL(document.URL);
-
-		await new injector(canonicalUrl).inject();
-	})().catch((error) => {
-		console.error(
-			'An error occurred during SGH injection:',
-			error instanceof Error ? error.message : 'unknown'
-		);
+		'quiz.load'({ loader }) {
+			const quizLoader = new sgQuizLoaders[loader](store.state.appSettings);
+			return quizLoader.getQuiz();
+		},
+		'quiz.reload'() {
+			if (!store.state.gradingContext) return;
+			actions.gradingContext.reloadQuiz();
+		},
 	});
-}
+	queue
+		.run(async () => {
+			const appSettings = await actions.loadAppSettings();
 
-console.log('SpeedGrader Helper: Content script loaded');
+			const injector = quizInjectors[appSettings.defaultQuizInjector];
+			const canonicalUrl = SGQuizLoader.getCanonicalURL(document.URL);
+
+			await new injector(canonicalUrl).inject();
+		})
+		.catch((error) => {
+			console.error(
+				'An error occurred during SGH injection:',
+				error instanceof Error ? error.message : 'unknown'
+			);
+		});
+	console.info('SpeedGrader Helper: Content script loaded');
+}

@@ -1,4 +1,4 @@
-import Constants from '#shared/constants';
+import Constants from '#pages/constants';
 import { Chip, ChipDelete, Tooltip, Typography, useTheme } from '@mui/joy';
 import { type KeyboardEvent, type MouseEvent } from 'react';
 import { useRecordHotkeys } from 'react-hotkeys-hook';
@@ -11,36 +11,6 @@ type HotkeysRecorderButtonProps = {
 
 const modifierKeys = ['shift', 'ctrl', 'alt', 'meta'] as const;
 type ModifierKey = (typeof modifierKeys)[number];
-
-const modifierKeyDisplayChar: Record<ModifierKey, string> = {
-	shift: '\u21e7',
-	ctrl: '\u2303',
-	alt: '\u2325',
-	meta: '\u2318',
-};
-
-const otherKeyDisplayChar: Record<string, string> = {
-	escape: '\u238b',
-	minus: '-',
-	equal: '=',
-	backspace: '\u232b',
-	delete: '\u2326',
-	divide: '\u00f7',
-	multiply: '\u00d7',
-	bracketleft: '[',
-	bracketright: ']',
-	backslash: '\\',
-	semicolon: ';',
-	enter: '\u23ce',
-	add: '+',
-	period: '.',
-	comma: ',',
-	slash: '/',
-	arrowleft: '\u2190',
-	arrowright: '\u2192',
-	arrowup: '\u2191',
-	arrowdown: '\u2193',
-};
 
 export default function HotkeysButton({
 	hotkeys,
@@ -117,6 +87,36 @@ export default function HotkeysButton({
 		</Chip>
 	);
 }
+
+const modifierKeyDisplayChar: Record<ModifierKey, string> = {
+	shift: '\u21e7',
+	ctrl: '\u2303',
+	alt: '\u2325',
+	meta: '\u2318',
+};
+
+const otherKeyDisplayChar: Record<string, string> = {
+	escape: '\u238b',
+	minus: '-',
+	equal: '=',
+	backspace: '\u232b',
+	delete: '\u2326',
+	divide: '\u00f7',
+	multiply: '\u00d7',
+	bracketleft: '[',
+	bracketright: ']',
+	backslash: '\\',
+	semicolon: ';',
+	enter: '\u23ce',
+	add: '+',
+	period: '.',
+	comma: ',',
+	slash: '/',
+	arrowleft: '\u2190',
+	arrowright: '\u2192',
+	arrowup: '\u2191',
+	arrowdown: '\u2193',
+};
 
 function getHotkeysInfo(hotkeys: string | Set<string>) {
 	hotkeys = new Set(hotkeys instanceof Set ? hotkeys : hotkeys.split(Constants.HOTKEYS_DELIMITER));

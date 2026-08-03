@@ -1,71 +1,122 @@
-import type { QuestionFeedback } from '#models/Feedback';
+import type { IQuizSubmissionFeedback, QuestionFeedback } from '#models/Feedback';
 import type { IQuestion } from '#models/Question';
 import type { IQuiz } from '#models/Quiz';
 import type { AppSettings } from '#shared/settings';
 import type { QuizLoaderPayloadMap, QuizLoaderType, SGQuizLoaderType } from './loader';
+import type { Nullable } from './utils';
 
-export const enum BackgroundCommand {
-	updateAppSettings = 0x00,
-
-	loadQuiz,
-	addQuizToStore,
-	updateQuizInStore,
-	removeQuizzesFromStore,
-
-	updateQuestionFeedbackInStore,
-	updateQuizLastGradedQuestion,
-}
-
-export const enum ContentCommand {
-	loadQuiz = 0x10,
-
-	reloadAppSettings,
-	reloadQuiz,
-}
-
-export type RuntimeCommand = BackgroundCommand | ContentCommand;
-
-export type CommandMessage<
-	C extends keyof CommandMessagePayload = keyof CommandMessagePayload,
-> = { command: C } & CommandMessagePayload[C];
+export type Message<Context extends MessageContext, Name extends MessageName<Context>> = {
+	name: Name;
+} & MessagePayload<Context, Name>;
 
 export type MessageResponse<T = any> =
 	{ error: { message: string }; data?: T } | { data: T; error?: undefined };
 
-export type CommandMessagePayload = {
-	/* Background script command */
-	[BackgroundCommand.updateAppSettings]: {
-		partialSettings: Partial<AppSettings>;
+type BackgroundMessage = {
+	'app.updateSettings': {
+		payload: {
+			partial: Partial<AppSettings>;
+		};
+		result: Promise<true>;
+	};
+	'app.factoryReset': {
+		payload: {};
+		result: Promise<true>;
 	};
 
-	[BackgroundCommand.loadQuiz]: QuizLoaderPayloadMap[QuizLoaderType];
-	[BackgroundCommand.addQuizToStore]: {
-		quiz: IQuiz;
+	'quizzes.load': {
+		payload: QuizLoaderPayloadMap[QuizLoaderType];
+		result: Promise<IQuiz>;
 	};
-	[BackgroundCommand.updateQuizInStore]: {
-		quiz: IQuiz;
+	'quizzes.getByID': {
+		payload: { id: IQuiz['id'] };
+		result: Promise<Nullable<IQuiz>>;
 	};
-	[BackgroundCommand.removeQuizzesFromStore]:
-		| { quizId: IQuiz['id']; quizIds?: undefined }
-		| { quizId?: undefined; quizIds: IQuiz['id'][] };
-
-	[BackgroundCommand.updateQuestionFeedbackInStore]: {
-		quizId: IQuiz['id'];
-		submissionId: string;
-		question:
-			| { id?: undefined; feedback: QuestionFeedback }
-			| { id: IQuestion['id']; feedback?: undefined };
+	'quizzes.getByURL': {
+		payload: { url: IQuiz['url'] };
+		result: Promise<Nullable<IQuiz>>;
 	};
-	[BackgroundCommand.updateQuizLastGradedQuestion]: {
-		quizId: IQuiz['id'];
-		questionId: IQuestion['id'];
+	'quizzes.add': {
+		payload: { quiz: IQuiz };
+		result: Promise<true>;
 	};
-
-	/* Content script command */
-	[ContentCommand.loadQuiz]: {
-		loader: SGQuizLoaderType;
+	'quizzes.set': {
+		payload: { quiz: IQuiz };
+		result: Promise<true>;
 	};
-
-	[ContentCommand.reloadAppSettings]: {};
-	[ContentCommand.reloadQuiz]: {};
+	'quizzes.remove': {
+		payload: { quizIds: IQuiz['id'][] };
+		result: Promise<true>;
+	};
+	'quizzes.clear': {
+		payload: {};
+		result: Promise<true>;
+	};
+	'quizzes.getFeedback': {
+		payload: {
+			quizId: IQuiz['id'];
+			submissionId: string;
+		};
+		result: Promise<Nullable<IQuizSubmissionFeedback>>;
+	};
+	'quizzes.updateFeedback': {
+		payload: {
+			quizId: IQuiz['id'];
+			submissionId: string;
+			feedback: Record<IQuestion['id'], Nullable<QuestionFeedback>>;
+		};
+		result: Promise<true>;
+	};
+	'quizzes.getLastGradedQuestion': {
+		payload: { quizId: IQuiz['id'] };
+		result: Promise<Nullable<IQuestion['id']>>;
+	};
+	'quizzes.updateLastGradedQuestion': {
+		payload: {
+			quizId: IQuiz['id'];
+			questionId: Nullable<IQuestion['id']>;
+		};
+		result: Promise<true>;
+	};
 };
+
+type ContentMessage = {
+	'app.reloadSettings': {
+		payload: {};
+		result: void;
+	};
+	'app.reloadPage': {
+		payload: { urls?: IQuiz['url'][] };
+		result: void;
+	};
+
+	'quiz.load': {
+		payload: { loader: SGQuizLoaderType };
+		result: Promise<IQuiz>;
+	};
+	'quiz.reload': {
+		payload: {};
+		result: void;
+	};
+};
+
+type MessageMap = {
+	background: BackgroundMessage;
+	content: ContentMessage;
+};
+
+export type MessageContext = keyof MessageMap;
+
+export type MessageName<Context extends MessageContext> = keyof MessageMap[Context];
+
+export type MessagePayload<
+	Context extends MessageContext,
+	Name extends MessageName<Context>,
+	// @ts-expect-error: Not sure why TypeScript is complaining about this
+> = MessageMap[Context][Name]['payload'];
+
+export type MessageHandlerResult<
+	Context extends MessageContext,
+	Name extends MessageName<Context>,
+	// @ts-expect-error: Not sure why TypeScript is complaining about this
+> = MessageMap[Context][Name]['result'];

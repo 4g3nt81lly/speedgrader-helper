@@ -1,33 +1,39 @@
-import Constants from './constants';
+import SharedConstants from './constants';
 import { TimeoutError } from './errors';
 import type {
-	CommandMessage,
-	CommandMessagePayload,
-	ContentCommand,
+	Message,
+	MessageContext,
+	MessageHandlerResult,
+	MessageName,
+	MessagePayload,
 	MessageResponse,
-	RuntimeCommand,
 } from './types/message';
 import type { Optional } from './types/utils';
 import { getActiveTab, withTimeout } from './utils';
 
-type CommandHandlers = {
-	[Command in keyof CommandMessagePayload]: (
-		payload: CommandMessagePayload[Command],
+type MessageHandlers<Context extends MessageContext> = {
+	[Name in MessageName<Context>]: (
+		payload: MessagePayload<Context, Name>,
 		sender: chrome.runtime.MessageSender
-	) => any;
+	) => MessageHandlerResult<Context, Name>;
 };
 
-export function addCommandHandler(handlers: Partial<CommandHandlers>) {
-	return addMessageListener<CommandMessage>((message, sender) => {
-		const handler = handlers[message.command];
+export function addMessageHandlers<Context extends MessageContext>(
+	handlers: MessageHandlers<Context>
+) {
+	return addMessageListener<Context>((message, sender) => {
+		const handler = handlers[message.name];
 		if (!handler) return;
-		return handler(message as unknown as any, sender);
+		return handler(message, sender);
 	});
 }
 
-function addMessageListener<Message>(
-	handler: (message: Message, sender: chrome.runtime.MessageSender) => any,
-	timeout: number = 5 * Constants.SECOND_MS
+function addMessageListener<
+	Context extends MessageContext,
+	Name extends MessageName<Context> = MessageName<Context>,
+>(
+	handler: (message: Message<Context, Name>, sender: chrome.runtime.MessageSender) => any,
+	timeoutMS: number = 5 * SharedConstants.SECOND_MS
 ) {
 	const listener = (
 		message: any,
@@ -43,7 +49,7 @@ function addMessageListener<Message>(
 		if (result instanceof Promise) {
 			(async () => {
 				try {
-					const response = await withTimeout(result, timeout);
+					const response = await withTimeout(result, timeoutMS);
 					if (response !== undefined) {
 						sendResponse({ data: response } satisfies MessageResponse);
 					}
@@ -78,7 +84,7 @@ function makeErrorResponsePayload(error: unknown): MessageResponse {
 
 type SendMessageOptions = {
 	timeout?: {
-		milliseconds: number;
+		seconds: number;
 		message?: string;
 	};
 	throwOnNoReceiver?: boolean;
@@ -91,20 +97,23 @@ async function sendMessage<T = unknown>(
 	const { timeout, throwOnNoReceiver } = options;
 	let response: Optional<MessageResponse<T>>;
 	try {
-		if (timeout && timeout.milliseconds > 0) {
-			response = await withTimeout(messagePromise, timeout.milliseconds);
+		if (timeout && timeout.seconds > 0) {
+			response = await withTimeout(
+				messagePromise,
+				timeout.seconds * SharedConstants.SECOND_MS
+			);
 		} else {
 			response = await messagePromise;
 		}
 	} catch (error) {
 		if (error instanceof TimeoutError) {
-			throw new Error(`Message timed out (${timeout!.milliseconds}ms)`);
+			throw new Error(`Message timed out (${timeout!.seconds}s)`);
 		}
 		if (!(error instanceof Error)) {
 			throw new Error('An error occurred while messaging');
 		}
 		if (
-			error.message.endsWith(Constants.RECEIVING_END_DNE_MESSAGE) &&
+			error.message.endsWith(SharedConstants.RECEIVING_END_DNE_MESSAGE) &&
 			!throwOnNoReceiver
 		) {
 			return undefined;
@@ -121,33 +130,32 @@ async function sendMessage<T = unknown>(
 	return response.data;
 }
 
-type SendMessageToRuntimeOptions = {} & SendMessageOptions;
+type SendMessageToBackgroundOptions = {} & SendMessageOptions;
 
-export function sendMessageToRuntime<
-	T = unknown,
-	C extends RuntimeCommand = RuntimeCommand,
->(message: CommandMessage<C>, options: SendMessageToRuntimeOptions = {}) {
-	return <Promise<T>>sendMessage<T>(chrome.runtime.sendMessage(message), options);
+export function sendMessageToBackground<
+	Name extends MessageName<'background'> = MessageName<'background'>,
+>(message: Message<'background', Name>, options: SendMessageToBackgroundOptions = {}) {
+	return <MessageHandlerResult<'background', Name>>(
+		sendMessage(chrome.runtime.sendMessage(message), options)
+	);
 }
-
-export const sendMessageToBackground = sendMessageToRuntime;
 
 type SendMessageToTabOptions = {
 	tabId?: number;
 } & SendMessageOptions;
 
 interface SendMessageToTabFunction {
-	<T = unknown, C extends ContentCommand = ContentCommand>(
-		message: CommandMessage<C>
+	<T = unknown, Name extends MessageName<'content'> = MessageName<'content'>>(
+		message: Message<'content', Name>
 	): Promise<Optional<T>>;
-	<T = unknown, C extends ContentCommand = ContentCommand>(
-		message: CommandMessage<C>,
+	<T = unknown, Name extends MessageName<'content'> = MessageName<'content'>>(
+		message: Message<'content', Name>,
 		options: Omit<SendMessageToTabOptions, 'throwOnNoReceiver'> & {
 			throwOnNoReceiver: true;
 		}
 	): Promise<T>;
-	<T = unknown, C extends ContentCommand = ContentCommand>(
-		message: CommandMessage<C>,
+	<T = unknown, Name extends MessageName<'content'> = MessageName<'content'>>(
+		message: Message<'content', Name>,
 		options: Omit<SendMessageToTabOptions, 'throwOnNoReceiver'> &
 			({ throwOnNoReceiver: false } | {})
 	): Promise<Optional<T>>;
@@ -155,8 +163,8 @@ interface SendMessageToTabFunction {
 
 export const sendMessageToTab: SendMessageToTabFunction = async function <
 	T = unknown,
-	C extends ContentCommand = ContentCommand,
->(message: CommandMessage<C>, options: SendMessageToTabOptions = {}) {
+	Name extends MessageName<'content'> = MessageName<'content'>,
+>(message: Message<'content', Name>, options: SendMessageToTabOptions = {}) {
 	let { tabId } = options;
 	if (tabId === undefined) {
 		const activeTab = await getActiveTab();
@@ -168,8 +176,10 @@ export const sendMessageToTab: SendMessageToTabFunction = async function <
 	return sendMessage<T>(chrome.tabs.sendMessage(tabId, message), options);
 };
 
-export async function broadcastMessageToTabs<C extends ContentCommand = ContentCommand>(
-	message: CommandMessage<C>,
+export async function broadcastMessageToTabs<
+	Name extends MessageName<'content'> = MessageName<'content'>,
+>(
+	message: Message<'content', Name>,
 	query: chrome.tabs.QueryInfo = {},
 	predicate?: (tab: chrome.tabs.Tab) => boolean
 ) {
