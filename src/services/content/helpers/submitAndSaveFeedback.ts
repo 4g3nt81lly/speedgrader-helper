@@ -7,13 +7,12 @@ import type { SGFeedbackState } from '#content/stores/QuestionGradingState';
 import type { QuestionFeedback } from '#models/Feedback';
 import type { IQuestion } from '#models/Question';
 import type { Nullable } from '#shared/types/utils';
-import { reloadPage } from '#shared/utils/browser';
 import { getFullComments } from './getQuestionComments';
 import saveFeedback from './saveFeedback';
 import submitFeedback from './submitFeedback';
 import { writeSGState } from './updateSGInputs';
 
-type SubmitAndSaveFeedbackResult =
+export type SubmitAndSaveFeedbackResult =
 	// A submission is already in in progress.
 	| { status: 'busy' }
 	// Nothing to submit and save.
@@ -36,28 +35,23 @@ type SubmitAndSaveFeedbackResult =
 			savedFeedback: Record<IQuestion['id'], Nullable<QuestionFeedback>>;
 	  };
 
-type SubmitAndSaveFeedbackOptions = {
+export type SubmitAndSaveFeedbackOptions = {
 	verboseNoOp?: boolean;
 };
 
 export default async function submitAndSaveFeedback(
 	this: GradingContextActions,
 	options: SubmitAndSaveFeedbackOptions
-): Promise<SubmitAndSaveFeedbackResult> {
-	const gradingContext = this.gradingContext;
-	this.update({ isFeedbackSubmitting: true });
-
+): Promise<Exclude<SubmitAndSaveFeedbackResult, { status: 'busy' }>> {
 	const submitResult = await submitFeedback(
-		gradingContext,
+		this.gradingContext,
 		this.state.appSettings.feedbackSubmissionStrategy
 	);
 	if (!submitResult.success) {
 		snackbar.post({
 			message: `Unable to submit feedback: ${submitResult.error}. Please try again!`,
 			type: 'error',
-			retry: { handler: reloadPage, tooltip: 'Reload page' },
 		});
-		this.update({ isFeedbackSubmitting: false });
 		return { status: 'failed', error: submitResult.error };
 	}
 	if (submitResult.submittedQuestions.size === 0) {
@@ -69,7 +63,6 @@ export default async function submitAndSaveFeedback(
 				timeoutSeconds: 2,
 			});
 		}
-		this.update({ isFeedbackSubmitting: false });
 		return { status: 'noop' };
 	}
 	snackbar.post({
@@ -80,7 +73,7 @@ export default async function submitAndSaveFeedback(
 	// Refresh grades and update stats in SpeedGrader header
 	dispatchContentEvent(ContentEvent.refreshGrades, {}, window);
 
-	const saveResult = await saveFeedback(gradingContext, submitResult);
+	const saveResult = await saveFeedback(this.gradingContext, submitResult);
 	if (saveResult.success) {
 		commitSavedFeedback.call(this, saveResult);
 	} else {
@@ -92,11 +85,7 @@ export default async function submitAndSaveFeedback(
 	}
 	// Suppress SpeedGrader's weird default behaviour (which caches unsaved feedback)
 	// by restoring inputs to last submitted
-	for (const { sgState, sgElements } of Object.values(gradingContext.gradingStates)) {
-		writeSGState(sgElements, sgState);
-	}
-
-	this.update({ isFeedbackSubmitting: false });
+	syncSGFeedback(this.gradingContext);
 
 	if (!saveResult.success) {
 		return {
@@ -139,4 +128,10 @@ function commitSavedFeedback(
 		};
 	}
 	this.updateGradingStates(partialGradingStates);
+}
+
+function syncSGFeedback(gradingContext: GradingContext) {
+	for (const { sgState, sgElements } of Object.values(gradingContext.gradingStates)) {
+		writeSGState(sgElements, sgState);
+	}
 }

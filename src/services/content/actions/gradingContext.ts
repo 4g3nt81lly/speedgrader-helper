@@ -2,7 +2,10 @@ import navigateSubmission, {
 	type NavigateSubmissionDirection,
 } from '#content/helpers/navigateSubmission';
 import reloadQuiz from '#content/helpers/reloadQuiz';
-import submitAndSaveFeedback from '#content/helpers/submitAndSaveFeedback';
+import submitAndSaveFeedback, {
+	type SubmitAndSaveFeedbackOptions,
+	type SubmitAndSaveFeedbackResult,
+} from '#content/helpers/submitAndSaveFeedback';
 import { queue } from '#content/main';
 import type { ContentState } from '#content/stores';
 import type { GradingContext } from '#content/stores/GradingContext';
@@ -27,7 +30,6 @@ export default class GradingContextActions extends StoreActions<ContentState> {
 			| ((gradingContext: GradingContext) => Optional<Partial<GradingContext>>)
 	) {
 		const gradingContext = this.gradingContext;
-
 		const partial = typeof state === 'function' ? state(gradingContext) : state;
 		if (!partial) return;
 
@@ -59,8 +61,8 @@ export default class GradingContextActions extends StoreActions<ContentState> {
 	}
 
 	async submitAndSaveFeedback(
-		options: Parameters<typeof submitAndSaveFeedback>[0] = {}
-	): ReturnType<typeof submitAndSaveFeedback> {
+		options: SubmitAndSaveFeedbackOptions = {}
+	): Promise<SubmitAndSaveFeedbackResult> {
 		if (this.gradingContext.isFeedbackSubmitting) {
 			snackbar.post({
 				title: 'Submit and save',
@@ -70,26 +72,28 @@ export default class GradingContextActions extends StoreActions<ContentState> {
 			});
 			return { status: 'busy' };
 		}
-		return queue.run(submitAndSaveFeedback.bind(this, options));
+		return queue.run(async () => {
+			this.update({ isFeedbackSubmitting: true });
+			const result = await submitAndSaveFeedback.call(this, options);
+			this.update({ isFeedbackSubmitting: false });
+			return result;
+		});
 	}
 
 	async submitFeedbackAndNavigate(direction: NavigateSubmissionDirection) {
-		console.info('Submit-n-navigate initiated');
 		const result = await this.submitAndSaveFeedback();
-		console.info('Submitted and saved, now navigating');
 		if (result.status === 'success' || result.status === 'noop') {
 			await this.navigateSubmission(direction);
-			console.info('Done navigating');
 		}
 	}
 
-	async navigateSubmission(direction: NavigateSubmissionDirection) {
+	navigateSubmission(direction: NavigateSubmissionDirection) {
 		if (this.state.gradingContext?.isFeedbackSubmitting) {
 			snackbar.post({
 				message: "Feedback submission in progress, please wait until it's complete!",
 				type: 'warning',
 			});
-			return false;
+			return;
 		}
 		return queue.run(navigateSubmission.bind(this, direction));
 	}
