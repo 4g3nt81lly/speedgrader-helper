@@ -19,6 +19,7 @@
 	"devDependencies": {
 		"@dotenvx/dotenvx": "^1.75.1",
 		"@tailwindcss/postcss": "^4.3.0",
+		"@tailwindcss/vite": "^4.3.3",
 		"@types/chrome": "^0.1.42",
 		"@types/fs-extra": "^11.0.4",
 		"@types/node": "^25.9.1",
@@ -50,7 +51,6 @@
 		"@mui/icons-material": "^9.0.1",
 		"@mui/joy": "^5.0.0-beta.52",
 		"@mui/material": "^9.0.1",
-		"@tailwindcss/vite": "^4.3.0",
 		"cheerio": "^1.2.0",
 		"decimal.js": "^10.6.0",
 		"idb": "^8.0.3",
