@@ -1,8 +1,9 @@
 import actions from '#content/actions';
+import { snackbar } from '#content/actions/snackbar';
 import useToplevelHotkeys from '#content/hooks/useToplevelHotkeys';
 import Selectors from '#content/selectors';
 import { store } from '#content/stores';
-import { useLayoutEffect, useMemo } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 
 export function ToplevelEventProxy() {
 	const appSettings = store.useStore('appSettings');
@@ -13,22 +14,12 @@ export function ToplevelEventProxy() {
 		() => Selectors[appSettings.defaultQuizInjector],
 		[appSettings.defaultQuizInjector]
 	);
-	const nextStudentButton = useMemo(
-		() => document.querySelector<HTMLElement>(selectors.NEXT_STUDENT_BUTTON),
-		[selectors.NEXT_STUDENT_BUTTON]
-	);
-	const prevStudentButton = useMemo(
-		() => document.querySelector<HTMLElement>(selectors.PREV_STUDENT_BUTTON),
-		[selectors.PREV_STUDENT_BUTTON]
-	);
-	const studentsMenu = useMemo(
-		() => document.querySelector<HTMLElement>(selectors.STUDENTS_MENU),
-		[selectors.STUDENTS_MENU]
-	);
 
-	async function overrideNavigation(event: PointerEvent | MouseEvent) {
-		if (!event.isTrusted) {
-			// Not triggered by user action, ignore
+	const studentsMenuRef = useRef<HTMLElement>(null);
+
+	const interceptUserNavigation = useCallback(async (event: PointerEvent | MouseEvent) => {
+		if (!event.isTrusted || !event.target) {
+			// Not triggered by user action or has no target, ignore
 			return;
 		}
 		const gradingContext = store.state.gradingContext;
@@ -47,22 +38,51 @@ export function ToplevelEventProxy() {
 		const result = await actions.gradingContext.submitAndSaveFeedback();
 		if (result.status === 'success' || result.status === 'noop') {
 			// Redispatch the event to trigger default behaviour
-			event.target?.dispatchEvent(oldEvent);
+			event.target.dispatchEvent(oldEvent);
 		}
-	}
+	}, []);
+
+	const handleDocumentMouseUp = useCallback((event: MouseEvent) => {
+		if (!event.isTrusted || !(event.target instanceof Element)) {
+			// Not triggered by user action or target is not an element, ignore
+			return;
+		}
+		// Check if the target is a descendent of the students menu
+		const studentsMenu = event.target.closest<HTMLElement>(selectors.STUDENTS_MENU);
+		if (!studentsMenu) return;
+		studentsMenuRef.current = studentsMenu;
+
+		interceptUserNavigation(event);
+		// Register mouseup listener on students menu directly
+		studentsMenu.addEventListener('mouseup', interceptUserNavigation, true);
+		document.removeEventListener('mouseup', handleDocumentMouseUp, true);
+	}, []);
 
 	useLayoutEffect(() => {
-		// TODO: post warning message if any of the following elements are absent
-		nextStudentButton?.addEventListener('click', overrideNavigation, { capture: true });
-		prevStudentButton?.addEventListener('click', overrideNavigation, { capture: true });
-		studentsMenu?.addEventListener('mouseup', overrideNavigation, { capture: true });
+		const nextStudentButton = document.querySelector<HTMLElement>(selectors.NEXT_STUDENT_BUTTON);
+		const prevStudentButton = document.querySelector<HTMLElement>(selectors.PREV_STUDENT_BUTTON);
+		if (!nextStudentButton || !prevStudentButton) {
+			snackbar.post({
+				message: 'Fatal error: SpeedGrader navigation buttons not found. Please reload the page!',
+				type: 'error',
+			});
+		}
+		nextStudentButton?.addEventListener('click', interceptUserNavigation, true);
+		prevStudentButton?.addEventListener('click', interceptUserNavigation, true);
+
+		// Register mouseup event on document since students menu won't be available
+		// until the user opens the menu for the first time
+		if (!studentsMenuRef.current) {
+			document.addEventListener('mouseup', handleDocumentMouseUp, true);
+		}
 
 		return () => {
-			nextStudentButton?.removeEventListener('click', overrideNavigation, { capture: true });
-			prevStudentButton?.removeEventListener('click', overrideNavigation, { capture: true });
-			studentsMenu?.addEventListener('mouseup', overrideNavigation, { capture: true });
+			nextStudentButton?.removeEventListener('click', interceptUserNavigation, true);
+			prevStudentButton?.removeEventListener('click', interceptUserNavigation, true);
+			document.removeEventListener('mouseup', handleDocumentMouseUp, true);
+			studentsMenuRef.current?.removeEventListener('mouseup', interceptUserNavigation, true);
 		};
-	}, [nextStudentButton, prevStudentButton, studentsMenu]);
+	}, [selectors]);
 
 	return <></>;
 }
