@@ -20,9 +20,7 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((error
 
 addMessageHandlers<'background'>({
 	async 'app.updateSettings'({ partial }) {
-		await taskQueues.run(Constants.APP_SETTINGS_ACTION_QUEUE_NAME, () =>
-			AppSettingsSyncStorage.set(partial)
-		);
+		await AppSettingsSyncStorage.set(partial);
 		return true;
 	},
 	async 'app.factoryReset'() {
