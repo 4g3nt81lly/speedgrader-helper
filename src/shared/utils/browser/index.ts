@@ -13,11 +13,11 @@ export function reloadPage() {
 }
 
 type QueryElementOptions = {
-	recursive?: boolean;
 	timeoutSeconds?: number;
+	recursive?: boolean;
 };
 
-export async function getElementByQuerySelector<E extends Element>(
+export async function waitForElement<E extends Element = Element>(
 	querySelector: string,
 	root: ParentNode = document,
 	options: QueryElementOptions = {}
@@ -28,11 +28,13 @@ export async function getElementByQuerySelector<E extends Element>(
 	}
 	const promise = new Promise<E>((resolve) => {
 		const mutationObserver = new MutationObserver((mutations) => {
-			if (mutations.some((mutation) => mutation.addedNodes.length > 0)) {
-				const element = root.querySelector<E>(querySelector);
-				if (element === null) return;
-				mutationObserver.disconnect();
-				resolve(element);
+			for (const mutation of mutations) {
+				for (const addedNode of mutation.addedNodes) {
+					if (!(addedNode instanceof Element) || !addedNode.matches(querySelector))
+						continue;
+					mutationObserver.disconnect();
+					resolve(<E>addedNode);
+				}
 			}
 		});
 		mutationObserver.observe(root, {
@@ -40,10 +42,8 @@ export async function getElementByQuerySelector<E extends Element>(
 			subtree: options.recursive ?? true,
 		});
 	});
-	if (typeof options.timeoutSeconds === 'number') {
-		return withTimeout(promise, options.timeoutSeconds * SharedConstants.SECOND_MS, null);
-	}
-	return promise;
+	const timeoutSeconds = options.timeoutSeconds ?? 0;
+	return withTimeout(promise, timeoutSeconds * SharedConstants.SECOND_MS, null);
 }
 
 export function getBaseUrl(urlString: string) {

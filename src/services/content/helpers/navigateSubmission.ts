@@ -20,7 +20,7 @@ export default async function navigateSubmission(
 			name: 'quizzes.updateLastGradedQuestion',
 			quizId: gradingContext.quiz.id,
 			questionId: gradingContext.lastGradedQuestionId,
-		});
+		}).catch(console.error);
 	}
 
 	const navigationButton = document.querySelector<HTMLButtonElement>(
@@ -28,13 +28,12 @@ export default async function navigateSubmission(
 			? Selectors[defaultQuizInjector].PREV_STUDENT_BUTTON
 			: Selectors[defaultQuizInjector].NEXT_STUDENT_BUTTON
 	);
-	if (!navigationButton) {
+	if (navigationButton) {
+		navigationButton.click();
+	} else {
 		snackbar.post({
-			message: 'Unable to navigate. Please refresh the page and try again!',
+			message: 'Unable to navigate. Please reload the page and try again!',
 			type: 'error',
 		});
-		return false;
 	}
-	navigationButton.click();
-	return true;
 }

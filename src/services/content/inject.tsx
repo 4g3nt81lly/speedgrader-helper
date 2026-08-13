@@ -1,9 +1,11 @@
 import type { Nullable } from '#shared/types/utils';
+import { ErrorBoundary } from '#shared/utils/browser/ErrorBoundary';
 import createCache from '@emotion/cache';
 import { CacheProvider } from '@emotion/react';
 import { StyledEngineProvider } from '@mui/joy';
 import { type ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
+import { snackbar } from './actions/snackbar';
 import baseStyles from './ui/base.css?inline';
 
 type InjectDOMOptions = {
@@ -52,11 +54,21 @@ export function injectReactShadowDOM(
 
 	const reactRoot = ReactDOM.createRoot(root);
 	reactRoot.render(
-		<StyledEngineProvider enableCssLayer>
-			<CacheProvider value={cache}>
-				{typeof element === 'function' ? element() : element}
-			</CacheProvider>
-		</StyledEngineProvider>
+		<ErrorBoundary
+			onError={(error) => {
+				console.error('An error has occurred in ShadowDOM-enclosed React component:', error);
+				snackbar.post({
+					message: `An unexpected error has occurred: ${error instanceof Error ? error.message : 'unknown error'}. Please reload the page!`,
+					type: 'error',
+				});
+			}}
+		>
+			<StyledEngineProvider enableCssLayer>
+				<CacheProvider value={cache}>
+					{typeof element === 'function' ? element() : element}
+				</CacheProvider>
+			</StyledEngineProvider>
+		</ErrorBoundary>
 	);
 
 	return { reactRoot, shadowRoot };

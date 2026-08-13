@@ -3,9 +3,10 @@ import { snackbar } from '#content/actions/snackbar';
 import useToplevelHotkeys from '#content/hooks/useToplevelHotkeys';
 import Selectors from '#content/selectors';
 import { store } from '#content/stores';
+import { errorBoundary } from '#shared/utils/browser/ErrorBoundary';
 import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 
-export function ToplevelEventProxy() {
+function ToplevelEventProxy() {
 	const appSettings = store.useStore('appSettings');
 
 	useToplevelHotkeys(appSettings.hotkeys);
@@ -86,3 +87,13 @@ export function ToplevelEventProxy() {
 
 	return <></>;
 }
+
+export default errorBoundary(ToplevelEventProxy, {
+	onError(error, _info) {
+		console.error(`Error in ${ToplevelEventProxy.name}:`, error);
+		snackbar.post({
+			message: `Something went wrong, please reload the page!\nError info: ${error instanceof Error ? error.message : 'unknown error'}`,
+			type: 'error',
+		});
+	},
+});

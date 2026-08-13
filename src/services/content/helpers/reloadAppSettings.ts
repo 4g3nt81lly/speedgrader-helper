@@ -9,7 +9,7 @@ export default async function reloadAppSettings(this: typeof actions) {
 	} catch (error) {
 		console.error('Failed to reload app settings:', error);
 		snackbar.post({
-			message: 'Unable to reload settings, please try again!',
+			message: 'Unable to update settings, please try again!',
 			retry: { handler: () => this.reloadAppSettings() },
 		});
 	}

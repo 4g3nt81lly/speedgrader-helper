@@ -1,10 +1,12 @@
 import actions from '#content/actions';
+import { snackbar } from '#content/actions/snackbar';
 import useIframeHotkeys from '#content/hooks/useIframeHotkeys';
 import { store } from '#content/stores';
 import { useGradingContext } from '#content/stores/GradingContext';
+import { errorBoundary } from '#shared/utils/browser/ErrorBoundary';
 import { useLayoutEffect } from 'react';
 
-export default function IframeEventProxy() {
+function IframeEventProxy() {
 	const appSettings = store.useStore('appSettings');
 
 	const submissionWindow = useGradingContext('submissionWindow');
@@ -13,7 +15,7 @@ export default function IframeEventProxy() {
 
 	useIframeHotkeys(appSettings.hotkeys, document);
 
-	function overrideSubmitOnKeyUp(event: KeyboardEvent) {
+	function interceptSubmitOnKeyUp(event: KeyboardEvent) {
 		if (
 			event.key !== 'Enter' ||
 			!(event.target as Element).matches('input') ||
@@ -28,7 +30,7 @@ export default function IframeEventProxy() {
 		actions.gradingContext.submitAndSaveFeedback({ verboseNoOp: true });
 	}
 
-	function overrideOnSubmit(event: SubmitEvent) {
+	function interceptSubmit(event: SubmitEvent) {
 		// Prevent default form submission flow
 		event.preventDefault();
 		// Prevent other submit event handlers from running
@@ -40,14 +42,24 @@ export default function IframeEventProxy() {
 	}
 
 	useLayoutEffect(() => {
-		document.addEventListener('keyup', overrideSubmitOnKeyUp, { capture: true });
-		document.addEventListener('submit', overrideOnSubmit, { capture: true });
+		document.addEventListener('keyup', interceptSubmitOnKeyUp, true);
+		document.addEventListener('submit', interceptSubmit, true);
 
 		return () => {
-			document.removeEventListener('keyup', overrideSubmitOnKeyUp, { capture: true });
-			document.removeEventListener('submit', overrideOnSubmit, { capture: true });
+			document.removeEventListener('keyup', interceptSubmitOnKeyUp, true);
+			document.removeEventListener('submit', interceptSubmit, true);
 		};
 	}, []);
 
 	return <></>;
 }
+
+export default errorBoundary(IframeEventProxy, {
+	onError(error, _info) {
+		console.error(`Error in ${IframeEventProxy.name}:`, error);
+		snackbar.post({
+			message: `Something went wrong, please reload the page!\nError info: ${error instanceof Error ? error.message : 'unknown error'}`,
+			type: 'error',
+		});
+	},
+});

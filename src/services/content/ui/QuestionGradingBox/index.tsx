@@ -1,5 +1,6 @@
 import Selectors from '#content/selectors';
 import type { IQuestion } from '#models/Question';
+import { errorBoundary } from '#shared/utils/browser/ErrorBoundary';
 import ActionBar from './ActionBar';
 import MessageBanner from './MessageBanner';
 import RubricControls from './RubricControls';
@@ -9,7 +10,7 @@ export type QuestionGradingBoxProps = {
 	questionId: IQuestion['id'];
 };
 
-export default function QuestionGradingBox({ questionId }: QuestionGradingBoxProps) {
+function QuestionGradingBox({ questionId }: QuestionGradingBoxProps) {
 	const { isVisible } = useGradingBox(questionId);
 
 	return (
@@ -27,3 +28,15 @@ export default function QuestionGradingBox({ questionId }: QuestionGradingBoxPro
 		)
 	);
 }
+
+export default errorBoundary(QuestionGradingBox, {
+	fallback: (
+		<div className="flex items-center justify-center p-10">
+			Something went wrong while rendering the grading box for this question. Please reload the
+			page!
+		</div>
+	),
+	onError(error, _info) {
+		console.error(`Error in ${QuestionGradingBox.name}:`, error);
+	},
+});

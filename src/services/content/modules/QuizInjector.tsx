@@ -2,7 +2,7 @@ import actions from '#content/actions';
 import QuestionGradingStateActions from '#content/actions/gradingState';
 import { snackbar } from '#content/actions/snackbar';
 import IframeEventProxy from '#content/components/IframeEventProxy';
-import { ToplevelEventProxy } from '#content/components/ToplevelEventProxy';
+import ToplevelEventProxy from '#content/components/ToplevelEventProxy';
 import { injectReactShadowDOM } from '#content/inject';
 import { queue } from '#content/main';
 import Selectors from '#content/selectors';
@@ -15,7 +15,7 @@ import QuestionNavBar from '#content/ui/QuestionNavBar';
 import Snackbar from '#content/ui/Snackbar';
 import { sendMessageToBackground } from '#shared/message';
 import type { SetOptional } from '#shared/types/utils';
-import { getElementByQuerySelector, reloadPage } from '#shared/utils/browser/index';
+import { reloadPage, waitForElement } from '#shared/utils/browser/index';
 import type ReactDOM from 'react-dom/client';
 
 export abstract class QuizInjector {
@@ -50,7 +50,7 @@ export class OldSGQuizInjector extends QuizInjector {
 	}
 
 	protected async registerInjectOnLoad() {
-		const submissionIframeHolder = await getElementByQuerySelector<HTMLElement>(
+		const submissionIframeHolder = await waitForElement<HTMLElement>(
 			this.selectors.SUBMISSION_IFRAME_HOLDER,
 			document,
 			{ timeoutSeconds: 5 }
