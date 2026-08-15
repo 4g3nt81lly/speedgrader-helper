@@ -36,8 +36,8 @@ export default function DashboardTab() {
 		const newQuiz = await quizIO.importQuiz();
 		if (!newQuiz) return;
 
-		actions.addQuiz(newQuiz);
-		actions.selection.selectQuiz(newQuiz.id);
+		await actions.addQuiz(newQuiz);
+		actions.selectQuiz(newQuiz.id);
 	}
 
 	return (
@@ -68,7 +68,7 @@ export default function DashboardTab() {
 			</TabPanel>
 
 			<TabPanel value={Tab.QuizDetails} className="overflow-hidden p-0">
-				{selectedQuiz && <QuizDetailsView quiz={selectedQuiz} />}
+				<QuizDetailsView quiz={selectedQuiz!} />
 			</TabPanel>
 
 			<TabPanel value={Tab.QuizCreation} className="overflow-hidden p-0">

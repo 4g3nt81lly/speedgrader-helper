@@ -6,6 +6,7 @@ const Constants = {
 	/* Events + Messaging channels */
 
 	PAGE_CHANNEL: 'page',
+	QUIZZES_QUEUE_NAME: 'quizzes',
 
 	/* UI */
 

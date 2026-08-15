@@ -12,7 +12,7 @@ export default class SelectionActions extends StoreActions<
 			...state,
 			selection: { ...state.selection, mainTab },
 		}));
-		this.save();
+		return this.save();
 	}
 
 	selectQuiz(quizId: Nullable<IQuiz['id']>) {
@@ -20,39 +20,25 @@ export default class SelectionActions extends StoreActions<
 			...state,
 			selection: { ...state.selection, quiz: quizId },
 		}));
-		this.save();
+		return this.save();
 	}
 
 	async load() {
-		try {
-			const selection = await SelectionLocalStorage.get();
-			if (!selection) {
-				return this.reset();
-			}
+		const selection = await SelectionLocalStorage.get();
+		if (selection) {
 			this.store.setState({ selection });
-		} catch (error) {
-			console.error('Failed to load selection state from local storage:', error);
-			alert('Failed to load selection state from local storage');
+		} else {
+			return this.reset();
 		}
 	}
 
-	async save() {
-		try {
-			await SelectionLocalStorage.set(this.store.getState().selection);
-		} catch (error) {
-			console.error('Failed to save selection state to local storage:', error);
-			alert('Failed to save selection state to local storage');
-		}
+	private save() {
+		return SelectionLocalStorage.set(this.store.getState().selection);
 	}
 
-	override async reset() {
+	override reset() {
 		const initial = this.store.getInitialState().selection;
-		try {
-			await SelectionLocalStorage.set(initial);
-			this.store.setState({ selection: initial });
-		} catch (error) {
-			console.error('Failed to reset selection state:', error);
-			alert('Failed to reset selection state');
-		}
+		this.store.setState({ selection: initial });
+		return SelectionLocalStorage.set(initial);
 	}
 }

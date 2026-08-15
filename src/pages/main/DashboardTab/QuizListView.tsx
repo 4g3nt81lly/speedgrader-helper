@@ -77,7 +77,7 @@ export default function QuizListView(props: QuizListViewProps) {
 				>
 					<ListItemButton
 						className="flex flex-col items-start gap-0 rounded-xl bg-transparent pt-1 pb-3"
-						onClick={() => actions.selection.selectQuiz(quiz.id)}
+						onClick={() => actions.selectQuiz(quiz.id)}
 					>
 						<div className="flex w-full items-center justify-between gap-2">
 							<Typography level="title-md" fontWeight="bold" className="line-clamp-1 text-ellipsis">

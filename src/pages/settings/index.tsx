@@ -1,9 +1,9 @@
-import { StyledEngineProvider } from '@mui/joy';
+import Layout from '#pages/Layout';
 import ReactDOM from 'react-dom/client';
 import SettingsPage from './SettingsPage';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-	<StyledEngineProvider enableCssLayer>
+	<Layout>
 		<SettingsPage />
-	</StyledEngineProvider>
+	</Layout>
 );

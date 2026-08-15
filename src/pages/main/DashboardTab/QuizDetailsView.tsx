@@ -33,7 +33,7 @@ export default function QuizDetailsView(props: QuizDetailsViewProps) {
 					startDecorator={<ChevronLeftIcon fontSize="small" />}
 					size="sm"
 					className="mt-1 ml-2 pl-1.5"
-					onClick={() => actions.selection.selectQuiz(null)}
+					onClick={() => actions.selectQuiz(null)}
 				>
 					Back
 				</Button>

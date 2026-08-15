@@ -1,7 +1,7 @@
 import DropdownMenu from '#pages/components/DropdownMenu';
 import HotkeysButton from '#pages/components/HotkeysButton';
 import RubricEditorSelector from '#pages/components/RubricEditorSelector';
-import { reloadSpeedGraderPages, syncPages } from '#pages/helpers';
+import { reloadSpeedGraderPages, syncPages, useToastOnErrorCallback } from '#pages/helpers';
 import { sendMessageToBackground } from '#shared/message';
 import { defaultAppSettings, type AppSettings } from '#shared/settings';
 import QuizFeedbackIDBStore from '#shared/storage/QuizFeedback';
@@ -20,7 +20,7 @@ type SettingsViewProps = {
 	settings: AppSettings;
 	settingsActions: SettingsActions;
 
-	clearQuizzes(): void;
+	clearQuizzes(): Promise<void>;
 };
 
 export default function SettingsView(props: SettingsViewProps) {
@@ -39,22 +39,22 @@ export default function SettingsView(props: SettingsViewProps) {
 		otherActions.clearQuizzes();
 	}
 
-	async function handleClearFeedback() {
-		if (!confirm('Clear all feedback saved in local storage? This cannot be undone.')) return;
+	const handleClearFeedback = useToastOnErrorCallback(async () => {
+		if (!confirm('Clear all saved feedback? This cannot be undone.')) return;
 		await QuizFeedbackIDBStore.clearAll();
 		reloadSpeedGraderPages();
 		syncPages();
-	}
+	}, 'Unable to clear all saved feedback, please try again!');
 
 	function handleResetSettings() {
 		if (!confirm('Reset all settings to default?')) return;
 		settingsActions.reset();
 	}
 
-	function handleFactoryReset() {
+	const handleFactoryReset = useToastOnErrorCallback(async () => {
 		if (!confirm('Clear all local storage and reload extension? This cannot be undone.')) return;
-		sendMessageToBackground({ name: 'app.factoryReset' });
-	}
+		await sendMessageToBackground({ name: 'app.factoryReset' });
+	}, 'Unable to factory reset, please try again!');
 
 	return (
 		<div className="mt-5 flex h-full flex-col gap-3">
@@ -198,21 +198,18 @@ export default function SettingsView(props: SettingsViewProps) {
 				<SettingsSection heading="Danger zone">
 					<SettingItem
 						title="Clear quizzes"
-						description="Remove all quizzes and their rubrics and saved feedbacks from the local storage."
+						description="Remove all quizzes and their rubrics and saved grading feedbacks."
 					>
 						<Button variant="soft" size="sm" color="danger" onClick={handleClearQuizzes}>
 							Clear quizzes
 						</Button>
 					</SettingItem>
-					<SettingItem
-						title="Clear saved feedback"
-						description="Clear grading feedback saved in local storage."
-					>
+					<SettingItem title="Clear saved feedback" description="Clear all saved grading feedback.">
 						<Button variant="soft" size="sm" color="danger" onClick={handleClearFeedback}>
 							Clear feedback
 						</Button>
 					</SettingItem>
-					<SettingItem title="Restore settings">
+					<SettingItem title="Reset settings">
 						<Button variant="soft" size="sm" color="danger" onClick={handleResetSettings}>
 							Reset settings
 						</Button>

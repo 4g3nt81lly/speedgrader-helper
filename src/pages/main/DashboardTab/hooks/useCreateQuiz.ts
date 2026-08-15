@@ -80,8 +80,8 @@ export default function useCreateQuiz(dismiss: () => void) {
 			return;
 		}
 		dismiss();
-		actions.addQuiz(state.newQuiz);
-		actions.selection.selectQuiz(state.newQuiz.id);
+		await actions.addQuiz(state.newQuiz);
+		actions.selectQuiz(state.newQuiz.id);
 	}
 
 	function reset() {

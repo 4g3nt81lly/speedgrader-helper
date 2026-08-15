@@ -1,3 +1,4 @@
+import TaskQueues from '#shared/utils/queues';
 import Constants from './constants';
 
 export const enum PageEvent {
@@ -6,4 +7,5 @@ export const enum PageEvent {
 
 export default {
 	pageChannel: new BroadcastChannel(Constants.PAGE_CHANNEL),
+	queues: new TaskQueues(),
 };

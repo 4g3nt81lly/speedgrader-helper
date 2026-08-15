@@ -1,3 +1,4 @@
+import babelPlugin from '@rolldown/plugin-babel';
 import { resolve } from 'path';
 import { io, type Socket } from 'socket.io-client';
 import { type ConfigPluginContext, type PluginOption } from 'vite';
@@ -30,4 +31,19 @@ export function hotReloadExtension(
 			hotReload.bind(this)(socket);
 		},
 	};
+}
+
+// https://github.com/vitejs/vite/discussions/21891#discussioncomment-17961380
+// FIXME: This is only a temporary solution
+export function stage3Decorators(): PluginOption {
+	return babelPlugin({
+		presets: [
+			{
+				preset: () => ({
+					plugins: [['@babel/plugin-proposal-decorators', { version: '2023-11' }]],
+				}),
+				rolldown: { filter: { code: '@' } },
+			},
+		],
+	});
 }

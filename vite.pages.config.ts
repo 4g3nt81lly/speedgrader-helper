@@ -2,13 +2,19 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 import { defineConfig, type PluginOption } from 'vite';
-import { hotReloadExtension, isProduction, sharedResolveOptions } from './vite.shared';
+import {
+	hotReloadExtension,
+	isProduction,
+	sharedResolveOptions,
+	stage3Decorators,
+} from './vite.shared';
 
 export default defineConfig(({ mode }) => ({
 	plugins: [
+		stage3Decorators(),
 		react(),
 		tailwindcss(),
-		populateIndexHtmlPreamble(mode),
+		populateTemplatePreamble(mode),
 		hotReloadExtension(function (socket) {
 			this.info('Reloading side panel...');
 			socket.emit('hr', 'reloadSidePanel');
@@ -41,9 +47,9 @@ export default defineConfig(({ mode }) => ({
 	envDir: '..',
 }));
 
-function populateIndexHtmlPreamble(mode: string): PluginOption {
+function populateTemplatePreamble(mode: string): PluginOption {
 	return {
-		name: 'populate-index-html-preamble',
+		name: 'populate-template-preamble',
 		transformIndexHtml(html, _ctx) {
 			if (!isProduction(mode)) {
 				html = html.replace(

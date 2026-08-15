@@ -25,6 +25,7 @@ type CanvasAPIOptionsProps = {
 	setPayload(payload: Nullable<QuizLoaderPayload['canvasAPI']>): void;
 };
 
+// TODO: Send cancel signal on unmount
 export default function CanvasAPILoaderConfig(props: CanvasAPIOptionsProps) {
 	const { setPayload } = props;
 

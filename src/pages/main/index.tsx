@@ -1,6 +1,7 @@
 import global, { PageEvent } from '#pages/global';
+import Layout from '#pages/Layout';
 import { reloadPage } from '#shared/utils/browser';
-import { StyledEngineProvider, Tab, tabClasses, TabList, TabPanel, Tabs } from '@mui/joy';
+import { Tab, tabClasses, TabList, TabPanel, Tabs } from '@mui/joy';
 import { useLayoutEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { io } from 'socket.io-client';
@@ -9,7 +10,7 @@ import DashboardTab from './DashboardTab';
 import SettingsTab from './SettingsTab';
 import { mainPageState, type MainTab } from './stores';
 
-function App() {
+function MainPage() {
 	const { mainTab } = mainPageState.useStore('selection');
 
 	useLayoutEffect(() => {
@@ -18,18 +19,23 @@ function App() {
 		const handleSyncSidePanel = ({ data }: MessageEvent<any>) => {
 			if (data.type !== PageEvent.syncState) return;
 			// Sync quizzes with another instance of side panel, reload from persistent storage
-			Promise.all([actions.settings.load(), actions.loadQuizzes()]);
+			Promise.allSettled([actions.settings.load(), actions.loadQuizzes()]);
 		};
 		global.pageChannel.addEventListener('message', handleSyncSidePanel);
 
+		return () => {
+			global.pageChannel.removeEventListener('message', handleSyncSidePanel);
+		};
+	}, []);
+
+	useLayoutEffect(() => {
+		if (import.meta.env.PROD) return;
 		const socket = io(import.meta.env.VITE_DEV_WS_SERVER_URI, {
 			transports: ['websocket'],
 			auth: { role: 'app' },
 		});
 		socket.on('hr', (name) => name === 'reloadSidePanel' && reloadPage());
-
 		return () => {
-			global.pageChannel.removeEventListener('message', handleSyncSidePanel);
 			socket.disconnect();
 		};
 	}, []);
@@ -37,7 +43,7 @@ function App() {
 	return (
 		<Tabs
 			value={mainTab}
-			onChange={(_, newValue) => actions.selection.selectMainTab(newValue as MainTab)}
+			onChange={(_, newValue) => actions.selectTab(newValue as MainTab)}
 			className="my-2 h-full bg-transparent"
 		>
 			<TabList
@@ -73,10 +79,10 @@ function App() {
 	);
 }
 
-Promise.all([actions.settings.load(), actions.selection.load()]).then(() => {
+Promise.all([actions.settings.load(), actions.loadSelection()]).then(() => {
 	ReactDOM.createRoot(document.getElementById('root')!).render(
-		<StyledEngineProvider enableCssLayer>
-			<App />
-		</StyledEngineProvider>
+		<Layout>
+			<MainPage />
+		</Layout>
 	);
 });

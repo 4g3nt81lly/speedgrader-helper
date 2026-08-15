@@ -1,29 +1,29 @@
 import type { IQuiz } from '#models/Quiz';
 import Quiz from '#models/Quiz';
-import { reloadSpeedGraderPages, syncPages } from '#pages/helpers';
-import { mainPageState, type MainPageState } from '#pages/main/stores';
+import Constants from '#pages/constants';
+import { queued, reloadSpeedGraderPages, syncPages, toastOnError } from '#pages/helpers';
+import { mainPageState, type MainPageState, type MainTab } from '#pages/main/stores';
 import SettingsActions from '#pages/settings/actions/settings';
 import { sendMessageToBackground } from '#shared/message';
-import type { SetOptional } from '#shared/types/utils';
+import type { Nullable, SetOptional } from '#shared/types/utils';
 import StoreActions from '#shared/utils/browser/StoreActions';
 import QuizzesActions from './quizzes';
 import SelectionActions from './selection';
 
 class MainPageActions extends StoreActions<MainPageState> {
 	private readonly quizzes = new QuizzesActions(this.store);
-	readonly selection = new SelectionActions(this.store);
+	private readonly selection = new SelectionActions(this.store);
 	readonly settings = new SettingsActions(this.store);
 
+	@queued(Constants.QUIZZES_QUEUE_NAME)
+	@toastOnError('Unable to load quizzes, please reload and try again!')
 	async loadQuizzes() {
-		try {
-			await this.quizzes.load();
-		} catch (error) {
-			console.error('Failed to load quizzes from local storage:', error);
-			return alert('Failed to load quizzes from local storage');
-		}
+		await this.quizzes.load();
 		this.deselectQuizIfInvalid();
 	}
 
+	@queued(Constants.QUIZZES_QUEUE_NAME)
+	@toastOnError('Unable to add quiz, please try again!')
 	async addQuiz(quiz: SetOptional<IQuiz, 'id'>) {
 		const newQuiz = Quiz.create(quiz);
 		await sendMessageToBackground({ name: 'quizzes.add', quiz: newQuiz });
@@ -39,6 +39,8 @@ class MainPageActions extends StoreActions<MainPageState> {
 		syncPages();
 	}
 
+	@queued(Constants.QUIZZES_QUEUE_NAME)
+	@toastOnError('Unable to update quiz, please try again!')
 	async updateQuiz(quiz: IQuiz, reload: boolean = false) {
 		await sendMessageToBackground({ name: 'quizzes.set', quiz });
 
@@ -50,6 +52,8 @@ class MainPageActions extends StoreActions<MainPageState> {
 		syncPages();
 	}
 
+	@queued(Constants.QUIZZES_QUEUE_NAME)
+	@toastOnError('Unable to remove quiz(zes), please try again!')
 	async removeQuizzes(...ids: IQuiz['id'][]) {
 		if (ids.length === 0) return;
 		await sendMessageToBackground({ name: 'quizzes.remove', quizIds: ids });
@@ -62,6 +66,8 @@ class MainPageActions extends StoreActions<MainPageState> {
 		syncPages();
 	}
 
+	@queued(Constants.QUIZZES_QUEUE_NAME)
+	@toastOnError('Unable to clear all quizzes, please try again!')
 	async clearQuizzes() {
 		const quizzes = Object.values(this.state.quizzes);
 		if (quizzes.length === 0) return;
@@ -77,8 +83,23 @@ class MainPageActions extends StoreActions<MainPageState> {
 	private deselectQuizIfInvalid() {
 		const selectedQuizId = this.state.selection.quiz;
 		if (selectedQuizId !== null && !this.state.quizzes[selectedQuizId]) {
-			this.selection.selectQuiz(null);
+			this.selectQuiz(null);
 		}
+	}
+
+	@toastOnError('Unable to load selection state.')
+	loadSelection() {
+		return this.selection.load();
+	}
+
+	@toastOnError()
+	selectTab(tab: MainTab) {
+		return this.selection.selectMainTab(tab);
+	}
+
+	@toastOnError()
+	selectQuiz(quizId: Nullable<IQuiz['id']>) {
+		return this.selection.selectQuiz(quizId);
 	}
 }
 
