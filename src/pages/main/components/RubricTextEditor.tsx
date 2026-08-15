@@ -3,7 +3,15 @@ import type { IRubric } from '#models/Rubric';
 import Rubric from '#models/Rubric';
 import { isDecimalGreaterThan } from '#shared/utils/decimal';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import { Button, Checkbox, FormControl, FormHelperText, Textarea, Typography } from '@mui/joy';
+import {
+	Button,
+	Checkbox,
+	FormControl,
+	FormHelperText,
+	Link,
+	Textarea,
+	Typography,
+} from '@mui/joy';
 import Decimal from 'decimal.js';
 import { useMemo, useState, type ChangeEvent } from 'react';
 
@@ -71,25 +79,21 @@ export default function RubricTextEditor(props: RubricTextEditorProps) {
 			<Typography component="div" level="body-sm" color="neutral">
 				<ul className="mt-1 pl-4">
 					<li>
-						Format: <code>&lt;index&gt;. (&lt;points&gt;)&emsp;&lt;description&gt;</code>
-						<br />
-						Example: <code>1.&thinsp;(+2)&thinsp;Correct answer</code>
-					</li>
-					<li>
-						The index is a transient ID used to identify rubric items. Each rubric item should start
-						on a new line with a <em>unique</em> index.
-					</li>
-					<li>
-						Rubric items are <strong>ordered by lines</strong>, not by the index.
-					</li>
-					<li>
-						Use "<code>\</code>" at the end of a line for multi-line description.
-					</li>
-					<li>
 						The magnitude of the points awarded/deducted must be no greater than {maxPoints}{' '}
 						point(s).
 					</li>
-					<li>Careful, malformed rubric items will be ignored and discarded!</li>
+					<li>
+						<strong>
+							Please read{' '}
+							<Link
+								href="https://4g3nt81lly.github.io/speedgrader-helper/basics/rubrics#text-based-builder"
+								target="_blank"
+							>
+								the documentation
+							</Link>{' '}
+							carefully before using this editor.
+						</strong>
+					</li>
 				</ul>
 			</Typography>
 
