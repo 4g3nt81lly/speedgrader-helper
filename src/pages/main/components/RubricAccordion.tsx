@@ -11,8 +11,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { Button, Chip, IconButton, Tooltip, Typography } from '@mui/joy';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState, type MouseEvent } from 'react';
-import RubricListEditor from './RubricListEditor';
 import RubricTextEditor from './RubricTextEditor';
+import RubricUIEditor from './RubricUIEditor';
 
 type RubricAccordionProps = {
 	question: IQuestion;
@@ -97,7 +97,7 @@ function RubricEditor({ question, defaultRubricEditor, updateRubric }: RubricEdi
 						layout="position"
 						{...inOutTransitionMotionProps({ opacity: [0, 1] })}
 					>
-						<RubricListEditor
+						<RubricUIEditor
 							rubric={question.rubric}
 							maxPoints={question.points}
 							updateRubric={updateRubric}

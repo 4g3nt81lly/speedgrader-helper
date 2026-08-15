@@ -16,7 +16,7 @@ export default function RubricEditorSelector({
 			value={editorType}
 			onChange={(_, newValue) => newValue && setEditorType(newValue)}
 		>
-			<Tooltip title="List Editor" placement="bottom" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
+			<Tooltip title="UI Editor" placement="bottom" enterDelay={Constants.TOOLTIP_ENTER_DELAY}>
 				<IconButton value="list" size="sm">
 					<TuneIcon fontSize="small" />
 				</IconButton>

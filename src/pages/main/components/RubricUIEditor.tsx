@@ -47,7 +47,7 @@ type RubricListEditorProps = {
 	updateRubric(newRubric: IQuestion['rubric']): void;
 };
 
-export default function RubricListEditor(props: RubricListEditorProps) {
+export default function RubricUIEditor(props: RubricListEditorProps) {
 	const { rubric, maxPoints, updateRubric } = props;
 
 	const [draftItemId, setDraftItemId] = useState<Nullable<IRubricItem['id']>>(null);
