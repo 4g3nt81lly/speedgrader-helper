@@ -15,7 +15,7 @@ import { useMemo, useState } from 'react';
 export default function useCreateQuiz(dismiss: () => void) {
 	const appSettings = mainPageState.useStore('settings');
 
-	const [loader, setLoader] = useState<LoaderOptions[QuizLoaderType]>(
+	const [loader, setLoader] = useState<LoaderOptions<QuizLoaderType>>(
 		defaultLoaderOptions[appSettings.defaultQuizLoader]
 	);
 
@@ -36,6 +36,13 @@ export default function useCreateQuiz(dismiss: () => void) {
 			basePoints
 		);
 	}, [state.newQuiz]);
+
+	function setQuizLoader<Type extends QuizLoaderType>(
+		type: LoaderOptions<Type>['type'],
+		payload: LoaderOptions<Type>['payload'] = defaultLoaderOptions[type].payload
+	) {
+		setLoader({ type, payload });
+	}
 
 	async function load() {
 		if (!loader.payload) return;
@@ -93,28 +100,26 @@ export default function useCreateQuiz(dismiss: () => void) {
 		totalPoints,
 		quizLoader: loader,
 
-		setQuizLoader: setLoader,
+		setQuizLoader,
 		loadQuiz: load,
 		confirmCreate,
 		reset,
 	};
 }
 
-type LoaderOptions = {
-	[Type in QuizLoaderType]: {
-		type: Type;
-		payload: Nullable<QuizLoaderPayload[Type]>;
-	};
+type LoaderOptions<Type extends QuizLoaderType> = {
+	type: Type;
+	payload: Nullable<QuizLoaderPayload[Type]>;
 };
 
-const defaultLoaderOptions: LoaderOptions = {
+const defaultLoaderOptions: { [Type in QuizLoaderType]: LoaderOptions<Type> } = {
 	oldSG: {
 		type: 'oldSG',
-		payload: null,
+		payload: {},
 	},
 	newSG: {
 		type: 'newSG',
-		payload: null,
+		payload: {},
 	},
 	canvasAPI: {
 		type: 'canvasAPI',

@@ -11,7 +11,7 @@ export type QuizLoaderPayload = {
 	};
 };
 
-export type QuizLoaderType = keyof QuizLoaderPayload;
+export type QuizLoaderType = Readonly<keyof QuizLoaderPayload>;
 
 export type QuizLoaderPayloadMap = {
 	[Loader in QuizLoaderType]: {

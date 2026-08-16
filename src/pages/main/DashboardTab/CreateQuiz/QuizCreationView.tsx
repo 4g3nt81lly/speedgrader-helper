@@ -70,14 +70,12 @@ export default function QuizCreationView(props: QuizCreationViewProps) {
 						<DropdownMenu
 							items={quizLoaderNames}
 							selectedItem={quizLoader.type}
-							onSelect={(type) => setQuizLoader({ type, payload: null })}
+							onSelect={setQuizLoader.bind(null)}
 						/>
 					</div>
 					<Divider />
 					{quizLoader.type === 'canvasAPI' && (
-						<CanvasAPILoaderConfig
-							setPayload={(payload) => setQuizLoader({ type: 'canvasAPI', payload })}
-						/>
+						<CanvasAPILoaderConfig setPayload={setQuizLoader.bind(null, 'canvasAPI')} />
 					)}
 				</div>
 			)}
