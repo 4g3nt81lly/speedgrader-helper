@@ -105,18 +105,16 @@ type MessageMap = {
 	content: ContentMessage;
 };
 
-export type MessageContext = keyof MessageMap;
+export type MessageContext = Readonly<keyof MessageMap>;
 
 export type MessageName<Context extends MessageContext> = keyof MessageMap[Context];
 
 export type MessagePayload<
 	Context extends MessageContext,
 	Name extends MessageName<Context>,
-	// @ts-expect-error: Not sure why TypeScript is complaining about this
-> = MessageMap[Context][Name]['payload'];
+> = MessageMap[Context][Name] extends { payload: infer Payload } ? Payload : never;
 
 export type MessageHandlerResult<
 	Context extends MessageContext,
 	Name extends MessageName<Context>,
-	// @ts-expect-error: Not sure why TypeScript is complaining about this
-> = MessageMap[Context][Name]['result'];
+> = MessageMap[Context][Name] extends { result: infer Result } ? Result : never;
